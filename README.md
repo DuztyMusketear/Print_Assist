@@ -11,10 +11,12 @@ reviewable agent assistance. We aim to compete on a simpler overall experience,
 reliable coordination, and predictable costs. These benefits and willingness to
 pay still need customer validation.
 
-**Current status:** Phase 1 implements offline order entry and a persisted queue,
-with unit, API integration, and browser tests. Printer simulation, scheduling,
-and recovery are planned next. Physical printer control, design generation,
-slicing, marketplace integrations, and billing are outside the MVP.
+**Current status:** Offline order entry uses a persisted queue. The dashboard
+also tracks operator-supplied model references through modeling, supports, and
+human review in a local session. It does not generate models, create supports,
+or slice files. Printer simulation, scheduling, and recovery are planned next.
+Physical printer control, marketplace integrations, and billing are outside the
+MVP.
 
 The planned stack is React/TypeScript with Vite, Python/FastAPI, and SQLite,
 with native Windows/macOS/Linux setup and an optional Docker Compose path.

@@ -2,8 +2,10 @@ import {useEffect,useRef,useState} from 'react';
 import {readState,addOrder,type Snapshot,type OrderInput} from './api';
 import {OrderForm} from './components/OrderForm';
 import {OrderQueue} from './components/OrderQueue';
+import {ModelingBoard} from './dashboard/ModelingBoard';
 
 export default function App() {
+  const [page,setPage]=useState<'dashboard'|'orders'>('dashboard');
   const [state,setState]=useState<Snapshot>();
   const [error,setError]=useState('');
   const sequence=useRef(0);
@@ -35,7 +37,14 @@ export default function App() {
       <span className="badge">Agents OFF · Offline prototype</span></header>
     <p className="notice">Simulated manufacturing · Print-ready files · No physical printer control</p>
     {error && <p role="alert">{error}</p>}
-    <button className="secondary" onClick={()=>void load()}>Refresh queue</button>
-    {state ? <div className="workspace"><OrderForm artifacts={state.artifacts} onSubmit={submit}/><OrderQueue state={state}/></div> : <p>Waiting for production state…</p>}
+    <nav className="app-nav" aria-label="Workspace sections">
+      <button className={page==='dashboard'?'nav-active':'secondary'} aria-current={page==='dashboard'?'page':undefined} onClick={()=>setPage('dashboard')}>Dashboard</button>
+      <button className={page==='orders'?'nav-active':'secondary'} aria-current={page==='orders'?'page':undefined} onClick={()=>setPage('orders')}>Orders</button>
+    </nav>
+    <div hidden={page!=='dashboard'}><ModelingBoard/></div>
+    <div hidden={page!=='orders'}>
+      <button className="secondary refresh" onClick={()=>void load()}>Refresh queue</button>
+      {state ? <div className="workspace"><OrderForm artifacts={state.artifacts} onSubmit={submit}/><OrderQueue state={state}/></div> : <p>Waiting for production state…</p>}
+    </div>
   </main>;
 }

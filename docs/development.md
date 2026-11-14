@@ -1,9 +1,12 @@
 # Phase 1 development
 
 Implemented: offline order entry, persisted SQLite queue, validated UTC deadlines,
-safe retries, and disabled agent state. Printer simulation/scheduling/recovery
-are later milestones. The seeded artifact is a reference and estimates, not a
-file that can be sent to a physical printer.
+safe retries, disabled agent state, and a local modeling/supports/review workflow
+dashboard. Dashboard tasks remain in memory for the page session. The dashboard
+tracks operator-supplied file references; it does not generate geometry or
+supports or slice files. Printer simulation/scheduling/recovery are later
+milestones. The seeded artifact is a reference and estimates, not a file that
+can be sent to a physical printer.
 
 ## Setup
 
@@ -50,7 +53,12 @@ Data defaults to `factory.sqlite3` in the working directory. Set
 starts a new session, pauses the clock, clears command replay history, and sets
 both agent controls OFF. No agents exist or initialize in this phase.
 
-The UI uses explicit UTC input labels. Choose the seeded blue PLA figure,
+The Dashboard opens first. Add a model name and operator-supplied file reference,
+then move the task through support preparation and human review. A review can
+approve the task or return it to modeling with a visible revision note. These
+stage changes are local to the current page session and do not call a model.
+
+The Orders tab uses explicit UTC input labels. Choose the seeded blue PLA figure,
 quantity and deadlines; add an order and reload to verify it remains. Errors
 preserve form inputs. If state conflicts, refresh and retry. Successful repeats
 are separate orders; an uncertain network retry reuses its command key while

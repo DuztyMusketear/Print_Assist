@@ -30,6 +30,8 @@ graph LR
     RESEARCH["docs/market-research.md"] -->|informs hypotheses in| BUSINESS
     MAP -->|indexes| RESEARCH
     CODE["docs/code-map.md"] -->|indexes implementation of| PLAN
+    DASH["Modeling dashboard"] -->|tracks operator workflow within| SPEC
+    CODE -->|indexes dashboard implementation| DASH
     MAP -->|links source responsibilities| CODE
     DEV["docs/development.md"] -->|runs and verifies| CODE
     README -->|links setup| DEV
@@ -49,7 +51,7 @@ graph LR
 | [Judging readiness](judging-readiness.md) | User-supplied rubric weights, evidence gaps, financial worksheet guidance, growth limits, and pitch checklist. Preparation rather than achieved scores. | Implementation plan, specification | Check weights total 100%, distinguish assumptions from evidence, verify links. |
 | [Business validation](business-validation.md) | Desk-research approach, archived optional interview guide, hypothetical pricing/cost model, evidence gaps, and demo script. No interviews planned or customer validation claimed. | Judging checklist, implementation plan | Verify arithmetic, dated source attribution, assumption labels, and local links. |
 | [Market research](market-research.md) | Dated vendor comparison, attributed customer anecdotes, niche hypotheses, pricing implications, and research limits. No scope changes or customer validation claimed. | Business validation brief, specification | Review source links, distinguish old anecdotes from current vendor claims, and validate arithmetic/local links. |
-| [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for Phase 1. | Plan, setup, implementation files | Validate file links and update alongside code. |
+| [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for order intake and the local modeling dashboard. | Plan, setup, implementation files | Validate file links and update alongside code. |
 | [Development setup](development.md) | Native setup/run/check commands, restart semantics, coverage boundaries and actual platform status. | README, code map | Full check command and local-link review. |
 | [Remaining phase backlog](backlog.md) | Fifteen Jira-style stories for Phases 2-6 plus a deferred live-adapter story; priorities, dependencies and acceptance criteria. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
 

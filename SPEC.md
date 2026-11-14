@@ -131,6 +131,9 @@ the seeded demo jobs.
 - Specialist responsibilities for order review, scheduling, printing operations,
   and monitoring/recovery. Model creation and supports/preparation are future
   extension points, not required active agents or MVP integrations.
+- A local dashboard may track operator-supplied model references through modeling,
+  supports, and human review stages; it does not generate geometry, create
+  supports, slice files, or invoke a model.
 - Validated tools for reading state and proposing or applying supported
   operations.
 - Simulated fault injection, visible fault states, and recovery workflow.

@@ -1,15 +1,30 @@
-import {act,render,screen,waitFor} from '@testing-library/react';
+import {act,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {test,expect,vi} from 'vitest';
 import App from './App';
 import {state,orderedState} from './test-fixtures';
+
+function renderOrders() {
+  render(<App/>);
+  fireEvent.click(screen.getByRole('button',{name:'Orders'}));
+}
+
+test('opens on the modeling dashboard and keeps order intake available',async()=>{
+  vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)));
+  render(<App/>);
+  expect(await screen.findByRole('heading',{name:'Modeling dashboard'})).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Orders'}));
+  expect(await screen.findByText(/No orders yet/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Dashboard'}));
+  expect(screen.getByRole('heading',{name:'Modeling dashboard'})).toBeVisible();
+});
 
 test('loads state, saves an order, and refreshes the queue with agents OFF',async()=>{
   const user=userEvent.setup();
   vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
     .mockResolvedValueOnce(new Response(JSON.stringify(orderedState)))
     .mockResolvedValueOnce(new Response(JSON.stringify(orderedState)));
-  render(<App/>);
+  renderOrders();
   expect(screen.getByText(/Waiting for production state/)).toBeInTheDocument();
   expect(await screen.findByText(/No orders yet/)).toBeInTheDocument();
   expect(screen.getByText(/Agents OFF/)).toBeInTheDocument();
@@ -25,7 +40,7 @@ test('server unavailable shows an error and refresh can recover',async()=>{
   const user=userEvent.setup();
   vi.spyOn(globalThis,'fetch').mockRejectedValueOnce(new Error('Server unavailable'))
     .mockResolvedValueOnce(new Response(JSON.stringify(state)));
-  render(<App/>);
+  renderOrders();
   expect(await screen.findByRole('alert')).toHaveTextContent('Server unavailable');
   await user.click(screen.getByRole('button',{name:'Refresh queue'}));
   expect(await screen.findByText(/No orders yet/)).toBeInTheDocument();
@@ -37,7 +52,7 @@ test('uncertain save retry reuses the same idempotency key',async()=>{
   const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
     .mockRejectedValueOnce(new Error('Response lost'))
     .mockResolvedValueOnce(new Response(JSON.stringify(orderedState)));
-  render(<App/>);
+  renderOrders();
   await screen.findByText(/No orders yet/);
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
@@ -56,7 +71,7 @@ test('a late refresh cannot replace a saved order with old state',async()=>{
   vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
     .mockImplementationOnce(()=>new Promise(resolve=>{finishRefresh=resolve;}))
     .mockResolvedValueOnce(new Response(JSON.stringify(orderedState)));
-  render(<App/>);
+  renderOrders();
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('button',{name:'Refresh queue'}));
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
@@ -72,7 +87,7 @@ test('an old refresh failure cannot hide a newer successful refresh',async()=>{
   let fail!:(reason:Error)=>void;
   vi.spyOn(globalThis,'fetch').mockImplementationOnce(()=>new Promise((_resolve,reject)=>{fail=reject;}))
     .mockResolvedValueOnce(new Response(JSON.stringify(state)));
-  render(<App/>);
+  renderOrders();
   await userEvent.setup().click(screen.getByRole('button',{name:'Refresh queue'}));
   await screen.findByText(/No orders yet/);
   await act(async()=>fail(new Error('Old connection failed')));
@@ -86,7 +101,7 @@ test('late submission result does not overwrite newer refreshed state',async()=>
     .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
     .mockResolvedValueOnce(new Response(JSON.stringify(newer)));
   const user=userEvent.setup();
-  render(<App/>);
+  renderOrders();
   await screen.findByText(/No orders yet/);
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
@@ -105,7 +120,7 @@ test.each([false,true])('refresh during a save cannot hide the successfully save
     .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
     .mockImplementationOnce(()=>new Promise(resolve=>{finishRefresh=resolve;}));
   const user=userEvent.setup();
-  render(<App/>);
+  renderOrders();
   await screen.findByText(/No orders yet/);
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
@@ -124,7 +139,7 @@ test('replaying an uncertain save cannot roll back a newer queue revision',async
     .mockResolvedValueOnce(new Response(JSON.stringify(newer)))
     .mockResolvedValueOnce(new Response(JSON.stringify(orderedState)));
   const user=userEvent.setup();
-  render(<App/>);
+  renderOrders();
   await screen.findByText(/No orders yet/);
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');

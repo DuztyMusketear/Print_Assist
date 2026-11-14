@@ -7,6 +7,7 @@ test('offline order intake survives a browser reload without external traffic',a
     return route.continue();
   });
   await page.goto('/');
+  await page.getByRole('button',{name:'Orders'}).click();
   await expect(page.getByText('Agents OFF · Offline prototype')).toBeVisible();
   const initial=await page.locator('section li').count();
   await page.getByLabel('Quantity').fill('3');
@@ -16,6 +17,7 @@ test('offline order intake survives a browser reload without external traffic',a
   await expect(page.locator('section li')).toHaveCount(initial+1);
   await expect(page.locator('section li').last()).toContainText('3 items');
   await page.reload();
+  await page.getByRole('button',{name:'Orders'}).click();
   await expect(page.locator('section li')).toHaveCount(initial+1);
   expect(external).toEqual([]);
 });
