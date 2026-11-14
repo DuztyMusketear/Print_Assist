@@ -18,6 +18,24 @@ alternative local setup, not a prerequisite for native development.
 
 **Spec:** [SPEC.md](../../../SPEC.md).
 
+## Current implementation audit - 2026-11-14
+
+Phase 1 is implemented; Tasks 2 and 3 have partial production/dashboard foundations.
+The original Task 2/3 completion checkboxes remain open because controls, scenario
+reset, schedule proposals/estimates, monitoring and some workflow evidence remain
+incomplete. Tasks 4-6 remain outstanding; native setup/research preparation are
+supporting pieces, not full milestone acceptance. Additional persisted modeling
+and interactive STL views are implemented under their focused plans.
+
+Consult the [current backlog](../../backlog.md) for per-story status, inspected
+code/test evidence, remaining criteria and the next development order. Consult
+[the overview audit](2026-11-14-production-overview.md) and
+[interactive printer plan](2026-11-14-interactive-printers.md) for delivered scope.
+The user's combined incoming-review/manual-entry workflow is tracked as PA-304;
+its acceptance stage is an extension requiring an approved design and plan.
+Partner STL preparation follows [the asset handoff](../../../frontend/public/models/README.md)
+and does not block development against deterministic example geometry.
+
 ## Agreed direction and implementation choices
 
 The user selected the React/Python web app and schematic printer floor. A 3D
@@ -58,7 +76,7 @@ The following are proposed implementation defaults, not prior user decisions:
 - Follow [AGENTS.md](../../../AGENTS.md): task branches, focused commits,
   maintained knowledge map, no unauthorized push/merge/deployment.
 - No credentials, runtime data, or generated dependencies in Git.
-- All commands below are planned interfaces; they do not exist yet.
+- Original interfaces below are planning targets. Some commands now exist under focused plans; inspect the code map and current backlog rather than assuming every original target is implemented.
 
 ## Review focus
 

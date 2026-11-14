@@ -1,15 +1,78 @@
 # Remaining MVP backlog
 
-Source: [implementation plan](superpowers/plans/2026-11-13-mvp-implementation.md)
-and [specification](../SPEC.md). Phase 1 is implemented and merged into local `main`.
-These are Jira-style local story IDs, not issues created in Jira. Phase 2-6 stories
-are **To Do**; PA-701 is **Deferred**. All stories are unassigned and have no
-committed estimates or due dates.
+Sources: [specification](../SPEC.md), [MVP implementation plan](superpowers/plans/2026-11-13-mvp-implementation.md),
+[production overview plan](superpowers/plans/2026-11-14-production-overview.md),
+and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers.md).
 
-Priority: **P0** = required workflow/control; **P1** = required supporting demo
-or packaging work. Priority does not remove dependencies. Phase 2 depends on
-the reviewed Phase 1 implementation; Phases 3-6 follow the existing plan order.
-Owners should be assigned jointly once partner availability is known.
+**Last audit: 2026-11-14, against `main` at `2b71df7`.** These are local story IDs,
+not remote issues. Status reflects inspected code and tests; passing coverage
+for current code does not mean unimplemented acceptance criteria are complete.
+Phase 1 is implemented. Phases 2 and 3 have working foundations but remain partial.
+
+**Status key:** Partial = implemented behavior exists but acceptance gaps remain;
+To Do = the story's primary workflow is not implemented; Deferred = gated follow-on.
+The acceptance criteria below are the completion contract, including those already
+implemented. The status notes identify what still needs work.
+
+Priority: **P0** = required workflow/control; **P1** = supporting demo or packaging
+work. Priority does not remove dependencies. No estimates or delivery dates are
+committed. Branch names below are planned task areas; start new follow-up branches
+from current `main`, rather than assuming the original feature branch is active.
+
+## Ownership and independent work
+
+- **Partner:** prepare printable part STL models, at intended millimeter scale,
+  Z-up, following the [part asset handoff](../frontend/public/models/README.md).
+  Supplied assets are not yet present; the example tower allows application work
+  and offline tests to continue without them.
+- **Application work:** printer controls, clock/reset, scheduling/estimates,
+  monitoring, intake, recovery, guarded agent framework and packaging. Individual
+  story owners can be assigned when coordinating the next implementation.
+- The partner's geometry delivery does not implement AI orchestration or model
+  generation. The current Modeling board is a persisted, operator-driven workflow.
+  Live inference remains gated by PA-701 and the specification.
+
+## Current delivery snapshot
+
+Implemented additions include persisted Modeling/Supports/Review stages, approval
+creating orderable artifacts, field-help icons and filament suggestions, plus
+interactive 3D printer beds and optional catalog STL associations. These supplement
+the original plan; they do not close the remaining operational requirements.
+See the [code map](code-map.md) for inspected implementation and test relationships.
+
+| Stories | Status | Remaining outcome |
+| --- | --- | --- |
+| PA-201 | Partial | Explain blocked assignments and record typed assignment/rejection events. |
+| PA-202 | Partial | Pause/offline controls, configurable accelerated clock and remaining lifecycle verification. |
+| PA-203 | Partial | Select/reset seeded and empty scenarios with new-session stale-work rejection. |
+| PA-301 | Partial | Reviewable future schedule proposals, explicit material reservations and validated apply. |
+| PA-302 | To Do | Completion estimates, deadline risk and infeasibility explanations. |
+| PA-303 | Partial | Live refresh, telemetry, history and full manual operation workflow. |
+| PA-304 | To Do | Unified incoming-order review and manual-entry workflow. |
+| PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
+| PA-501, PA-502, PA-503 | To Do | Fake agent gateway, controls, budgets and cancellation/zero-inference safeguards. |
+| PA-601 | To Do | Simulated business metrics and matched scenario comparisons. |
+| PA-602 | Partial | Production serving, portable packaging and broader platform verification. |
+| PA-603 | Partial | Complete rehearsal/readiness evidence and actual-build presentation fallback. |
+| PA-701 | Deferred | Optional bounded live-provider adapter after readiness gates. |
+
+## Next development order and traceability
+
+1. Finish PA-201/PA-202 controls, material/lifecycle checks and event foundations;
+   then PA-203 reset/scenarios. Reference SPEC sections 6-7 and MVP plan Task 2.
+2. Complete PA-301/PA-302 schedule proposals, reservation rules and estimates;
+   then PA-303 live monitoring/history. Reference SPEC section 6 and plan Task 3.
+3. Design PA-304 as the agreed combined intake workflow; it can proceed alongside
+   operational work once its contracts are agreed. Direct manual order entry
+   already exists; incoming acceptance/rejection is additional scope.
+4. Continue with fault/recovery (Task 4), guarded fake agents (Task 5), and metrics,
+   packaging and rehearsal (Task 6), preserving their dependencies and readiness gates.
+
+For every implementation, read the relevant SPEC sections and approved design/plan
+before coding. Maintain a requirements-to-test checklist, record justified plan
+adjustments, run the required offline checks, and update this status and both maps
+in the same change. SPEC sections 5, 7, 10 and 12 apply throughout: agent controls,
+deterministic validation, acceptance evidence and test-first development.
 
 ## Shared definition of done
 
@@ -34,6 +97,12 @@ three virtual printers with accurate quantities and filament accounting.
 
 ### PA-201 — Assign work to compatible printers
 
+**Status:** Partial (audit 2026-11-14).
+
+Three printers, compatibility/material checks, distinct attempts and transactional schedule/replay guards exist. Remaining: visible per-order rejection reasons, assignment/rejection activity events and focused competing-assignment workflow evidence.
+
+**Evidence / references:** [scheduling.py](../backend/print_assist/scheduling.py), [service.py](../backend/print_assist/service.py), [scheduling tests](../backend/tests/unit/test_scheduling.py). SPEC 6-7; MVP plan Task 2.
+
 **P0 · Depends on:** Phase 1.
 As an operator, I want to assign queued work to available compatible printers
 so that production can begin without double booking or consuming unavailable material.
@@ -49,6 +118,12 @@ Acceptance criteria:
 
 ### PA-202 — Advance, pause and complete simulated work
 
+**Status:** Partial (audit 2026-11-14).
+
+Manual clock advancement, material consumption, successful quantity accounting, automatic/manual starts and restart resume exist. Remaining: user-operated pause/offline/resume transitions, configurable accelerated run/pause clock, and lifecycle/material/concurrency checks across those controls.
+
+**Evidence / references:** [simulation.py](../backend/print_assist/simulation.py), [API](../backend/print_assist/api.py), [scheduling tests](../backend/tests/unit/test_scheduling.py). SPEC 6; MVP plan Task 2.
+
 **P0 · Depends on:** PA-201.
 As an operator, I want predictable progress and manual printer controls so that
 I can run production without agents.
@@ -60,9 +135,16 @@ Acceptance criteria:
 - Consume filament consistently with elapsed progress; never allow negative stock.
 - Count completion once, even across retries or repeated events. An order is
   print-complete only when all required items succeed; it is not marked shipped.
+- Provide a configurable accelerated simulation clock with explicit run/pause; restart never catches up elapsed wall time.
 - Only one backend simulation owner advances state; no tick invokes inference.
 
 ### PA-203 — Reset to repeatable scenarios
+
+**Status:** Partial (audit 2026-11-14).
+
+Restart preserves state, changes session, pauses running jobs and keeps agent controls off. Remaining: seeded/empty scenario selection, atomic reset command/UI and delayed-response/command invalidation across reset. Restart is not a reset feature.
+
+**Evidence / references:** [scenarios.py](../backend/print_assist/scenarios.py), [service.py](../backend/print_assist/service.py), [API integration tests](../backend/tests/integration/test_orders_api.py). SPEC 6-7, 10; MVP plan Task 2.
 
 **P0 · Depends on:** PA-202.
 As a presenter, I want seeded and empty-order scenarios so that demos can be repeated.
@@ -82,6 +164,12 @@ should run next, and which orders may miss their production deadlines.
 
 ### PA-301 — Produce and apply a feasible schedule
 
+**Status:** Partial (audit 2026-11-14).
+
+Immediate deterministic assignment orders by priority/deadline and uses revision/replay guards. Remaining: a reviewable schedule proposal and validated application, future-capacity planning, explicit planned-material reservation semantics and reasons for unassigned work.
+
+**Evidence / references:** [scheduling.py](../backend/print_assist/scheduling.py), [service.py](../backend/print_assist/service.py). SPEC 6-7; MVP plan Task 3.
+
 **P0 · Depends on:** PA-203.
 As a seller, I want a feasible production schedule so that urgent orders use
 available capacity and material appropriately.
@@ -96,6 +184,12 @@ Acceptance criteria:
 
 ### PA-302 — Display estimates and deadline risk
 
+**Status:** To Do (audit 2026-11-14).
+
+Order due/ship-by timestamps are displayed, but no completion estimate or risk calculation exists. Implement estimate assumptions, exact deadline boundaries and explanations for missing capacity/material.
+
+**Evidence / references:** [OrderQueue](../frontend/src/components/OrderQueue.tsx). SPEC 6, 10; MVP plan Task 3.
+
 **P0 · Depends on:** PA-301.
 As a seller, I want to understand deadline risk so that I can make realistic commitments.
 
@@ -107,7 +201,13 @@ Acceptance criteria:
   not a fabricated completion promise.
 - Keep finishing/packing allowance and print completion distinct from shipping.
 
-### PA-303 — Operate the floor through a live schematic dashboard
+### PA-303 — Operate the floor through a live production dashboard
+
+**Status:** Partial (audit 2026-11-14).
+
+Tabs, real printer/job/progress/material state, 3D views, refresh and stale-response guards exist. Remaining: non-overlapping automatic refresh, temperature telemetry, activity history, full printer controls and browser completion across the manual workflow.
+
+**Evidence / references:** [App](../frontend/src/App.tsx), [PrinterFloor](../frontend/src/printers/PrinterFloor.tsx), [3D browser tests](../tests/e2e/printer-views.spec.ts). SPEC 6; MVP plan Task 3 and interactive printer plan.
 
 **P0 · Depends on:** PA-302.
 As an operator, I want printer cards, queue and history in one view so that I
@@ -121,12 +221,47 @@ Acceptance criteria:
 - Activity identifies affected entities and distinguishes commands from simulator events.
 - Browser test completes a manual order with agents OFF.
 
+### PA-304 - Review incoming orders and enter production details manually
+
+**Status:** To Do. User-requested addition, agreed as one combined workflow.
+**P1 - Depends on:** Phase 1 intake and existing approved-artifact handoff. Does not depend on partner STL delivery.
+
+As an operator, I want incoming requests and manual entry in one Orders workflow
+so that I can review requirements before committing work to production.
+
+Acceptance criteria:
+- Offer a clear manual-entry path and an incoming-request review queue in Orders;
+  keep Overview focused on production rather than placing the creation form there.
+- Reuse approved artifacts, quantity, priority, material/print requirements and UTC
+  deadlines; explain field purpose/units with the existing accessible help pattern.
+- Distinguish pending, accepted and rejected requests. Pending/rejected requests
+  cannot silently enter scheduling. Acceptance creates one production order.
+- Validate required data and current artifact compatibility at acceptance; make
+  errors visible and preserve inputs. Repeated/uncertain retries cannot duplicate orders.
+- Preserve session/revision/idempotency checks and persist requests, decisions
+  and order links atomically; test concurrent acceptance and restart/reload.
+- Remain offline and usable with agents off. Marketplace ingestion, arbitrary
+  file upload, slicing and live AI are not implied by this story.
+- Agree the detailed design and contracts before implementation; add unit/API/UI
+  and browser evidence under the shared definition of done.
+
+**Traceability:** SPEC sections 4, 6-7 and 12 cover intake/validation. The pending
+request and acceptance lifecycle is a user-requested extension beyond the original
+MVP plan; record its approved design/plan and any required spec amendment before
+implementation instead of silently treating it as an existing requirement.
+
 ## Phase 4 — Faults and recovery
 
 Branch: `feat/fault-recovery`. Epic outcome: a disruption is contained and a
 reviewed recovery can restore production without corrupting fulfillment.
 
 ### PA-401 — Inject and safely isolate faults
+
+**Status:** To Do (audit 2026-11-14).
+
+No fault injection or deterministic isolation workflow exists.
+
+**Evidence / references:** SPEC 6-7, 10; MVP plan Task 4.
 
 **P0 · Depends on:** PA-303.
 As an operator, I want faults to stop affected work immediately so that a
@@ -141,6 +276,12 @@ Acceptance criteria:
 
 ### PA-402 — Review and apply a validated recovery
 
+**Status:** To Do (audit 2026-11-14).
+
+No recovery proposals, approval/rejection or replacement-attempt workflow exists.
+
+**Evidence / references:** SPEC 6-7, 10; MVP plan Task 4.
+
 **P0 · Depends on:** PA-401.
 As a seller, I want to review affected orders and a feasible recovery before
 applying it so that I retain control over disruptions.
@@ -153,6 +294,12 @@ Acceptance criteria:
 - Recovery creates at most the needed replacement attempts; never starts unsafe equipment.
 
 ### PA-403 — Demonstrate failure-to-completion in the browser
+
+**Status:** To Do (audit 2026-11-14).
+
+Existing browser tests cover intake/modeling/3D production progress, not a fault-to-recovery workflow.
+
+**Evidence / references:** SPEC 6, 10, 12; MVP plan Task 4.
 
 **P1 · Depends on:** PA-402.
 As a presenter, I want the entire recovery story visible so that judges can
@@ -172,6 +319,12 @@ can be tested through typed tools without paid inference or autonomous developme
 
 ### PA-501 — Add explicit agent controls and a fake proposal gateway
 
+**Status:** To Do (audit 2026-11-14).
+
+Stored controls default off, but there is no functional agent gateway, fake proposal flow or enable-control interface.
+
+**Evidence / references:** SPEC 5-7; MVP plan Task 5.
+
 **P0 · Depends on:** PA-403.
 As an operator, I want agent assistance to be explicitly controllable so that
 normal production and development never trigger unexpected inference.
@@ -188,6 +341,12 @@ Acceptance criteria:
 
 ### PA-502 — Enforce bounded execution budgets
 
+**Status:** To Do (audit 2026-11-14).
+
+No shared execution budget ledger or budget UI exists.
+
+**Evidence / references:** SPEC 5, 10, 12; MVP plan Task 5.
+
 **P0 · Depends on:** PA-501.
 As an operator, I want finite execution limits so that a demo cannot spend indefinitely.
 
@@ -202,6 +361,12 @@ Acceptance criteria:
 - UI exposes usage/reservations, remaining limits and stop reasons. Test with fakes only.
 
 ### PA-503 — Cancel safely and prove zero inference
+
+**Status:** To Do (audit 2026-11-14).
+
+Command session guards and offline tests exist, but there is no queued/in-flight agent lifecycle to cancel or verify yet.
+
+**Evidence / references:** SPEC 5, 10, 12; MVP plan Task 5.
 
 **P0 · Depends on:** PA-502.
 As an operator, I want OFF/reset to invalidate pending work so that old responses
@@ -224,6 +389,12 @@ with honest simulated outcomes and documented setup.
 
 ### PA-601 — Report simulated business outcomes
 
+**Status:** To Do (audit 2026-11-14).
+
+No metrics aggregation, metrics dashboard or matched comparison scenarios exist.
+
+**Evidence / references:** SPEC 6, 10, 13; MVP plan Task 6.
+
 **P0 · Depends on:** PA-503.
 As a seller, I want outcomes tied to orders so that I can assess production rather
 than just printer activity.
@@ -239,6 +410,12 @@ Acceptance criteria:
 
 ### PA-602 — Package and verify the local web app
 
+**Status:** Partial (audit 2026-11-14).
+
+Native setup, dependency locks and Windows/Chromium offline checks exist. Remaining: unified production frontend/API serving, health-checked packaging/Compose volume lifecycle and explicit additional-platform verification.
+
+**Evidence / references:** [Development setup](development.md). SPEC 7-8, 10, 12; MVP plan Task 6.
+
 **P0 · Depends on:** PA-601.
 As a teammate, I want repeatable setup so that I can run the demo on a supported system.
 
@@ -253,6 +430,12 @@ Acceptance criteria:
 - Dependency/browser/image downloads are setup-only; installed demo/test operation is offline.
 
 ### PA-603 — Prepare the judged demo and readiness evidence
+
+**Status:** Partial (audit 2026-11-14).
+
+Business/market research and judging preparation documents exist. Remaining: complete operational demo including risk/recovery/reset, readiness evidence, timed rehearsal and an actual-build fallback recording/screenshots.
+
+**Evidence / references:** [Judging checklist](judging-readiness.md), [business validation](business-validation.md). SPEC 9-10, 13; MVP plan Task 6.
 
 **P1 · Depends on:** PA-602.
 As a presenter, I want a rehearsed end-to-end story and fallback so that judges
@@ -271,6 +454,12 @@ Acceptance criteria:
 ## Optional follow-on — not part of Phases 2-6
 
 ### PA-701 — Add a bounded live demo provider adapter
+
+**Status:** Deferred (audit 2026-11-14).
+
+No live adapter exists. Preserve the readiness and explicit operator/provider approval gates.
+
+**Evidence / references:** SPEC 5, 9-10, 12; MVP plan optional follow-on.
 
 **Deferred · Depends on:** all readiness gates and PA-603, plus an approved
 provider/model choice and a separate adapter plan.

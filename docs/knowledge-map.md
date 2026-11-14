@@ -37,6 +37,8 @@ graph LR
     README -->|links setup| DEV
     BACKLOG["docs/backlog.md"] -->|breaks down remaining work in| PLAN
     MAP -->|indexes stories| BACKLOG
+    BACKLOG -->|traces requirements to| SPEC
+    BACKLOG -->|audits implementation evidence in| CODE
     DESIGN["Production overview design"] -->|extends| PLAN
     MAP -->|indexes design| DESIGN
     OVERVIEWPLAN["Production overview implementation plan"] -->|implements| DESIGN
@@ -54,17 +56,16 @@ graph LR
 | [SPEC.md](../SPEC.md) | Customer, business outcomes, MVP scope, proposed architecture, agent controls, TDD policy, acceptance criteria, and pricing hypotheses. Requirements rather than implemented behavior. | README, instructions | Review requirements for consistency; preserve offline development and explicit live-demo gates. |
 | [AGENTS.md](../AGENTS.md) | Contributor/agent rules for branches, navigation, graph maintenance, tests, and authorization boundaries. No automated branch enforcement. | Specification, map | Compare rules with spec and current workflow. |
 | [docs/knowledge-map.md](knowledge-map.md) | This index and relationship graph. No runtime behavior. | All indexed files | Confirm links resolve, entries match files, and edges match inspected relationships. |
-| [MVP implementation plan](superpowers/plans/2026-11-13-mvp-implementation.md) | Six test-first milestones and contracts. Phase 1 implemented; later milestones remain planned. | Specification, instructions, development setup | Review milestone coverage against spec and verify actual results in development setup. |
+| [MVP implementation plan](superpowers/plans/2026-11-13-mvp-implementation.md) | Six test-first milestones and contracts with an implementation audit: Phase 1 implemented, Tasks 2-3 partial, later milestones outstanding. | Specification, instructions, development setup | Review milestone coverage against spec and verify actual results in development setup. |
 | [Judging readiness](judging-readiness.md) | User-supplied rubric weights, evidence gaps, financial worksheet guidance, growth limits, and pitch checklist. Preparation rather than achieved scores. | Implementation plan, specification | Check weights total 100%, distinguish assumptions from evidence, verify links. |
 | [Business validation](business-validation.md) | Desk-research approach, archived optional interview guide, hypothetical pricing/cost model, evidence gaps, and demo script. No interviews planned or customer validation claimed. | Judging checklist, implementation plan | Verify arithmetic, dated source attribution, assumption labels, and local links. |
 | [Market research](market-research.md) | Dated vendor comparison, attributed customer anecdotes, niche hypotheses, pricing implications, and research limits. No scope changes or customer validation claimed. | Business validation brief, specification | Review source links, distinguish old anecdotes from current vendor claims, and validate arithmetic/local links. |
 | [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for order intake, modeling, virtual production and interactive 3D views. | Plan, setup, implementation files | Validate file links and update alongside code. |
 | [Development setup](development.md) | Native setup/run/check commands, restart semantics, coverage boundaries and actual platform status. | README, code map | Full check command and local-link review. |
-| [Remaining phase backlog](backlog.md) | Fifteen Jira-style stories for Phases 2-6 plus a deferred live-adapter story; priorities, dependencies and acceptance criteria. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
+| [Remaining phase backlog](backlog.md) | Sixteen local stories for Phases 2-6 plus a deferred live-adapter story; audited status, remaining criteria, ownership and spec/plan references. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
 | [Production overview design](superpowers/specs/2026-11-14-production-overview-design.md) | Approved virtual printers, automatic/manual scheduling, dashboard tabs and AI ownership boundary. | Implementation plan, backlog, specification | Review design against agreed scope and shared contracts. |
-| [Production overview implementation plan](superpowers/plans/2026-11-14-production-overview.md) | Test-first tasks for virtual printer state, scheduling, dashboard and verification. | Production overview design, code map | Check task coverage against design and update as implementation evolves. |
+| [Production overview implementation plan](superpowers/plans/2026-11-14-production-overview.md) | Test-first tasks and partial-completion audit for virtual printer state, scheduling, dashboard and verification. | Production overview design, code map | Check task coverage against design and update as implementation evolves. |
 | [Interactive printer design](superpowers/specs/2026-11-14-interactive-printer-design.md) | Approved 3D printer/bed views, STL part assets and persisted visual associations. | Production overview design, specification, code map | Review contracts, scope and proposed defaults before implementation. |
-
 | [Interactive printer implementation](superpowers/plans/2026-11-14-interactive-printers.md) | Test-first tasks, constraints and recorded implementation choices for 3D views. | Interactive printer design, code map | Full/coverage commands and feature review. |
 | [Part model handoff](../frontend/public/models/README.md) | STL convention, catalog registration, limits, example provenance and optional printer replacement notes. | visual_assets.py, modeling form, printer loader | Verify catalog paths and offline browser loading. |
 
