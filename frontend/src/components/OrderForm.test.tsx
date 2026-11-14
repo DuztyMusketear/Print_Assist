@@ -5,6 +5,14 @@ import { OrderForm } from './OrderForm';
 
 const artifacts = [{ id: 'figure-pla-blue', name: 'Blue PLA figure' }];
 
+test('explains order fields with examples and deadline units',()=>{
+  render(<OrderForm artifacts={artifacts} onSubmit={vi.fn()}/>);
+  expect(screen.getByLabelText('Quantity')).toHaveAccessibleDescription(/Example: 3/);
+  expect(screen.getByLabelText('Priority')).toHaveAccessibleDescription(/Higher numbers/);
+  expect(screen.getByLabelText('Production due (UTC)')).toHaveAccessibleDescription(/printing must finish/);
+  expect(screen.getByLabelText('Ship by (UTC)')).toHaveAccessibleDescription(/leave for shipping/);
+});
+
 test('submits the requested artifact and quantity with UTC deadlines', async () => {
   const submit = vi.fn().mockResolvedValue(undefined);
   const user = userEvent.setup();

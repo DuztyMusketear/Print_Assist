@@ -10,9 +10,9 @@ test('offline order intake survives a browser reload without external traffic',a
   await expect(page.getByText('Agents OFF · Offline prototype')).toBeVisible();
   await page.getByRole('tab',{name:'Orders'}).click();
   const initial=await page.locator('section li').count();
-  await page.getByLabel('Quantity').fill('3');
-  await page.getByLabel('Production due (UTC)').fill('2026-11-15T12:00');
-  await page.getByLabel('Ship by (UTC)').fill('2026-11-16T12:00');
+  await page.getByLabel('Quantity',{exact:true}).fill('3');
+  await page.getByLabel('Production due (UTC)',{exact:true}).fill('2026-11-15T12:00');
+  await page.getByLabel('Ship by (UTC)',{exact:true}).fill('2026-11-16T12:00');
   await page.getByRole('button',{name:'Add order'}).click();
   await expect(page.locator('section li')).toHaveCount(initial+1);
   await expect(page.locator('section li').last()).toContainText('3 items');

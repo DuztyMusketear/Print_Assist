@@ -43,14 +43,14 @@ graph LR
 | [App.tsx](../frontend/src/App.tsx) | Dashboard tabs and printer overview, state loading, retry key ownership, stale-response suppression and order composition. Schedule controls are in progress. | Frontend App tests |
 | [api.ts](../frontend/src/api.ts) | HTTP transport and actionable save/load errors. | Frontend transport tests |
 | [types.ts](../frontend/src/types.ts) | Generated OpenAPI types; do not hand-edit. | `python scripts/schema.py --check` |
-| [styles.css](../frontend/src/styles.css) | Responsive visual layout for intake/queue. No business logic. | Build/browser review |
-| [OrderForm.tsx](../frontend/src/components/OrderForm.tsx) | Inputs, UTC command payload, busy/error states, preservation on failure. | Frontend OrderForm tests |
+| [styles.css](../frontend/src/styles.css) | Responsive visual layout for intake, modeling and queue, including field-help text. No business logic. | Build/browser review |
+| [OrderForm.tsx](../frontend/src/components/OrderForm.tsx) | Inputs with icon-triggered tooltips and examples, UTC command payload, busy/error states, preservation on failure. | Frontend OrderForm tests |
 | [OrderQueue.tsx](../frontend/src/components/OrderQueue.tsx) | Empty state, saved quantity/deadlines/status and completion display. | Frontend OrderQueue tests |
 | [test-setup.ts](../frontend/src/test-setup.ts) | DOM cleanup, mock restoration and default fetch denial. | Frontend suite |
 | [test-fixtures.ts](../frontend/src/test-fixtures.ts) | Complete typed empty/ordered snapshot fixtures. | Frontend suite/typecheck |
 | [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, overlapping refresh/save, retry key reuse, busy state, late success/failure handling. | `npm test` |
 | [api.test.ts](../frontend/src/api.test.ts) | Transport command body and load/conflict/validation errors. | `npm test` |
-| [OrderForm.test.tsx](../frontend/src/components/OrderForm.test.tsx) | Submit payload, rejected-input preservation and invalid deadline feedback. | `npm test` |
+| [OrderForm.test.tsx](../frontend/src/components/OrderForm.test.tsx) | Field explanations, submit payload, rejected-input preservation and invalid deadline feedback. | `npm test` |
 | [OrderQueue.test.tsx](../frontend/src/components/OrderQueue.test.tsx) | Empty and saved order presentation. | `npm test` |
 | [scripts/check.py](../scripts/check.py) | Portable unit/full/coverage orchestration; short-circuits on failure; per-run outputs. | Runner unit tests and all three check modes |
 | [scripts/schema.py](../scripts/schema.py) | Offline OpenAPI generation, TS generation and drift check in temporary storage. | Full/coverage modes |
@@ -79,9 +79,9 @@ graph LR
 
 | File | Responsibility | Verification |
 | --- | --- | --- |
-| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted workflow board, task intake, print estimates, retry controls, stage actions, and review outcomes. Does not generate models or supports. | ModelingBoard tests, workflow module |
+| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted workflow board, task intake with icon-triggered field help/examples and editable material/color suggestions, print estimates, retry controls, stage actions, and review outcomes. Does not generate models or supports. | ModelingBoard tests, workflow module |
 | [workflow.ts](../frontend/src/dashboard/workflow.ts) | Validates deterministic task creation and modeling/supports/review/approval transitions. No inference; backend owns persistence in the integrated app. | `workflow.test.ts` |
-| [ModelingBoard.test.tsx](../frontend/src/dashboard/ModelingBoard.test.tsx) | Verifies dashboard stage progression, approval, and revision return. | `npm test` |
+| [ModelingBoard.test.tsx](../frontend/src/dashboard/ModelingBoard.test.tsx) | Verifies input descriptions, material/color suggestions, custom material entry, stage progression, approval, and revision return. | `npm test` |
 | [workflow.test.ts](../frontend/src/dashboard/workflow.test.ts) | Verifies required inputs, allowed transitions, and invalid action rejection. | `npm test` |
 
 Return to the [repository map](knowledge-map.md) for requirements and research.
@@ -100,4 +100,19 @@ graph LR
   Service -->|validated transition| Modeling[modeling.py]
   Modeling -->|approval creates| Artifact[Orderable artifact]
   Service -->|atomic snapshot| SQLite[store.py]
+```
+
+## Field help
+
+| File | Responsibility | Verification |
+| --- | --- | --- |
+| [EntryField.tsx](../frontend/src/components/EntryField.tsx) | Shared input label and info icon; help hidden until hover, focus or tap; Escape dismisses; accessible field description. | `npm test --workspace frontend -- src/components/EntryField.test.tsx` |
+| [EntryField.test.tsx](../frontend/src/components/EntryField.test.tsx) | Visibility, keyboard/touch activation, Escape dismissal, and non-submitting info button behavior. | `npm test --workspace frontend -- src/components/EntryField.test.tsx` |
+
+```mermaid
+graph LR
+  OrderForm -->|field labels and icon help| EntryField
+  ModelingBoard -->|field labels and icon help| EntryField
+  EntryFieldTest[EntryField.test.tsx] -->|verifies interaction| EntryField
+  ModelingBrowser[modeling-dashboard.spec.ts] -->|checks real hover and keyboard visibility| EntryField
 ```

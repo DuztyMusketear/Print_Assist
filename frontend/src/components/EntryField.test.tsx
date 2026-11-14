@@ -1,0 +1,31 @@
+import {render,screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import {expect,test,vi} from 'vitest';
+import {EntryField} from './EntryField';
+
+test('help is hidden until hover or focus and never submits its form',async()=>{
+  const user=userEvent.setup();
+  const submit=vi.fn(event=>event.preventDefault());
+  render(<form onSubmit={submit}><EntryField id="quantity" label="Quantity" help="How many finished items you need. Example: 3."><input name="quantity"/></EntryField></form>);
+  const icon=screen.getByRole('button',{name:'Help for Quantity'});
+  const tooltip=screen.getByRole('tooltip',{hidden:true});
+  expect(tooltip).not.toBeVisible();
+  await user.hover(icon);
+  expect(tooltip).toBeVisible();
+  await user.unhover(icon);
+  expect(tooltip).not.toBeVisible();
+  await user.tab();
+  expect(icon).toHaveFocus();
+  expect(tooltip).toBeVisible();
+  await user.keyboard('a');
+  expect(tooltip).toBeVisible();
+  await user.keyboard('{Escape}');
+  expect(tooltip).not.toBeVisible();
+  await user.click(icon);
+  expect(tooltip).toBeVisible();
+  expect(submit).not.toHaveBeenCalled();
+  await user.unhover(icon);
+  await user.tab();
+  expect(tooltip).not.toBeVisible();
+  expect(screen.getByLabelText('Quantity')).toHaveAccessibleDescription(/Example: 3/);
+});

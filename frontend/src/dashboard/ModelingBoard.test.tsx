@@ -1,7 +1,20 @@
 import {fireEvent,render,screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {expect,test} from 'vitest';
+import {expect,test,vi} from 'vitest';
 import {ModelingBoard} from './ModelingBoard';
+
+test('explains model inputs with examples and offers common filament choices',async()=>{
+  render(<ModelingBoard items={[]} onCreate={vi.fn()}/>);
+  expect(screen.getByLabelText('Model name')).toHaveAccessibleDescription(/Dragon figurine/);
+  expect(screen.getByLabelText('Model file reference')).toHaveAccessibleDescription(/does not upload/);
+  expect(screen.getByLabelText('Estimated print minutes')).toHaveAccessibleDescription(/one item/);
+  expect(screen.getByRole('combobox',{name:'Filament type'})).toHaveAttribute('list','filament-types');
+  expect(document.querySelector('#filament-types option[value="PETG"]')).not.toBeNull();
+  expect(document.querySelector('#filament-colors option[value="blue"]')).not.toBeNull();
+  const user=userEvent.setup();
+  await user.type(screen.getByRole('combobox',{name:'Filament type'}),'Custom blend');
+  expect(screen.getByRole('combobox',{name:'Filament type'})).toHaveValue('Custom blend');
+});
 
 test('moves a model task through supports and review to approval',async()=>{
   const user=userEvent.setup();render(<ModelingBoard/>);

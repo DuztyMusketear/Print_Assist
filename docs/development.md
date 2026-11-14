@@ -125,3 +125,14 @@ Windows process-cleanup permissions were needed for Playwright server shutdown.
 Modeling integration verification (2026-11-14): `python scripts/check.py coverage`
 passed with 47 backend tests, 57 frontend tests and 2 browser tests, 100%
 statement/branch coverage, schema drift and build checks. No live models ran.
+
+Input-help verification (2026-11-14): `python scripts/check.py coverage` passed
+47 backend tests, 59 frontend tests and 2 browser tests at 100% statement/branch
+coverage. Modeling and order fields include info icons that show context and examples on hover, focus or tap; Escape dismisses the tooltip;
+filament and color use native editable suggestion lists, preserving custom input.
+
+Icon-tooltip verification (2026-11-14): backend/frontend coverage gates reached
+100% with 47 backend and 60 frontend tests. The initial browser run exposed
+ambiguous input/help-button selectors; exact-label selectors resolved this.
+`python scripts/check.py full` then passed all tests, schema drift/build and
+both browser workflows, including hover, keyboard focus and Escape dismissal.

@@ -1,6 +1,7 @@
 import {useState,type FormEvent} from 'react';
 import {advanceWorkItem,createWorkItem,type WorkItem,type WorkflowAction} from './workflow';
 import type {components} from '../types';
+import {EntryField} from '../components/EntryField';
 
 const stages=['modeling','supports','review','approved'] as const;
 const labels:Record<WorkItem['stage'],string>={modeling:'Modeling',supports:'Supports',review:'Review',approved:'Approved'};
@@ -40,9 +41,15 @@ export function ModelingBoard(props:Props) {
     <div className="dashboard-intro"><div><p className="eyebrow">MODEL PREPARATION</p><h2>Modeling dashboard</h2><p className="muted">Track each design through modeling, support preparation, and human review.</p></div><span className="local-tag">LOCAL WORKFLOW · NO MODEL CALLS</span></div>
     <form className="work-form" onSubmit={add}>
       <div><h3>Add a model task</h3><p className="muted">Start from an operator-supplied model file reference.</p></div>
-      <label>Model name<input value={title} onChange={event=>setTitle(event.target.value)} placeholder="e.g. Dragon figurine" /></label>
-      <label>Model file reference<input value={reference} onChange={event=>setReference(event.target.value)} placeholder="e.g. dragon-v2.stl" /></label>
-      {props.onCreate && <><label>Estimated print minutes<input required type="number" min="1" value={duration} onChange={e=>setDuration(e.target.value)}/></label><label>Estimated filament grams<input required type="number" min="0.01" step="0.01" value={grams} onChange={e=>setGrams(e.target.value)}/></label><label>Filament type<input required value={material} onChange={e=>setMaterial(e.target.value)}/></label><label>Filament color<input required value={color} onChange={e=>setColor(e.target.value)}/></label><label>Required printer capabilities (comma separated)<input required value={capabilities} onChange={e=>setCapabilities(e.target.value)}/></label></>}
+      <div><EntryField id="model-name" label="Model name" help="A recognizable name for this design. Example: Dragon figurine."><input value={title} onChange={event=>setTitle(event.target.value)} placeholder="Dragon figurine" /></EntryField></div>
+      <div><EntryField id="model-reference" label="Model file reference" help="A filename or team reference; this does not upload a file. Example: dragon-v2.stl."><input value={reference} onChange={event=>setReference(event.target.value)} placeholder="dragon-v2.stl" /></EntryField></div>
+      {props.onCreate && <>
+        <div><EntryField id="model-duration" label="Estimated print minutes" help="Print time for one item, from your slicer or experience. Example: 120 means two hours."><input required type="number" min="1" value={duration} onChange={e=>setDuration(e.target.value)} placeholder="120"/></EntryField></div>
+        <div><EntryField id="model-grams" label="Estimated filament grams" help="Material for one item, including supports. Example: 25 grams."><input required type="number" min="0.01" step="0.01" value={grams} onChange={e=>setGrams(e.target.value)} placeholder="25"/></EntryField></div>
+        <div><EntryField id="model-material" label="Filament type" help="Choose a common material or type your own. Example: PLA. Must match printer inventory."><input required list="filament-types" value={material} onChange={e=>setMaterial(e.target.value)} placeholder="PLA"/></EntryField><datalist id="filament-types">{['PLA','PETG','ABS','ASA','TPU','Nylon','PC','PVA'].map(value=><option key={value} value={value}/>)}</datalist></div>
+        <div><EntryField id="model-color" label="Filament color" help="Choose a common color or type your own. Example: blue. Match the printer inventory spelling."><input required list="filament-colors" value={color} onChange={e=>setColor(e.target.value)} placeholder="blue"/></EntryField><datalist id="filament-colors">{['blue','black','white','gray','red','green','yellow','orange','purple','pink','natural','transparent'].map(value=><option key={value} value={value}/>)}</datalist></div>
+        <div><EntryField id="model-capabilities" label="Required printer capabilities (comma separated)" help="Printer features this model requires. Example: FFF for the virtual filament printers. Separate multiple requirements with commas."><input required value={capabilities} onChange={e=>setCapabilities(e.target.value)} placeholder="FFF"/></EntryField></div>
+      </>}
       <button type="submit" disabled={busy}>Add to modeling</button>
     </form>
     {error && <><p role="alert">{error}</p>{props.onRetry && <button disabled={busy} onClick={async()=>{setBusy(true);try {await props.onRetry!();setError('');}catch(reason){setError((reason as Error).message);}finally{setBusy(false);}}}>Retry modeling change</button>}</>}
