@@ -52,6 +52,9 @@ graph LR
     MAP -->|indexes design| WORKFLOW
     GUIDEDPLAN["Guided model/order plan"] -->|implements| WORKFLOW
     MAP -->|indexes plan| GUIDEDPLAN
+    COMPACTPLAN["Compact order/schedule plan"] -->|implements| COMPACTDESIGN["Compact planning design"]
+    MAP -->|indexes| COMPACTPLAN
+    COMPACTDESIGN -->|extends guided workflow| WORKFLOW
 ```
 
 ## File index
@@ -91,6 +94,9 @@ graph LR
 ## How to extend the map
 
 New guided workflow references:
+
+- [Compact order/schedule design](superpowers/specs/2026-11-14-compact-order-schedule-design.md): compact intake, confirmed queued management, calendar axis and incoming simulation; relates to the guided design, SPEC and code map; verify against browser and offline checks.
+- [Compact order/schedule plan](superpowers/plans/2026-11-14-compact-order-schedule.md): test-first tasks, constraints and execution evidence for the refinement; verify using root coverage/schema/build/browser commands.
 - [Guided model/order design](superpowers/specs/2026-11-14-guided-model-order-design.md): saved models, bounded STL uploads, example shop feed, reviewed timelines and user navigation; verify against SPEC and workflow browser tests.
 - [Guided model/order plan](superpowers/plans/2026-11-14-guided-model-orders.md): test-first backend/UI tasks, guarded contracts, scope and execution evidence; verify using root coverage/schema/build/browser checks.
 

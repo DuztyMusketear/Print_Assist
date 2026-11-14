@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import {test,expect,vi} from 'vitest';
 import App from './App';
 vi.mock('./monitoring',()=>({useMonitoring:()=>{}}));
+vi.mock('./components/useOrderEstimate',()=>({useOrderEstimate:()=>({estimate:undefined,busy:false,error:''})}));
 vi.mock('./printers/scene',()=>({mountScene:()=>({command:()=>{},update:()=>{},dispose:()=>{}})}));
 import {state,orderedState} from './test-fixtures';
 
@@ -824,7 +825,7 @@ test('local shop acceptance guides to review and held production details can be 
  const loaded={...state,revision:1,shop_requests:[request]};const held={...loaded,revision:2,shop_requests:[{...request,status:'accepted'}],orders:orderedState.orders.map(order=>({...order,requires_schedule_review:true}))};
  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state))).mockResolvedValueOnce(new Response(JSON.stringify(loaded))).mockResolvedValueOnce(new Response(JSON.stringify(held))).mockResolvedValueOnce(new Response(JSON.stringify({...held,revision:3})));
  const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);await user.click(screen.getByRole('tab',{name:'Orders'}));await user.click(screen.getByRole('button',{name:'Load example shop orders'}));await screen.findByText('EXAMPLE-1');await user.click(screen.getByRole('button',{name:'Review schedule for EXAMPLE-1'}));await screen.findByRole('heading',{name:'Orders awaiting confirmation'});
- expect(screen.getByRole('tab',{name:'Schedule'})).toHaveAttribute('aria-selected','true');await user.click(screen.getByText('Edit quantity and dates'));await user.click(screen.getByRole('button',{name:'Save order changes'}));await waitFor(()=>expect(transport).toHaveBeenCalledTimes(4));expect(transport.mock.calls[3][0]).toBe('/api/orders/revise');
+ expect(screen.getByRole('tab',{name:'Schedule'})).toHaveAttribute('aria-selected','true');await user.click(screen.getByRole('button',{name:/Inspect order/}));await user.click(screen.getByText('Edit quantity and dates'));await user.click(screen.getByRole('button',{name:'Save order changes'}));await user.click(screen.getByRole('button',{name:'Confirm changes'}));await waitFor(()=>expect(transport).toHaveBeenCalledTimes(4));expect(transport.mock.calls[3][0]).toBe('/api/orders/revise');
 });
 
 test('accepted requests reopen the schedule and live review offers an explicit simulation pause',async()=>{
@@ -852,3 +853,26 @@ test('late confirmed schedule cannot navigate away from a reset session',async()
 
 async function openPreparation(user:ReturnType<typeof userEvent.setup>){await user.click(screen.getByRole('tab',{name:'Models'}));if(!document.querySelector('details.preparation-tools')!.hasAttribute('open'))await user.click(screen.getByText('Model preparation & support review'));}
 async function openScheduleTools(user:ReturnType<typeof userEvent.setup>){await user.click(screen.getByRole('tab',{name:'Schedule'}));if(!document.querySelector('details.advanced-schedule')!.hasAttribute('open'))await user.click(screen.getByText('Manual scheduling tools'));}
+
+test.each(['manual','automatic','unmatched'] as const)('individual incoming %s requests use guarded commands and automatic matches preview the queue',async(mode)=>{
+ const request={id:'SIM-1',source:'simulation',sku:'MODEL-figure',product_name:'Figure',artifact_id:mode==='unmatched'?null:'figure-pla-blue',quantity:2,priority:0,production_due:'2026-11-16T00:00:00Z',ship_by:'2026-11-17T00:00:00Z',status:mode==='automatic'?'accepted':'pending'};
+ const response={...state,revision:1,shop_requests:[request],orders:mode==='automatic'?orderedState.orders.map(order=>({...order,requires_schedule_review:true})):[]};
+ const proposal={id:'p',session_id:state.session_id,revision:1,mode:'automatic',assumptions:'Estimate',assignments:[],blocked:[]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state))).mockResolvedValueOnce(new Response(JSON.stringify(response))).mockResolvedValueOnce(new Response(JSON.stringify(proposal)));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);await user.click(screen.getByRole('tab',{name:'Orders'}));await user.click(screen.getByRole('button',{name:'Simulate incoming order'}));
+ if(mode!=='manual')await user.selectOptions(screen.getByLabelText('Incoming process'),'automatic');if(mode==='unmatched')await user.selectOptions(screen.getByLabelText('Incoming model'),'');await user.click(screen.getByRole('button',{name:'Simulate order'}));await waitFor(()=>expect(transport).toHaveBeenCalledTimes(mode==='automatic'?3:2));
+ expect(transport.mock.calls[1][0]).toBe('/api/shop/simulate');expect(screen.getByRole('tab',{name:mode==='automatic'?'Schedule':'Orders'})).toHaveAttribute('aria-selected','true');
+});
+
+test('confirmed deletion preserves the source revision and removes the order from active overview totals',async()=>{
+ const initial={...orderedState,visual_assets:[{id:'other',name:'Other',path:'/models/other.stl',units:'mm',rotation_degrees:[0,0,0]}]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(initial))).mockResolvedValueOnce(new Response(JSON.stringify({...initial,revision:2,orders:initial.orders.map(order=>({...order,status:'cancelled'}))})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/2 items/);await user.click(screen.getByRole('tab',{name:'Schedule'}));await user.click(screen.getByRole('button',{name:/Inspect order/}));await user.click(screen.getByRole('button',{name:'Delete scheduled order'}));await user.click(screen.getByRole('button',{name:'Confirm deletion'}));await waitFor(()=>expect(screen.queryByRole('button',{name:/Inspect order/})).not.toBeInTheDocument());
+ const body=JSON.parse(String(transport.mock.calls[1][1]!.body));expect(body.expected_revision).toBe(1);expect(body.payload.confirmed).toBe(true);await user.click(screen.getByRole('tab',{name:'Overview'}));expect(screen.getByText('Items remaining').parentElement).toHaveTextContent('0');
+});
+
+test('a refreshed new session invalidates an open confirmation even when order IDs and revisions are reused',async()=>{
+ const next={...orderedState,session_id:'00000000-0000-4000-8000-000000000099'};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(orderedState))).mockResolvedValueOnce(new Response(JSON.stringify(next)));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/2 items/);await user.click(screen.getByRole('tab',{name:'Schedule'}));await user.click(screen.getByRole('button',{name:/Inspect order/}));await user.click(screen.getByRole('button',{name:'Delete scheduled order'}));await user.click(screen.getByRole('button',{name:'Refresh queue'}));await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());expect(transport).toHaveBeenCalledTimes(2);
+});

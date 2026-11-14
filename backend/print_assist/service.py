@@ -76,6 +76,21 @@ class FactoryService:
         from .order_review import revise
         return self._transition(command,'order-revise',lambda state:revise(state,command.payload.model_dump(mode='json')))
 
+    def delete_order(self,command):
+        from .order_review import delete
+        return self._transition(command,'order-delete',lambda state:delete(state,command.payload.model_dump(mode='json')))
+
+    def estimate_order(self,request):
+        from .estimates import estimate
+        state=self.snapshot()
+        if str(request.session_id)!=state['session_id']:
+            raise ValueError('Stale session; refresh before estimating')
+        return estimate(state,request.order.model_dump(mode='json'))
+
+    def simulate_order(self,command):
+        from .shop import simulate
+        return self._transition(command,'shop-simulate',lambda state:simulate(state,command.payload.model_dump(mode='json')))
+
     def schedule(self, command: ScheduleCommand) -> dict:
         return self._transition(command, "schedule", lambda state: schedule(state, command.payload.mode))
 

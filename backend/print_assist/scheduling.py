@@ -27,7 +27,7 @@ def schedule(state: dict, mode: str = "automatic", preserve_mode: bool = False) 
             if job['schedule_mode']=='automatic': result=start_job(result,job['id'])
     orders = sorted(result["orders"], key=lambda order: (-order["priority"], order["production_due"], order["id"]))
     for order in orders:
-        if order.get('requires_schedule_review'):
+        if order.get('requires_schedule_review') or order['status']=='cancelled':
             continue
         if not preserve_mode or not order.get("schedule_mode"):
             order["schedule_mode"] = mode

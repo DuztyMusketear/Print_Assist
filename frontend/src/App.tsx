@@ -20,6 +20,8 @@ import type {ProductionPath,ProductionBody,ProductionPayload} from './api';
 export default function App() {
   const [state,setState]=useState<Snapshot>();
   const currentSession=useRef(state?.session_id);currentSession.current=state?.session_id;
+  const [schedulePreview,setSchedulePreview]=useState<components['schemas']['ScheduleProposal']>();
+  const [autoPreview,setAutoPreview]=useState(0);
   const [reviewSpeed,setReviewSpeed]=useState<1|60|300|3600>(60);
   const [selectedPrinter,setSelectedPrinter]=useState('');
   const [selectedModel,setSelectedModel]=useState<string>();
@@ -75,14 +77,14 @@ export default function App() {
       if(current===sequence.current) setError('');
     } catch(reason) {if(current===sequence.current) setError((reason as Error).message);}
   }
-  async function command(path:ProductionPath,payload:ProductionPayload,retry=false,throwOnFailure=false) {
+  async function command(path:ProductionPath,payload:ProductionPayload,retry=false,throwOnFailure=false,expectedRevision?:number) {
     ++sequence.current;
     let body:ProductionBody|undefined;
     try {
       const signature=JSON.stringify([path,payload,state!.session_id]);
       if(path==='/api/scenarios/reset' && pendingCommand.current && JSON.parse(pendingCommand.current.signature)[0]!=='/api/scenarios/reset') pendingCommand.current=undefined;
       if(pendingCommand.current && pendingCommand.current.signature!==signature && !retry) throw new Error('Retry the previous production command before issuing another.');
-      if(!pendingCommand.current) pendingCommand.current={signature,body:{session_id:state!.session_id,expected_revision:state!.revision,idempotency_key:crypto.randomUUID(),payload} as Parameters<typeof productionCommand>[1]};
+      if(!pendingCommand.current) pendingCommand.current={signature,body:{session_id:state!.session_id,expected_revision:expectedRevision??state!.revision,idempotency_key:crypto.randomUUID(),payload} as Parameters<typeof productionCommand>[1]};
       body=pendingCommand.current.body;
       let updated:Snapshot;
       try {updated=await productionCommand(path,body);}
@@ -98,6 +100,7 @@ export default function App() {
       const ownsRequest=pendingCommand.current?.body.idempotency_key===body.idempotency_key;
       if(ownsRequest) pendingCommand.current=undefined;
       if(path==='/api/scenarios/reset' && ownsRequest) {
+        setAutoPreview(0);setSchedulePreview(undefined);
         ++sequence.current;
         if(pendingModel.current?.body.session_id===body.session_id) pendingModel.current=undefined;
         if(pending.current && JSON.parse(pending.current.signature)[0]===body.session_id) pending.current=undefined;
@@ -142,7 +145,7 @@ export default function App() {
       {tab==='Overview' && <PrintingGuidance state={state} onNewPrint={()=>setTab('Orders')} onSchedule={()=>setTab('Schedule')}/>}
       {tab==='Overview' && <div className="summary-grid" aria-label="Production summary">
         <section><span>Active printers</span><strong>{state.printers.filter(p=>p.status==='running').length} / {state.printers.length}</strong></section>
-        <section><span>Items remaining</span><strong>{state.orders.reduce((sum,o)=>sum+o.quantity-o.successful_quantity,0)}</strong></section>
+        <section><span>Items remaining</span><strong>{state.orders.filter(order=>order.status!=='cancelled').reduce((sum,o)=>sum+o.quantity-o.successful_quantity,0)}</strong></section>
         <section><span>Items completed</span><strong>{state.orders.reduce((sum,o)=>sum+o.successful_quantity,0)}</strong></section>
         <section><span>Orders at risk</span><strong>{state.forecasts?.filter(f=>f.risk!=='on_time').length ?? 0}</strong></section>
       </div>}
@@ -155,11 +158,11 @@ export default function App() {
         <section className="orchestration-placeholder"><h2>Orchestration</h2><p>Chat, fault recovery and agent activity controls are planned. Manual production works with agents off.</p></section>
       </aside></div>}
       {tab==='Printers' && <><PrinterFloor onNewPrint={()=>setTab('Orders')} selectedId={selectedPrinter} onSelect={setSelectedPrinter} state={state} detailed onStart={job_id=>command('/api/start',{job_id})} onControl={(printer_id,action)=>command('/api/printers/control',{printer_id,action})}/><ScenarioReset onReset={scenario=>command('/api/scenarios/reset',{scenario})}/></>}
-      {tab==='Schedule' && <OrderDrafts state={state} onRevise={payload=>command('/api/orders/revise',payload,false,true)}/>}
-      {tab==='Schedule' && <ScheduleProposal guided onPause={()=>void command('/api/clock',{running:false,speed:(state.clock_speed ?? 60) as 1|60|300|3600})} initialSpeed={reviewSpeed} key={state.session_id} state={state} onApply={applyReviewedSchedule}/>}
+      {tab==='Schedule' && <OrderDrafts key={state.session_id} state={state} proposal={schedulePreview} onRevise={(payload,revision)=>command('/api/orders/revise',payload,false,true,revision)} onDelete={(payload,revision)=>command('/api/orders/delete',payload,false,true,revision)}/>}
+      {tab==='Schedule' && <ScheduleProposal guided autoPreview={autoPreview>0} onPreview={setSchedulePreview} onPause={()=>void command('/api/clock',{running:false,speed:(state.clock_speed ?? 60) as 1|60|300|3600})} initialSpeed={reviewSpeed} key={state.session_id+autoPreview} state={state} onApply={applyReviewedSchedule}/>}
 
       {tab==='Schedule' && <details className="advanced-schedule"><summary>Manual scheduling tools</summary><ActivityFeed events={state.events}/><section><h2>Schedule</h2><p>Start each pending print below. Further manual copies are prepared as printers become free and wait for your start. Then open Overview to inspect the printer and run the clock.</p><button className="secondary" onClick={()=>setTab('Overview')}>Next: monitor printers</button><button onClick={()=>void schedule('automatic')}>Schedule automatically</button> <button onClick={()=>void schedule('manual')}>Schedule for manual start</button> <button onClick={()=>void command('/api/advance',{seconds:3600})}>Advance 1 hour</button><ul>{state.jobs.map((job,index)=><li key={String(job.id ?? index)}>{partLabel(String(job.id))} · {String(job.status)} · {printerLabel(String(job.printer_id))} {(job.status==='pending'||job.status==='paused') && <button onClick={()=>void command('/api/start',{job_id:String(job.id)})}>{job.status==='paused'?'Resume':'Start'} {partLabel(String(job.id))}</button>}</li>)}</ul><OrderQueue state={state}/></section></details>}
-      {tab==='Orders' && <div className="order-intake-grid"><QuickPrint guided key={state.session_id+selectedModel} initialModel={selectedModel} state={state} onQueue={queuePrint} onModels={()=>setTab('Models')}/><ShopInbox state={state} onLoad={()=>command('/api/shop/example',{},false,true)} onDecision={async payload=>{const sourceSession=state.session_id;await command('/api/shop/decisions',payload,false,true);if(payload.decision==='accept'&&currentSession.current===sourceSession)setTab('Schedule');}} onSchedule={()=>setTab('Schedule')}/><details className="advanced-order"><summary>Custom order details</summary><div className="workspace"><OrderForm artifacts={state.artifacts} onSubmit={submit}/><OrderQueue state={state}/></div></details></div>}
+      {tab==='Orders' && <div className="order-intake-grid"><QuickPrint guided key={state.session_id+selectedModel} initialModel={selectedModel} state={state} onQueue={queuePrint} onModels={()=>setTab('Models')}/><ShopInbox initialModel={selectedModel} onSimulate={async payload=>{const sourceSession=state.session_id;await command('/api/shop/simulate',payload,false,true);if(currentSession.current===sourceSession&&payload.mode==='automatic'&&payload.artifact_id){setAutoPreview(value=>value+1);setTab('Schedule');}}} state={state} onLoad={()=>command('/api/shop/example',{},false,true)} onDecision={async payload=>{const sourceSession=state.session_id;await command('/api/shop/decisions',payload,false,true);if(payload.decision==='accept'&&currentSession.current===sourceSession)setTab('Schedule');}} onSchedule={()=>setTab('Schedule')}/><details className="advanced-order"><summary>Custom order details</summary><div className="workspace"><OrderForm artifacts={state.artifacts} onSubmit={submit}/><OrderQueue state={state}/></div></details></div>}
     </> : <p>Waiting for production state…</p>}
   </main>;
 }

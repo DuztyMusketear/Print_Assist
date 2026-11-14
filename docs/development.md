@@ -388,3 +388,67 @@ desktop Models/Orders/Schedule screenshots were inspected; Chromium reported no
 page errors or 390px horizontal overflow. Existing bundle-size advisory remains.
 No live providers, shop APIs or physical printers ran. User acceptance remains
 separate from automated and visual checks.
+
+## Compact planning and queue management verification - 2026-11-14
+
+Orders preserves library selection and adds model search, compact copy/date fields,
+a stepper and debounced read-only capacity/material estimates. Infeasible drafts
+offer feasible quantities, later dates with packing allowance retained, or a faster
+saved profile when supplied. Playback speed only accelerates the demo. Earliest-fit
+dates round up to minute input precision. Planning summaries and timeline labels
+use explicit UTC consistently.
+Preview-only placements display Proposed rather than suggesting they are committed.
+
+Schedule uses selectable order cards with quantity, whole-order estimate and
+late/overlap/unavailable cues; partial unavailable work has no misleading ETA.
+Details expose confirmed queued edits/deletion. Edits cancel old placements and
+return to review; deletion archives the order and releases commitments without
+restoring physical stock. Started/completed attempts remain protected. Confirmation
+captures its original session/revision; reset invalidates dialogs even with reused
+IDs. Day/week/month controls label bounded bottom calendar ticks; detail allocations
+and stock ledgers are collapsed by default. Full keyboard traversal reaches all
+simulation-form fields and traps focus inside the modal.
+
+Simulate incoming order creates individual persisted local requests. Manual mode
+leaves an inbox item; automatic matching creates a held order and opens its preview.
+Final confirmation starts printing. The older example batch works alongside this
+flow. Website model imports remain separate partner work.
+
+Root `.venv\Scripts\python.exe scripts/check.py coverage` passed 119 backend,
+229 frontend and 18 browser tests with 100% application statement/branch coverage,
+schema drift, TypeScript and production build checks. Browser workflows verify
+early deadline warnings, selection handoff, calendar controls, explicit cancel/confirm,
+stock release and both incoming paths. Independent review findings have regression
+coverage and scoped verification. Actual desktop Orders/Schedule previews and 390px
+containment were inspected; no page errors or horizontal overflow were found. The
+primary order action fits within the 1000px desktop viewport. Existing Vite bundle
+advisory remains. No live shop calls, inference or hardware ran; active print
+cancel/discard and scrap accounting are still separate work.
+
+Follow-up estimate display: saved model cards explicitly label per-item print time
+and filament. Orders and schedule cards/details show total estimated printer work
+and filament for the requested quantity, with material/color; edit confirmation
+uses the revised quantity. Proposed queue totals cover proposed assignments only.
+Summed printer work is distinguished from the scheduled finish date. New regressions
+first failed for missing labels/totals, then passed. The root coverage command above
+was rerun successfully after these changes (360 tests total); schema/build passed,
+and the compact browser workflow verifies totals and retained desktop action density.
+
+Order-color follow-up: a shared color key identifies each order across printer
+lanes and gives guarded estimated completion; final allocated prints carry markers.
+Archived orders retain their color slots. Partial, blocked, overlapping and unavailable
+work does not promise a whole-order finish. Status/deadline/overlap labels remain in
+the readable key and details even when bars are narrow; accessible names preserve
+the model label. Independent review identified those accessibility improvements,
+which have red/green regressions. The inbox's expandable demo walkthrough explains
+manual review and automatic matching through confirmation and printer monitoring.
+
+Fresh root `.venv\Scripts\python.exe scripts/check.py coverage` passed 119 backend,
+229 frontend and 18 browser tests (366 total), 100% application coverage, schema
+drift, TypeScript and production build checks. Browser tests include distinct order
+colors/readable key geometry in a 390px monthly view and both incoming routes reaching
+running printers only after confirmation/manual start. Existing Vite bundle advisory
+remains; no physical printing, live shop calls or application agents ran.
+Restored the existing preview database with clock and agents off. Actual two-order
+schedule colors/key/final markers were visually inspected; the mobile preview has no
+page overflow. Previewing did not apply/start orders or reset saved simulation data.

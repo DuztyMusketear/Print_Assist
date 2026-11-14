@@ -25,6 +25,7 @@ def project(state):
             held.add(order['id']);available[pid]=None
     forecasts=[]
     for order in sorted(state['orders'],key=lambda o:(-o['priority'],o['production_due'],o['id'])):
+        if order['status']=='cancelled':continue
         artifact=next(a for a in state['artifacts'] if a['id']==order['artifact_id'])
         reason='Held or manual work requires an explicit start/resume' if order['id'] in held else ''
         if order['successful_quantity']>=order['quantity']:

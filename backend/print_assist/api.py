@@ -16,6 +16,7 @@ from .contracts import ModelTaskCommand, ModelActionCommand
 from .contracts import PrinterControlCommand, ResetCommand
 from .contracts import LibraryUploadCommand, ExampleFeedCommand, ShopDecisionCommand, ReviseOrderCommand
 from fastapi.responses import Response
+from .contracts import DeleteOrderCommand, EstimateRequest, OrderEstimate, SimulateOrderCommand
 
 
 def create_app(path=None):
@@ -36,6 +37,27 @@ def create_app(path=None):
             except asyncio.CancelledError:
                 pass
     app = FastAPI(lifespan=lifespan,title="Print Assist", version="0.1.0")
+
+    @app.post('/api/orders/delete',response_model=FactorySnapshot)
+    def delete_order(command:DeleteOrderCommand):
+        try:
+            return project(service.delete_order(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/orders/estimate',response_model=OrderEstimate)
+    def estimate_order(request:EstimateRequest):
+        try:
+            return service.estimate_order(request)
+        except ValueError as error:
+            raise HTTPException(status_code=409 if str(error).startswith('Stale') else 422,detail=str(error)) from error
+
+    @app.post('/api/shop/simulate',response_model=FactorySnapshot)
+    def simulate_order(command:SimulateOrderCommand):
+        try:
+            return project(service.simulate_order(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
 
     @app.post('/api/library/models',response_model=FactorySnapshot)
     def upload_model(command:LibraryUploadCommand):

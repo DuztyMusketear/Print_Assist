@@ -227,8 +227,8 @@ component tests assert the new presentation and preserve command checks.
 
 | File | Purpose, relationships and verification |
 | --- | --- |
-| [display.ts](../frontend/src/display.ts) | Presentation-only printer/part/short hexadecimal order labels, shared by App, PrinterFloor and ProductionControls. Verify display unit tests. |
-| [display.test.ts](../frontend/src/display.test.ts) | Friendly, custom and long-ID label examples. `npm test --workspace frontend -- src/display.test.ts`. |
+| [display.ts](../frontend/src/display.ts) | Presentation-only printer/part/short hexadecimal order labels and rounded-up human-readable printer-work durations; shared by App, printer controls, QuickPrint, OrderDrafts and ScheduleProposal. Verify display unit tests. |
+| [display.test.ts](../frontend/src/display.test.ts) | Friendly/custom/long-ID labels and minute/hour printer-work estimates, including fractional-minute rounding. `npm test --workspace frontend -- src/display.test.ts`. |
 | [PrinterScene.tsx](../frontend/src/printers/PrinterScene.tsx) | Asset metadata identity controls loading; live progress/color update the existing scene without resetting cameras. Async stale-load cleanup remains. Verify PrinterScene tests. |
 | [scene.ts](../frontend/src/printers/scene.ts) | Incremental clipping/material/nozzle updates preserve renderer, mesh and camera; geometry is disposed only on scene replacement/unmount. Verify scene tests. |
 | [PrinterScene.test.tsx](../frontend/src/printers/PrinterScene.test.tsx) | Equal metadata snapshots reuse renderer/load and apply latest progress/color; existing stale/unmount/fallback cases. Frontend suite. |
@@ -447,12 +447,12 @@ estimates recompute remaining work after holds and queue it per printer.
 | [ModelLibrary.test.tsx](../frontend/src/components/ModelLibrary.test.tsx) | Browse/filter/handoff, required preparation, import/read/upload failures, optional support metadata and safe success/navigation. | Frontend coverage |
 | [ModelPreview.tsx](../frontend/src/components/ModelPreview.tsx) | Bounded geometry loader to static isometric canvas thumbnails, stable asset identity, abort/disposal and readable fallback. | ModelPreview tests/browser |
 | [ModelPreview.test.tsx](../frontend/src/components/ModelPreview.test.tsx) | Real geometry drawing/disposal, retained polling metadata, absent/failed/canvas fallback and late navigation results. | Frontend coverage |
-| [ShopInbox.tsx](../frontend/src/components/ShopInbox.tsx) | Explicit example import, pending model matches, accept/reject actions, preserved request history and review navigation. | ShopInbox tests/browser |
-| [ShopInbox.test.tsx](../frontend/src/components/ShopInbox.test.tsx) | Unmatched/mapped choices, request statuses, callbacks, empty feed and load/decision failures. | Frontend coverage |
+| [ShopInbox.tsx](../frontend/src/components/ShopInbox.tsx) | Explicit example import, pending model matches, accept/reject actions, preserved request history, review navigation and expandable manual/automatic intake-to-printer walkthrough. | ShopInbox tests/browser |
+| [ShopInbox.test.tsx](../frontend/src/components/ShopInbox.test.tsx) | Unmatched/mapped choices, request statuses, callbacks, empty feed, load/decision failures and readable demo directions. | Frontend coverage |
 | [OrderDrafts.tsx](../frontend/src/components/OrderDrafts.tsx) | Visible held-order review, guarded quantity/date corrections and editable-error preservation. | OrderDrafts/App tests |
 | [OrderDrafts.test.tsx](../frontend/src/components/OrderDrafts.test.tsx) | Corrected payload/deadlines, error preservation and protected active/completed production. | Frontend coverage |
-| [PrintTimeline.tsx](../frontend/src/components/PrintTimeline.tsx) | Existing/proposed printer lanes with actual geometry thumbnails, times, statuses, deadline flags and detail disclosure. Missing timing cannot crash the dashboard. | Timeline/App/browser tests |
-| [PrintTimeline.test.tsx](../frontend/src/components/PrintTimeline.test.tsx) | Model/lane/deadline association, active/held/unknown timing, profile fallback and empty state. | Frontend coverage |
+| [PrintTimeline.tsx](../frontend/src/components/PrintTimeline.tsx) | Existing/proposed printer lanes, geometry thumbnails, order hues/completion key/end markers, readable status/conflict key, accessible model labels and detailed timing. Missing timing cannot crash the dashboard. | Timeline/App/browser tests |
+| [PrintTimeline.test.tsx](../frontend/src/components/PrintTimeline.test.tsx) | Model/lane/deadline association, active/held/unknown timing, profile fallback, empty state, color-key correspondence, final markers, partial completion suppression and accessible non-clipped warning labels. | Frontend coverage |
 | [model-order-workflow.spec.ts](../tests/e2e/model-order-workflow.spec.ts) | Upload/reload/browse, held quantity/deadline correction, timeline confirmation/progress/mobile layout and example-feed mapping/history without external traffic. | Root full/coverage |
 
 ```mermaid
@@ -471,4 +471,84 @@ graph LR
   Preview -->|registered local mesh loading| Loader[assets.ts]
   Review -->|complete on-time apply| Proposals[proposals.py]
   Proposals -->|automatic dispatch| Scheduling[scheduling.py]
+```
+
+## Compact planning, confirmed queue management and incoming simulation
+
+QuickPrint.tsx keeps library selection, searches saved models and groups the model
+summary, copy stepper and deadline into compact controls. Packing and direct/manual
+starts stay secondary. Draft feasibility exposes real quantity/date alternatives;
+earliest-fit dates round up to minute precision and preserve packing allowance.
+Faster prepared profiles are explicit choices; playback speed cannot alter estimates.
+
+order_review.py now requires explicit confirmation for queued revision/deletion,
+protects started/completed attempts, cancels unstarted placements, frees reserved
+printers and archives deleted orders. Edits return to review. contracts.py/types.ts,
+service.py and api.py own delete/estimate/individual-simulation contracts and guarded
+transactions. scheduling.py/proposals.py/monitoring.py exclude canceled orders;
+OrderQueue/PrintingGuidance/App totals exclude them from active work. shop.py adds
+unique simulated incoming requests; manual requests stay pending, automatic matches
+become held orders, and request/model mappings persist without live website access.
+
+OrderDrafts.tsx owns selectable model/quantity/finish cards and selected details.
+It highlights late/overlap/blocked/unavailable conditions and never presents an
+unavailable partial allocation as whole-order ETA. Edit/delete confirmations capture
+session/revision; App.tsx keys the board by session and forwards source revisions.
+ScheduleProposal.tsx shares preview data with cards and can preview an automatically
+matched incoming request on entry. It collapses detailed placements/material ledgers.
+PrintTimeline.tsx consumes the shared projection and bottom calendar axis; model
+previews and interactive printer views remain independent. ShopInbox.tsx exposes
+individual simulation and compact request details, with separate removed history.
+PrintTimeline also renders order colors, a labeled completion key and last-print
+markers. scheduleView.ts groups shown slots and withholds completion for partial,
+blocked, overlapping or unavailable allocations; color indices include archived
+orders so existing hues survive completion and incoming additions. Status warnings
+stay textual and use outlines independent of the order hue. ShopInbox includes an
+expandable manual/automatic demo walkthrough through printer monitoring.
+styles.css owns compact fields/cards, dialogs/focus presentation and aligned axes.
+Planning summaries and calendar ticks share explicit UTC formatting. Preview-only
+placements label cards Proposed; only committed placements display Scheduled.
+ModelLibrary explicitly labels per-item print time and filament. QuickPrint and
+OrderDrafts show quantity-based estimated printer work and filament totals with
+material/color; revised confirmations use the new quantity. ScheduleProposal sums
+only proposed assignment estimates. These views use display.ts duration formatting
+and distinguish summed work from elapsed completion. Display/component regressions
+and the compact browser workflow verify rounding, labels and quantity updates.
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [estimates.py](../backend/print_assist/estimates.py) | Bounded read-only draft feasibility using authoritative proposals, on-time quantities, complete finish estimates and material/capacity explanations. | Backend integration/coverage |
+| [test_compact_planning.py](../backend/tests/integration/test_compact_planning.py) | Confirmed queue edits/deletion/release, history, stale/started guards, pure estimate alternatives and repeatable manual/automatic incoming simulation. | Root backend coverage |
+| [scheduleView.ts](../frontend/src/components/scheduleView.ts) | Current remaining-work slots, queued placement projection, deadline/overlap flags, stable order hues/guarded completion groups and bounded UTC day/week/month windows/ticks. | scheduleView/timeline tests |
+| [scheduleView.test.ts](../frontend/src/components/scheduleView.test.ts) | Calendar bounds/tick limits, overlapping/late allocations, stable distinct colors through append/completion and partial/blocked/overlap/unavailable/orphan completion guards. | Frontend coverage |
+| [useOrderEstimate.ts](../frontend/src/components/useOrderEstimate.ts) | Debounced read-only draft requests, loading/error feedback and late/session/unmount guards. | Hook tests/browser |
+| [useOrderEstimate.test.tsx](../frontend/src/components/useOrderEstimate.test.tsx) | Valid/disabled drafts, debounce/abort, changed input/session, network failure and cleanup without mutations. | Frontend coverage |
+| [ConfirmDialog.tsx](../frontend/src/components/ConfirmDialog.tsx) | Explicit confirmation/cancel, busy state, Escape, focus restoration and keyboard trapping across all enabled form controls. | ConfirmDialog tests/browser |
+| [ConfirmDialog.test.tsx](../frontend/src/components/ConfirmDialog.test.tsx) | Confirmation/cancellation, busy dismissal and full form/button keyboard traversal. | Frontend coverage |
+| [OrderSimulation.tsx](../frontend/src/components/OrderSimulation.tsx) | Individual local request form with model/mode/copies/dates and safe feedback; no automatic print start. | OrderSimulation/App/browser tests |
+| [OrderSimulation.test.tsx](../frontend/src/components/OrderSimulation.test.tsx) | Manual/automatic/missing-model request payloads, editable date/errors and cancel flow. | Frontend coverage |
+| [compact-planning.spec.ts](../tests/e2e/compact-planning.spec.ts) | Compact desktop/mobile planning, live draft warning, conflict cards, calendar controls, confirmed changes/deletion, stock release, timeline completion key and both incoming paths reaching running printers only after confirmation/start. | Root full/coverage |
+
+Existing App, OrderDrafts, QuickPrint, Timeline, ScheduleProposal and inbox tests
+cover the new confirmation/state lifecycles; test_library_shop.py retains compatible
+guard checks for started work and confirmed revision. Original browser workflows
+open compact request/order details explicitly before interacting with them.
+
+```mermaid
+graph LR
+  QuickPrint -->|debounced read-only draft| EstimateHook[useOrderEstimate]
+  EstimateHook -->|session-checked snapshot| Estimate[estimates.py]
+  Estimate -->|same queue rules| Proposals[proposals.py]
+  ScheduleProposal -->|shared preview| Cards[OrderDrafts]
+  QuickPrint -->|estimated printer work formatting| Display[display.ts]
+  Cards -->|estimated printer work formatting| Display
+  ScheduleProposal -->|proposed work formatting| Display
+  Cards -->|source-bound confirmation| Dialog[ConfirmDialog]
+  Dialog -->|atomic confirmed changes| Review[order_review.py]
+  Review -->|archives canceled placements| Store[store.py]
+  ShopInbox -->|individual demo input| Simulate[OrderSimulation]
+  Simulate -->|guarded local request| Shop[shop.py]
+  Shop -->|matched held order| ScheduleProposal
+  Cards -->|remaining work and conflict projection| View[scheduleView]
+  PrintTimeline -->|calendar ticks, order colors and guarded finish groups| View
 ```

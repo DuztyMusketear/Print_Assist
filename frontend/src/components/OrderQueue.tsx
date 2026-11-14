@@ -1,6 +1,7 @@
 import {partLabel,printerLabel} from '../display';
 import type {Snapshot} from '../api';
 export function OrderQueue({state,compact=false}:{state:Snapshot;compact?:boolean}) {
+  state={...state,orders:state.orders.filter(order=>order.status!=='cancelled'),jobs:state.jobs.filter(job=>job.status!=='cancelled')};
   if(compact) return <section className="compact-queue"><h2>Production queue ({state.orders.length})</h2>
     {state.orders.length===0?<p>No orders yet. Add your first production order.</p>:<div className="queue-scroll"><table aria-label="Production queue"><thead><tr><th>Model / part</th><th>Printer</th><th>Quantity</th><th>Priority</th><th>Status / timing</th></tr></thead><tbody>{state.orders.map(order=><tr key={order.id}>
       <td><strong>{state.artifacts.find(item=>item.id===order.artifact_id)!.name}</strong>{state.jobs.filter(job=>job.order_id===order.id).map(job=><small key={String(job.id)}>{partLabel(String(job.id))} / {String(job.status)}</small>)}</td>

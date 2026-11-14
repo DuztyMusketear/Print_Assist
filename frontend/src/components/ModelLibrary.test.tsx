@@ -7,6 +7,8 @@ import {state} from '../test-fixtures';
 test('browse saved estimates, search and choose a model without reentering its settings',async()=>{
  const choose=vi.fn(),user=userEvent.setup();render(<ModelLibrary state={{...state,visual_assets:[{id:'unrelated',name:'Other preview',path:'/models/other.stl',units:'mm',rotation_degrees:[0,0,0]}]}} onChoose={choose} onUpload={vi.fn()}/>);
  expect(screen.getByText(/120 min/)).toBeInTheDocument();expect(screen.getByText(/25 g/)).toBeInTheDocument();
+ expect(screen.getByText('Est. print time: 120 min per item')).toBeInTheDocument();
+ expect(screen.getByText('Est. filament: 25 g per item')).toBeInTheDocument();
  await user.click(screen.getByRole('button',{name:'Print Blue PLA figure'}));expect(choose).toHaveBeenCalledWith('figure-pla-blue');
  await user.type(screen.getByLabelText('Search saved models'),'missing');expect(screen.getByText(/No saved models match/)).toBeInTheDocument();
 });

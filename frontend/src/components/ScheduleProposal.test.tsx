@@ -10,6 +10,7 @@ test('guided confirmation shows deadline problems and submits the server deadlin
  const user=userEvent.setup(),apply=vi.fn().mockResolvedValue(undefined);
  const view=render(<ScheduleProposal guided state={state} onApply={apply}/>);
  await user.click(screen.getByRole('button',{name:'Preview schedule'}));await screen.findByRole('button',{name:'Confirm and start printing'});
+ expect(screen.getByText(/Proposed jobs: estimated printer time: 2 h/)).toHaveTextContent('Estimated filament: 25.0 g');
  await user.click(screen.getByRole('button',{name:'Confirm and start printing'}));
  expect(apply).toHaveBeenCalledWith({proposal_id:'hash',mode:'automatic',clock_speed:60,require_on_time:true});
  view.rerender(<ScheduleProposal guided state={{...state,orders:[{id:'order-1',artifact_id:'figure-pla-blue',quantity:1,priority:0,production_due:'2026-11-15T01:00:00Z',ship_by:'2026-11-16T00:00:00Z',status:'queued',successful_quantity:0}]}} onApply={apply}/>);
@@ -63,4 +64,9 @@ test('guided manual confirmation preserves the explicit-start mode',async()=>{
  vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(proposal)));
  const apply=vi.fn().mockResolvedValue(undefined),user=userEvent.setup();render(<ScheduleProposal guided state={state} onApply={apply}/>);
  await user.selectOptions(screen.getByLabelText('Proposed start mode'),'manual');await user.click(screen.getByRole('button',{name:'Preview schedule'}));await screen.findByRole('button',{name:'Confirm manual schedule'});await user.click(screen.getByRole('button',{name:'Confirm manual schedule'}));expect(apply).toHaveBeenCalledWith({proposal_id:'manual',mode:'manual',clock_speed:60,require_on_time:true});
+});
+
+test('automatic incoming review previews once and reports preview mode changes to order cards',async()=>{
+ const proposal={id:'auto',session_id:state.session_id,revision:0,mode:'automatic',assignments:[],blocked:[],assumptions:'Estimate'};
+ const fetch=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(proposal))),onPreview=vi.fn(),user=userEvent.setup();render(<ScheduleProposal guided autoPreview state={state} onApply={vi.fn()} onPreview={onPreview}/>);await screen.findByText('No new assignments available.');expect(fetch).toHaveBeenCalledOnce();expect(onPreview).toHaveBeenCalledWith(proposal);await user.selectOptions(screen.getByLabelText('Proposed start mode'),'manual');expect(onPreview).toHaveBeenLastCalledWith(undefined);
 });

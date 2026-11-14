@@ -64,10 +64,46 @@ class ReviseOrderPayload(BaseModel):
     model_config = ConfigDict(extra='forbid')
     order_id: str
     order: OrderCreate
+    confirmed: bool = Field(default_factory=bool)
 
 
 class ReviseOrderCommand(ScheduleCommand):
     payload: ReviseOrderPayload
+
+
+class DeleteOrderPayload(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    order_id: str
+    confirmed: bool = Field(default_factory=bool)
+
+
+class DeleteOrderCommand(ScheduleCommand):
+    payload: DeleteOrderPayload
+
+
+class EstimateRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    session_id: UUID
+    order: OrderCreate
+
+
+class OrderEstimate(BaseModel):
+    session_id: str
+    revision: int
+    feasible: bool
+    on_time_quantity: int
+    estimated_finish: AwareDatetime | None
+    reason: str
+
+
+class SimulateOrderPayload(OrderCreate):
+    artifact_id: str | None = None
+    quantity: Annotated[int,Field(strict=True,gt=0,le=10000)]
+    mode: Literal['manual','automatic']='manual'
+
+
+class SimulateOrderCommand(ScheduleCommand):
+    payload: SimulateOrderPayload
 
 
 class ApplySchedulePayload(BaseModel):
@@ -227,10 +263,10 @@ class ShopDecisionCommand(ScheduleCommand):
 class ShopRequest(OrderCreate):
     artifact_id: str | None = None
     id: str
-    source: Literal['example']
+    source: Literal['example','simulation']
     sku: str
     product_name: str
-    status: Literal['pending','accepted','rejected']
+    status: Literal['pending','accepted','rejected','cancelled']
     order_id: str | None = None
 
 

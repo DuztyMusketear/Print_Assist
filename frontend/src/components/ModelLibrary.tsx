@@ -56,7 +56,7 @@ export function ModelLibrary({state,onChoose,onUpload}:{state:Snapshot;onChoose:
   </form>}
   <div className="model-grid">{models.map(model=><article className="saved-model" key={model.id}>
    <ModelPreview name={model.name} asset={state.visual_assets?.find(asset=>asset.id===model.visual_asset_id)}/><h3>{model.name}</h3>
-   <p>{Math.ceil(model.duration_seconds/60)} min / {model.filament_grams} g per item</p><p>{model.color} {model.filament_type}</p><button onClick={()=>onChoose(model.id)}>Print {model.name}</button>
+   <p>Est. print time: {Math.ceil(model.duration_seconds/60)} min per item</p><p>Est. filament: {model.filament_grams} g per item</p><p>{model.color} {model.filament_type}</p><button onClick={()=>onChoose(model.id)}>Print {model.name}</button>
   </article>)}</div>{models.length===0&&<p>No saved models match. Upload a model or change your search.</p>}
  </div>;
 }

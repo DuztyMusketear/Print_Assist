@@ -140,7 +140,7 @@ def test_held_order_can_be_corrected_then_confirmed_but_committed_work_is_protec
         order_id=state['orders'][0]['id'];updated={**order,'production_due':'2026-11-15T12:00:00Z','quantity':2}
         for payload in [dict(order_id='unknown',order=updated),dict(order_id=order_id,order={**updated,'artifact_id':'missing'})]:
             assert client.post('/api/orders/revise',json=envelope(client,payload)).status_code==409
-        command=envelope(client,dict(order_id=order_id,order=updated))
+        command=envelope(client,dict(order_id=order_id,order=updated,confirmed=True))
         result=client.post('/api/orders/revise',json=command)
         assert result.status_code==200,result.text
         assert client.post('/api/orders/revise',json=command).json()==result.json()
@@ -149,7 +149,7 @@ def test_held_order_can_be_corrected_then_confirmed_but_committed_work_is_protec
         result=client.post('/api/schedule/apply',json=envelope(client,dict(proposal_id=proposal['id'],mode='automatic',require_on_time=True)))
         assert result.status_code==200,result.text
         assert result.json()['running']
-        assert client.post('/api/orders/revise',json=envelope(client,dict(order_id=order_id,order=updated))).status_code==409
+        assert client.post('/api/orders/revise',json=envelope(client,dict(order_id=order_id,order=updated,confirmed=True))).status_code==409
 
 
 def test_partial_guided_plan_and_stale_feed_are_rejected_without_starting(tmp_path):
@@ -168,10 +168,10 @@ def test_partial_guided_plan_and_stale_feed_are_rejected_without_starting(tmp_pa
 def test_review_corrections_cannot_rewrite_partial_or_active_production():
     from print_assist.order_review import revise
     from print_assist.scenarios import initial_state
-    state=initial_state();order=dict(id='order',artifact_id='figure-pla-blue',quantity=2,priority=0,production_due='2026-11-16T00:00:00Z',ship_by='2026-11-17T00:00:00Z',successful_quantity=1,requires_schedule_review=True)
+    state=initial_state();order=dict(status='queued',id='order',artifact_id='figure-pla-blue',quantity=2,priority=0,production_due='2026-11-16T00:00:00Z',ship_by='2026-11-17T00:00:00Z',successful_quantity=1,requires_schedule_review=True)
     state['orders']=[order]
     with pytest.raises(ValueError,match='uncommitted'):revise(state,dict(order_id='order',order=order))
-    order['successful_quantity']=0;state['jobs']=[dict(order_id='order',status='planned')]
+    order['successful_quantity']=0;state['jobs']=[dict(order_id='order',status='running')]
     with pytest.raises(ValueError,match='uncommitted'):revise(state,dict(order_id='order',order=order))
 
 

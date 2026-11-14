@@ -151,6 +151,28 @@ the seeded demo jobs.
   quantities, deadlines and acceptance/rejection. Acceptance creates held orders,
   never jobs; final schedule confirmation starts printing. This is not a connected
   marketplace or automatic order synchronization.
+- Orders includes compact model search, reusable selection, copy/date planning and
+  read-only feasibility feedback from the queue planner. Alternatives change copies
+  or planning dates explicitly; simulation playback speed is not manufacturing speed.
+- Schedule summarizes orders as selectable cards with conflict/availability reasons
+  and whole-order estimates. Confirmed changes/deletion may release unstarted queued
+  placements; started/completed prints and consumed stock remain protected. Deleted
+  orders are archived and excluded from dispatch/forecasts. Confirmations are bound
+  to their source session/revision. Timeline day/week/month views label UTC calendar
+  ticks beneath the lanes.
+- Timeline colors identify orders consistently across printers. A labeled color key
+  shows estimated order completion, with markers at final allocated prints. Partial,
+  blocked, unavailable or overlapping schedules do not promise a whole-order finish;
+  status and deadline warnings remain textual. Archived orders keep their color slot.
+- Model cards explicitly label estimated print time and filament per item. Orders,
+  schedule cards/details and revised-order confirmations show quantity-based totals
+  and filament type/color. Total printer time is summed work across printers, separate
+  from the scheduled completion date. Proposed queue totals cover proposed jobs only.
+- Individually simulated incoming requests support manual inbox review or automatic
+  model matching into a held order and schedule preview. Final confirmation remains
+  required before printing. Website model-import connectors are separate partner work.
+  An expandable inbox walkthrough explains intake, model matching, schedule
+  confirmation, manual starts and monitoring the simulated printers.
 - Validated tools for reading state and proposing or applying supported
   operations.
 - Simulated fault injection, visible fault states, and recovery workflow.

@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/api/orders/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Order */
+        post: operations["delete_order_api_orders_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Estimate Order */
+        post: operations["estimate_order_api_orders_estimate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shop/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simulate Order */
+        post: operations["simulate_order_api_shop_simulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/library/models": {
         parameters: {
             query?: never;
@@ -492,6 +543,38 @@ export interface components {
             /** Automatic Triggers */
             automatic_triggers: boolean;
         };
+        /** DeleteOrderCommand */
+        DeleteOrderCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["DeleteOrderPayload"];
+        };
+        /** DeleteOrderPayload */
+        DeleteOrderPayload: {
+            /** Order Id */
+            order_id: string;
+            /** Confirmed */
+            confirmed?: boolean;
+        };
+        /** EstimateRequest */
+        EstimateRequest: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            order: components["schemas"]["OrderCreate"];
+        };
         /** ExampleFeedCommand */
         ExampleFeedCommand: {
             /**
@@ -772,6 +855,21 @@ export interface components {
              */
             ship_by: string;
         };
+        /** OrderEstimate */
+        OrderEstimate: {
+            /** Session Id */
+            session_id: string;
+            /** Revision */
+            revision: number;
+            /** Feasible */
+            feasible: boolean;
+            /** On Time Quantity */
+            on_time_quantity: number;
+            /** Estimated Finish */
+            estimated_finish: string | null;
+            /** Reason */
+            reason: string;
+        };
         /** PlanOrderCommand */
         PlanOrderCommand: {
             /**
@@ -898,6 +996,8 @@ export interface components {
             /** Order Id */
             order_id: string;
             order: components["schemas"]["OrderCreate"];
+            /** Confirmed */
+            confirmed?: boolean;
         };
         /** ScheduleAssignment */
         ScheduleAssignment: {
@@ -1027,9 +1127,9 @@ export interface components {
             id: string;
             /**
              * Source
-             * @constant
+             * @enum {string}
              */
-            source: "example";
+            source: "example" | "simulation";
             /** Sku */
             sku: string;
             /** Product Name */
@@ -1038,9 +1138,53 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "pending" | "accepted" | "rejected";
+            status: "pending" | "accepted" | "rejected" | "cancelled";
             /** Order Id */
             order_id?: string | null;
+        };
+        /** SimulateOrderCommand */
+        SimulateOrderCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["SimulateOrderPayload"];
+        };
+        /** SimulateOrderPayload */
+        SimulateOrderPayload: {
+            /** Artifact Id */
+            artifact_id?: string | null;
+            /** Quantity */
+            quantity: number;
+            /**
+             * Priority
+             * @default 0
+             */
+            priority: number;
+            /**
+             * Production Due
+             * Format: date-time
+             */
+            production_due: string;
+            /**
+             * Ship By
+             * Format: date-time
+             */
+            ship_by: string;
+            /**
+             * Mode
+             * @default manual
+             * @enum {string}
+             */
+            mode: "manual" | "automatic";
         };
         /** StartCommand */
         StartCommand: {
@@ -1145,6 +1289,105 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    delete_order_api_orders_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteOrderCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    estimate_order_api_orders_estimate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EstimateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderEstimate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulate_order_api_shop_simulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulateOrderCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     upload_model_api_library_models_post: {
         parameters: {
             query?: never;

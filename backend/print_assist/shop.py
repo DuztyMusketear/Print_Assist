@@ -9,6 +9,7 @@ def load_examples(state):
     result = deepcopy(state)
     requests = result.setdefault('shop_requests', [])
     mappings = result.setdefault('product_mappings', {'EXAMPLE-FIGURE': 'figure-pla-blue'})
+    mappings.setdefault('EXAMPLE-FIGURE','figure-pla-blue')
     now = datetime.fromisoformat(state['simulation_time'])
     for number, sku, name, quantity in [(1, 'EXAMPLE-FIGURE', 'Blue PLA figure', 2),
                                       (2, 'EXAMPLE-FIGURE', 'Blue PLA figure', 1),
@@ -30,7 +31,7 @@ def decide(state, payload):
     if payload['decision'] == 'reject':
         request['status'] = 'rejected'
     else:
-        artifact_id = payload.get('artifact_id') or result['product_mappings'].get(request['sku'])
+        artifact_id = payload.get('artifact_id') or result['product_mappings'].get(request['sku']) or request.get('artifact_id')
         if not any(artifact['id'] == artifact_id for artifact in result['artifacts']):
             raise ValueError('Select a saved model before accepting this product')
         order_id = str(uuid4())
@@ -43,4 +44,21 @@ def decide(state, payload):
             if pending['status']=='pending' and pending['sku']==request['sku']:
                 pending['artifact_id']=artifact_id
     record(result, 'shop_request_' + request['status'], request['id'] + ': ' + request['status'], order_id=request['order_id'])
+    return result
+
+
+def simulate(state,payload):
+    result=deepcopy(state)
+    model=next((model for model in state['artifacts'] if model['id']==payload.get('artifact_id')),None)
+    if payload.get('artifact_id') is not None and model is None:
+        raise ValueError('Choose a saved model or an unmatched demo product')
+    request_id='SIM-'+uuid4().hex[:8].upper()
+    sku='MODEL-'+model['id'] if model else 'UNMATCHED-DEMO'
+    result.setdefault('product_mappings',{})
+    result.setdefault('shop_requests',[]).append(dict(id=request_id,source='simulation',sku=sku,
+        product_name=model['name'] if model else 'Unmatched demo product',artifact_id=model['id'] if model else None,
+        quantity=payload['quantity'],priority=payload['priority'],production_due=payload['production_due'],ship_by=payload['ship_by'],status='pending',order_id=None))
+    record(result,'incoming_order_simulated',request_id+': local incoming request simulated')
+    if payload['mode']=='automatic' and model is not None:
+        result=decide(result,dict(request_id=request_id,decision='accept',artifact_id=model['id']))
     return result

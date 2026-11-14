@@ -4,7 +4,7 @@ Sources: [specification](../SPEC.md), [MVP implementation plan](superpowers/plan
 [production overview plan](superpowers/plans/2026-11-14-production-overview.md),
 and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers.md).
 
-**Last audit: 2026-11-14, including `feat/guided-model-order-workflow` based on main `3d2a2f1`.**
+**Last audit: 2026-11-14, including `feat/compact-order-schedule-controls` based on main `1dec51f`.**
 Statuses describe the audited implementation; operator verification remains separate from automated test results.
 These are local story IDs,
 not remote issues. Status reflects inspected code and tests; passing coverage
@@ -53,7 +53,7 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 | PA-303 | Implemented; operator verification pending | Live floor/controls, guided intake and visual print timeline; verify the revised journey with the user. |
 | PA-304 | Implemented on current branch | Local example shop inbox, model matching, acceptance/rejection, held orders and final schedule confirmation; no live connector. |
 | PA-305 | Partial | Bounded STL upload/library and reusable estimates implemented; versioned slicer provenance and actual layer/toolpath data remain. |
-| PA-306 | To Do | Explicit cancel/discard with scrap and consumed-material accounting. |
+| PA-306 | Partial | Confirmed unstarted queued-order deletion/release implemented; active cancel/discard and scrap accounting remain. |
 | PA-307 | Implemented; operator verification pending | Idle/new-print guidance and visible start/pause/resume pass browser tests; verify with user. |
 | PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
 | PA-501, PA-502, PA-503 | To Do | Fake agent gateway, controls, budgets and cancellation/zero-inference safeguards. |
@@ -538,7 +538,7 @@ local catalog/file registration, provenance and readiness guidance.
 
 ### PA-306 ? Explicit print cancellation and discarded material
 
-**Status:** To Do. **P1.** Depends on lifecycle/recovery accounting.
+**Status:** Partial. **P1.** Unstarted queue deletion/release is implemented in the compact planning refinement; active cancel/discard still depends on lifecycle/recovery accounting.
 - Distinguish reversible pause/hold from irreversible cancel/discard in the UI.
 - Explain remaining requested quantity and consumed material before cancellation.
 - Record scrapped attempts and material exactly once; replacement attempts cannot
@@ -661,3 +661,28 @@ This closes local PA-304 and the geometry-upload/library portion of PA-305. It
 does not implement a real shop connector, infer slicer estimates, or close the
 Phase 4 recovery, Phase 5 guarded runtime or Phase 6 metrics/packaging requirements.
 Operator signoff and versioned estimate provenance remain separate follow-ups.
+
+## Compact planning refinement (2026-11-14)
+
+User requests compact searchable Orders, copy/date planning with early feasibility,
+selectable schedule cards with conflict/ETA summaries, confirmed queued editing and
+deletion, calendar ticks and individual incoming-request simulations. This is the
+current feature branch `feat/compact-order-schedule-controls`, based on main 1dec51f.
+The model library remains intact; website model-import integration belongs to the
+partner and is not implemented by this branch.
+
+Queued changes release unstarted attempts, return edits to review and archive
+removed orders without stock restoration. Started work stays protected. Canceled
+orders cannot be dispatched or counted as active. Selected card confirmations bind
+the original session/revision; resetting with reused IDs cannot authorize stale
+changes. Incoming manual requests stay pending; automatic matches create held orders
+and preview, with final printing confirmation still required.
+The inbox now explains both routes through confirmation and printer monitoring.
+Timeline order colors, readable status keys and final-print markers distinguish
+completion across printers; incomplete or conflicting allocations suppress promises
+of a whole-order finish. Profile time/filament totals remain explicit.
+
+Deadline advice uses supplied model estimates/current capacity, not accelerated
+playback. A faster prepared profile can be chosen explicitly. Active print scrap,
+recovery, guarded AI runtime, real model import connectors and broader packaging
+remain outstanding under their respective owners/stories.
