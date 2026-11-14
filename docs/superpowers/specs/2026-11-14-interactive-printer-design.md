@@ -1,6 +1,6 @@
 # Interactive printer and bed visualization
 
-Status: draft for approval. No runtime changes in this design branch.
+Status: approved 2026-11-14; implemented on the interactive printer feature branch.
 
 ## Intent and agreed direction
 

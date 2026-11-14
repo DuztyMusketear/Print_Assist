@@ -1,4 +1,4 @@
-# Phase 1 code map
+# Application code map
 
 All paths below exist. Verification commands run from the repo root using the
 virtual environment. `python scripts/check.py full` verifies the entire slice;
@@ -25,7 +25,7 @@ graph LR
 | File | Owned behavior / relationships | Verification |
 | --- | --- | --- |
 | [backend/print_assist/__init__.py](../backend/print_assist/__init__.py) | Package marker; no initialization side effects. | Backend suite/imports |
-| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, command and snapshot schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration/test_orders_api.py` |
+| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, visual asset metadata/validated new associations, command and snapshot schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration/test_orders_api.py` |
 | [scenarios.py](../backend/print_assist/scenarios.py) | Deterministic empty-orders seed with three idle virtual printers and one print-ready artifact reference. | Service/API tests |
 | [store.py](../backend/print_assist/store.py) | SQLite transactions, snapshot storage, command-result table and connection lifetime. | Store/service tests |
 | [service.py](../backend/print_assist/service.py) | One-owner authoritative intake, legacy printer-state initialization, session/revision checks, idempotency and atomic order/events. | `python -m pytest backend/tests/unit/test_service.py` |
@@ -40,10 +40,10 @@ graph LR
 | [test_checks.py](../backend/tests/unit/test_checks.py) | Root runner executes subprocesses and propagates failure without continuing. | Backend unit suite |
 | [test_orders_api.py](../backend/tests/integration/test_orders_api.py) | Real app/SQLite HTTP behavior, response schema, offline operation with fake credentials. | Backend integration suite |
 | [frontend/src/main.tsx](../frontend/src/main.tsx) | DOM mounting and stylesheet import only. | Browser test/build |
-| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs and printer overview, state loading, retry key ownership, stale-response suppression and order composition. Schedule controls are in progress. | Frontend App tests |
+| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs and printer overview, state loading, retry key ownership, stale-response suppression and order composition. Delegates 3D views to PrinterFloor. | Frontend App tests |
 | [api.ts](../frontend/src/api.ts) | HTTP transport and actionable save/load errors. | Frontend transport tests |
 | [types.ts](../frontend/src/types.ts) | Generated OpenAPI types; do not hand-edit. | `python scripts/schema.py --check` |
-| [styles.css](../frontend/src/styles.css) | Responsive visual layout for intake, modeling and queue, including field-help text. No business logic. | Build/browser review |
+| [styles.css](../frontend/src/styles.css) | Responsive visual layout for intake, modeling, queue, tooltips and 3D printer/control panels. No business logic. | Build/browser review |
 | [OrderForm.tsx](../frontend/src/components/OrderForm.tsx) | Inputs with icon-triggered tooltips and examples, UTC command payload, busy/error states, preservation on failure. | Frontend OrderForm tests |
 | [OrderQueue.tsx](../frontend/src/components/OrderQueue.tsx) | Empty state, saved quantity/deadlines/status and completion display. | Frontend OrderQueue tests |
 | [test-setup.ts](../frontend/src/test-setup.ts) | DOM cleanup, mock restoration and default fetch denial. | Frontend suite |
@@ -115,4 +115,37 @@ graph LR
   ModelingBoard -->|field labels and icon help| EntryField
   EntryFieldTest[EntryField.test.tsx] -->|verifies interaction| EntryField
   ModelingBrowser[modeling-dashboard.spec.ts] -->|checks real hover and keyboard visibility| EntryField
+```
+
+## Interactive printer views
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [visual_assets.py](../backend/print_assist/visual_assets.py) | Local STL catalog and visual-ID allowlist used by task validation and snapshot metadata. | `python -m pytest backend/tests/integration/test_modeling.py` |
+| [model.ts](../frontend/src/printers/model.ts) | Resolves each printer's active/latest completed job, artifact and bounded progress. | `npm test --workspace frontend -- src/printers/model.test.ts` |
+| [model.test.ts](../frontend/src/printers/model.test.ts) | Empty, unknown, active, completed and invalid progress view states. | Frontend suite |
+| [assets.ts](../frontend/src/printers/assets.ts) | Bounded same-origin STL loading, geometry validation, explicit rotation, centering and volume warnings without rescaling. | `npm test --workspace frontend -- src/printers/assets.test.ts` |
+| [assets.test.ts](../frontend/src/printers/assets.test.ts) | ASCII/binary parsing, units/orientation, bounds, byte/triangle limits and invalid assets. | Frontend suite |
+| [scene.ts](../frontend/src/printers/scene.ts) | Procedural frame/bed/nozzle, demand rendering, clipping, orbit/camera commands, resize, context failure and GPU disposal. Three.js is third-party, bundled locally. | `npm test --workspace frontend -- src/printers/scene.test.ts` and real browser tests |
+| [scene.test.ts](../frontend/src/printers/scene.test.ts) | Real Three geometry and cameras with fake GPU boundary: clipping, commands, resizing, empty/placeholder scenes, failure and disposal. | Frontend suite |
+| [PrinterScene.tsx](../frontend/src/printers/PrinterScene.tsx) | Asynchronous asset lifecycle, stale-load disposal, fallback, fit warnings and accessible camera controls. | `npm test --workspace frontend -- src/printers/PrinterScene.test.tsx` |
+| [PrinterScene.test.tsx](../frontend/src/printers/PrinterScene.test.tsx) | Empty/loaded/stale/failed/context-lost view behavior and unmount cleanup. | Frontend suite |
+| [PrinterFloor.tsx](../frontend/src/printers/PrinterFloor.tsx) | Compact overview and single selected detailed printer, model association and explicitly local example-progress controls. | `npm test --workspace frontend -- src/printers/PrinterFloor.test.tsx` |
+| [PrinterFloor.test.tsx](../frontend/src/printers/PrinterFloor.test.tsx) | Printer selection, example isolation, empty state and artifact progress. | Frontend suite |
+| [example-tower.stl](../frontend/public/models/example-tower.stl) | Original deterministic stepped example mesh in millimeters/Z-up; no real production certification. | STL loader and browser checks |
+| [Model handoff](../frontend/public/models/README.md) | Partner-facing instructions and asset provenance. | Link/catalog consistency review |
+| [printer-views.spec.ts](../tests/e2e/printer-views.spec.ts) | Real WebGL, camera-change evidence, local STL, WebGL fallback and production/model association workflows. | `python scripts/check.py full` |
+
+```mermaid
+graph LR
+  App -->|overview or detailed tab| Floor[PrinterFloor]
+  Floor -->|resolves job and artifact| View[model.ts]
+  Floor -->|mounts visible scenes| Component[PrinterScene]
+  Component -->|bounded local STL| Assets[assets.ts]
+  Component -->|owns GPU lifetime| Scene[scene.ts]
+  Scene -->|uses bundled controls and geometry| Three[Three.js]
+  Catalog[visual_assets.py] -->|metadata and approved ID| Contract[contracts.py]
+  Contract -->|generated types and state| Floor
+  Contract -->|selector choices| ModelingBoard
+  Assets -->|loads same-origin fixture| STL[example-tower.stl]
 ```

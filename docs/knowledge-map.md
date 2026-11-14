@@ -1,8 +1,8 @@
 # Repository knowledge map
 
-Start here to find responsibilities and related files. Phase 1 implements offline
-order intake and persistence. The [code map](code-map.md) indexes every current
-source/configuration/test file. Later runtime architecture remains planned.
+Start here to find responsibilities and related files. The application implements
+offline order intake, persisted modeling, virtual production and interactive printer views. The [code map](code-map.md) indexes every current
+source/configuration/test file. Later agent and recovery architecture remains planned.
 
 ## Current graph
 
@@ -41,8 +41,9 @@ graph LR
     MAP -->|indexes design| DESIGN
     OVERVIEWPLAN["Production overview implementation plan"] -->|implements| DESIGN
     MAP -->|indexes plan| OVERVIEWPLAN
-    PRINTER3D["Interactive printer design (draft)"] -->|extends visualization of| DESIGN
-    MAP -->|indexes proposed design| PRINTER3D
+    PRINTER3D["Interactive printer design"] -->|extends visualization of| DESIGN
+    MAP -->|indexes design| PRINTER3D
+    PRINTER3D -->|implemented by| VIEW3D["Interactive printer plan"]
 ```
 
 ## File index
@@ -57,13 +58,15 @@ graph LR
 | [Judging readiness](judging-readiness.md) | User-supplied rubric weights, evidence gaps, financial worksheet guidance, growth limits, and pitch checklist. Preparation rather than achieved scores. | Implementation plan, specification | Check weights total 100%, distinguish assumptions from evidence, verify links. |
 | [Business validation](business-validation.md) | Desk-research approach, archived optional interview guide, hypothetical pricing/cost model, evidence gaps, and demo script. No interviews planned or customer validation claimed. | Judging checklist, implementation plan | Verify arithmetic, dated source attribution, assumption labels, and local links. |
 | [Market research](market-research.md) | Dated vendor comparison, attributed customer anecdotes, niche hypotheses, pricing implications, and research limits. No scope changes or customer validation claimed. | Business validation brief, specification | Review source links, distinguish old anecdotes from current vendor claims, and validate arithmetic/local links. |
-| [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for order intake and the local modeling dashboard. | Plan, setup, implementation files | Validate file links and update alongside code. |
+| [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for order intake, modeling, virtual production and interactive 3D views. | Plan, setup, implementation files | Validate file links and update alongside code. |
 | [Development setup](development.md) | Native setup/run/check commands, restart semantics, coverage boundaries and actual platform status. | README, code map | Full check command and local-link review. |
 | [Remaining phase backlog](backlog.md) | Fifteen Jira-style stories for Phases 2-6 plus a deferred live-adapter story; priorities, dependencies and acceptance criteria. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
 | [Production overview design](superpowers/specs/2026-11-14-production-overview-design.md) | Approved virtual printers, automatic/manual scheduling, dashboard tabs and AI ownership boundary. | Implementation plan, backlog, specification | Review design against agreed scope and shared contracts. |
 | [Production overview implementation plan](superpowers/plans/2026-11-14-production-overview.md) | Test-first tasks for virtual printer state, scheduling, dashboard and verification. | Production overview design, code map | Check task coverage against design and update as implementation evolves. |
+| [Interactive printer design](superpowers/specs/2026-11-14-interactive-printer-design.md) | Approved 3D printer/bed views, STL part assets and persisted visual associations. | Production overview design, specification, code map | Review contracts, scope and proposed defaults before implementation. |
 
-| [Interactive printer design](superpowers/specs/2026-11-14-interactive-printer-design.md) | Draft 3D printer/bed views, STL part assets and persisted visual associations; runtime behavior remains planned. | Production overview design, specification, code map | Review contracts, scope and proposed defaults before implementation. |
+| [Interactive printer implementation](superpowers/plans/2026-11-14-interactive-printers.md) | Test-first tasks, constraints and recorded implementation choices for 3D views. | Interactive printer design, code map | Full/coverage commands and feature review. |
+| [Part model handoff](../frontend/public/models/README.md) | STL convention, catalog registration, limits, example provenance and optional printer replacement notes. | visual_assets.py, modeling form, printer loader | Verify catalog paths and offline browser loading. |
 
 ## How to extend the map
 

@@ -200,6 +200,8 @@ export interface components {
             filament_grams: number;
             /** Required Capabilities */
             required_capabilities: string[];
+            /** Visual Asset Id */
+            visual_asset_id?: string | null;
         };
         /** CommandEnvelope */
         CommandEnvelope: {
@@ -255,6 +257,8 @@ export interface components {
             artifacts: components["schemas"]["Artifact"][];
             /** Modeling Tasks */
             modeling_tasks?: components["schemas"]["ModelTask"][];
+            /** Visual Assets */
+            visual_assets?: components["schemas"]["VisualAsset"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -303,6 +307,8 @@ export interface components {
             color: string;
             /** Required Capabilities */
             required_capabilities: string[];
+            /** Visual Asset Id */
+            visual_asset_id?: string | null;
             /** Id */
             id: string;
             /**
@@ -345,6 +351,8 @@ export interface components {
             color: string;
             /** Required Capabilities */
             required_capabilities: string[];
+            /** Visual Asset Id */
+            visual_asset_id?: string | null;
         };
         /** Order */
         Order: {
@@ -478,6 +486,26 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VisualAsset */
+        VisualAsset: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /**
+             * Units
+             * @constant
+             */
+            units: "mm";
+            /** Rotation Degrees */
+            rotation_degrees: [
+                number,
+                number,
+                number
+            ];
         };
     };
     responses: never;

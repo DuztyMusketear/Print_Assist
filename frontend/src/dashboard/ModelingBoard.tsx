@@ -6,10 +6,11 @@ import {EntryField} from '../components/EntryField';
 const stages=['modeling','supports','review','approved'] as const;
 const labels:Record<WorkItem['stage'],string>={modeling:'Modeling',supports:'Supports',review:'Review',approved:'Approved'};
 
-type Props={items?:WorkItem[];onCreate?:(payload:components['schemas']['ModelTaskCreate'])=>Promise<void>;onMove?:(id:string,action:WorkflowAction)=>Promise<void>;onRetry?:()=>Promise<void>};
+type Props={visualAssets?:components['schemas']['VisualAsset'][];items?:WorkItem[];onCreate?:(payload:components['schemas']['ModelTaskCreate'])=>Promise<void>;onMove?:(id:string,action:WorkflowAction)=>Promise<void>;onRetry?:()=>Promise<void>};
 export function ModelingBoard(props:Props) {
   const [localItems,setItems]=useState<WorkItem[]>([]);
   const items=props.items ?? localItems;
+  const [visual,setVisual]=useState('');
   const [duration,setDuration]=useState('');
   const [grams,setGrams]=useState('');
   const [material,setMaterial]=useState('');
@@ -24,7 +25,7 @@ export function ModelingBoard(props:Props) {
     setBusy(true);
     try {
       const item=createWorkItem(crypto.randomUUID(),title,reference);
-      if(props.onCreate) await props.onCreate({title:item.title,modelReference:item.modelReference,duration_seconds:Number(duration)*60,filament_grams:Number(grams),filament_type:material,color,required_capabilities:capabilities.split(',').map(value=>value.trim())});
+      if(props.onCreate) await props.onCreate({title:item.title,modelReference:item.modelReference,duration_seconds:Number(duration)*60,filament_grams:Number(grams),filament_type:material,color,required_capabilities:capabilities.split(',').map(value=>value.trim()),visual_asset_id:visual||null});
       else setItems(current=>[...current,item]);
       setTitle('');setReference('');setError('');
     } catch(reason) {setError((reason as Error).message);} finally {setBusy(false);}
@@ -44,6 +45,7 @@ export function ModelingBoard(props:Props) {
       <div><EntryField id="model-name" label="Model name" help="A recognizable name for this design. Example: Dragon figurine."><input value={title} onChange={event=>setTitle(event.target.value)} placeholder="Dragon figurine" /></EntryField></div>
       <div><EntryField id="model-reference" label="Model file reference" help="A filename or team reference; this does not upload a file. Example: dragon-v2.stl."><input value={reference} onChange={event=>setReference(event.target.value)} placeholder="dragon-v2.stl" /></EntryField></div>
       {props.onCreate && <>
+        <div><EntryField id="model-visual" label="3D preview model" help="Optional local geometry for the printer-bed preview. This does not upload or certify a file; your partner's assets can be added to the catalog."><select value={visual} onChange={event=>setVisual(event.target.value)}><option value="">No visual model (placeholder)</option>{props.visualAssets?.map(asset=><option key={asset.id} value={asset.id}>{asset.name}</option>)}</select></EntryField></div>
         <div><EntryField id="model-duration" label="Estimated print minutes" help="Print time for one item, from your slicer or experience. Example: 120 means two hours."><input required type="number" min="1" value={duration} onChange={e=>setDuration(e.target.value)} placeholder="120"/></EntryField></div>
         <div><EntryField id="model-grams" label="Estimated filament grams" help="Material for one item, including supports. Example: 25 grams."><input required type="number" min="0.01" step="0.01" value={grams} onChange={e=>setGrams(e.target.value)} placeholder="25"/></EntryField></div>
         <div><EntryField id="model-material" label="Filament type" help="Choose a common material or type your own. Example: PLA. Must match printer inventory."><input required list="filament-types" value={material} onChange={e=>setMaterial(e.target.value)} placeholder="PLA"/></EntryField><datalist id="filament-types">{['PLA','PETG','ABS','ASA','TPU','Nylon','PC','PVA'].map(value=><option key={value} value={value}/>)}</datalist></div>

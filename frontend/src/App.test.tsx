@@ -2,6 +2,7 @@ import {act,render,screen,waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {test,expect,vi} from 'vitest';
 import App from './App';
+vi.mock('./printers/scene',()=>({mountScene:()=>({command:()=>{},dispose:()=>{}})}));
 import {state,orderedState} from './test-fixtures';
 
 test('modeling is available alongside the default production overview',async()=>{

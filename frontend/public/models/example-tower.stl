@@ -1,0 +1,254 @@
+solid example_tower
+facet normal 0 0 0
+outer loop
+vertex -25 -25 0
+vertex -25 25 0
+vertex 25 25 0
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -25 -25 0
+vertex 25 25 0
+vertex 25 -25 0
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -25 -25 18
+vertex 25 -25 18
+vertex 25 25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -25 -25 18
+vertex 25 25 18
+vertex -25 25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -25 -25 0
+vertex 25 -25 0
+vertex 25 -25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -25 -25 0
+vertex 25 -25 18
+vertex -25 -25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 25 -25 0
+vertex 25 25 0
+vertex 25 25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 25 -25 0
+vertex 25 25 18
+vertex 25 -25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 25 25 0
+vertex -25 25 0
+vertex -25 25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 25 25 0
+vertex -25 25 18
+vertex 25 25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -25 25 0
+vertex -25 -25 0
+vertex -25 -25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -25 25 0
+vertex -25 -25 18
+vertex -25 25 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -17 -17 18
+vertex -17 17 18
+vertex 17 17 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -17 -17 18
+vertex 17 17 18
+vertex 17 -17 18
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -17 -17 46
+vertex 17 -17 46
+vertex 17 17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -17 -17 46
+vertex 17 17 46
+vertex -17 17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -17 -17 18
+vertex 17 -17 18
+vertex 17 -17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -17 -17 18
+vertex 17 -17 46
+vertex -17 -17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 17 -17 18
+vertex 17 17 18
+vertex 17 17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 17 -17 18
+vertex 17 17 46
+vertex 17 -17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 17 17 18
+vertex -17 17 18
+vertex -17 17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 17 17 18
+vertex -17 17 46
+vertex 17 17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -17 17 18
+vertex -17 -17 18
+vertex -17 -17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -17 17 18
+vertex -17 -17 46
+vertex -17 17 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -10 -10 46
+vertex -10 10 46
+vertex 10 10 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -10 -10 46
+vertex 10 10 46
+vertex 10 -10 46
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -10 -10 78
+vertex 10 -10 78
+vertex 10 10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -10 -10 78
+vertex 10 10 78
+vertex -10 10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -10 -10 46
+vertex 10 -10 46
+vertex 10 -10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -10 -10 46
+vertex 10 -10 78
+vertex -10 -10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 10 -10 46
+vertex 10 10 46
+vertex 10 10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 10 -10 46
+vertex 10 10 78
+vertex 10 -10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 10 10 46
+vertex -10 10 46
+vertex -10 10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex 10 10 46
+vertex -10 10 78
+vertex 10 10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -10 10 46
+vertex -10 -10 46
+vertex -10 -10 78
+endloop
+endfacet
+facet normal 0 0 0
+outer loop
+vertex -10 10 46
+vertex -10 -10 78
+vertex -10 10 78
+endloop
+endfacet
+endsolid example_tower
