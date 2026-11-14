@@ -15,6 +15,17 @@ function binaryStl(triangles:number[][]=[[0,0,0,1,0,0,0,1,0],[0,0,0,0,0,0,0,0,0]
   return buffer;
 }
 
+test('selected catalog visual is passed to persisted modeling tasks',async()=>{
+  const onCreate=vi.fn().mockResolvedValue(undefined);
+  render(<ModelingBoard onCreate={onCreate} visualAssets={[{id:'example-tower',name:'Example tower',path:'/models/example-tower.stl',units:'mm',rotation_degrees:[0,0,0]}]}/>);
+  fireEvent.change(screen.getByLabelText('Model name'),{target:{value:'Part'}});
+  fireEvent.change(screen.getByLabelText('Model file reference'),{target:{value:'part.stl'}});
+  const user=userEvent.setup();
+  await user.selectOptions(screen.getByLabelText('3D preview model'),'example-tower');
+  fireEvent.submit(screen.getByRole('button',{name:'Add to modeling'}).closest('form')!);
+  expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({visual_asset_id:'example-tower'}));
+});
+
 test('explains model inputs with examples and offers common filament choices',async()=>{
   render(<ModelingBoard items={[]} onCreate={vi.fn()}/>);
   expect(screen.getByLabelText('Model name')).toHaveAccessibleDescription(/Dragon figurine/);

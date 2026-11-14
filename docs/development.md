@@ -207,3 +207,29 @@ assessment is required, no-support findings go directly to Review, required
 supports appear with the model in Review, approval stores the linked support task
 on the same artifact, and review revisions clear stale support data. The browser
 workflow also used the linked Snack Sticks source page as its model reference.
+
+## Interactive printer views
+
+Three simulated 220 x 220 x 250 mm printer beds now render on Overview; choose
+Printers for a single larger view with orbit, zoom, pan and reset controls.
+Camera buttons work with keyboard focus/Enter. Select **Preview example part**
+to inspect the bundled tower; its slider only changes demonstration geometry.
+Production parts reveal according to actual job elapsed time. No slicing or
+hardware commands run. No extra server is needed; dependencies bundle Three.js
+and its MIT-licensed addons locally.
+
+Use [the partner asset handoff](../frontend/public/models/README.md) to register
+STL files and choose their visual asset in Modeling. Missing/removed catalog
+entries retain historical records and show a placeholder instead of breaking
+production. Unavailable WebGL retains status text; moving to another tab releases
+its scene resources. No new coverage exclusions were added.
+
+Verification on Windows/Chromium (2026-11-14):
+`.venv\Scripts\python.exe scripts/check.py coverage` passed 48 backend tests,
+77 frontend tests and 5 browser workflows with 100% statement/branch coverage;
+schema drift and type/build checks passed. Browser checks used real WebGL and
+also deliberately forced WebGL failure to verify fallback. Setup on other OSes
+and browsers remains unverified. Vite reports an approximately 813 kB main JS
+bundle after the new 3D dependency; code splitting is a future performance task,
+not a functional failure. The renderer is demand-driven with no continuous idle
+animation loop. No official Prusa CAD asset is included.

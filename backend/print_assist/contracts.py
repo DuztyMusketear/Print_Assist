@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
+from .visual_assets import ASSETS, known_visual_asset
 
 
 class OrderCreate(BaseModel):
@@ -65,7 +66,7 @@ class AdvanceCommand(ScheduleCommand):
     payload: AdvancePayload
 
 
-class ModelTaskCreate(BaseModel):
+class ModelTaskFields(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     title: Annotated[str, Field(min_length=1)]
     modelReference: Annotated[str, Field(min_length=1)]
@@ -74,6 +75,11 @@ class ModelTaskCreate(BaseModel):
     filament_type: Annotated[str, Field(min_length=1)]
     color: Annotated[str, Field(min_length=1)]
     required_capabilities: Annotated[list[Annotated[str, Field(min_length=1)]], Field(min_length=1)]
+    visual_asset_id: str | None = None
+
+
+class ModelTaskCreate(ModelTaskFields):
+    _visual_asset = field_validator('visual_asset_id')(known_visual_asset)
 
 
 class SupportAssessment(BaseModel):
@@ -104,10 +110,19 @@ class Artifact(BaseModel):
     duration_seconds: int
     filament_grams: float
     required_capabilities: list[str]
+    visual_asset_id: str | None = None
     support_task: SupportTask | None = None
 
 
-class ModelTask(ModelTaskCreate):
+class VisualAsset(BaseModel):
+    id: str
+    name: str
+    path: str
+    units: Literal['mm']
+    rotation_degrees: tuple[float, float, float]
+
+
+class ModelTask(ModelTaskFields):
     id: str
     stage: Literal['modeling', 'supports', 'review', 'approved']
     reviewOutcome: Literal['changes-requested'] | None = None
@@ -172,6 +187,7 @@ class FactorySnapshot(BaseModel):
     controls: Controls
     artifacts: list[Artifact]
     modeling_tasks: list[ModelTask] = Field(default_factory=list)
+    visual_assets: list[VisualAsset] = Field(default_factory=lambda: [VisualAsset(**asset) for asset in ASSETS])
 
 
 def validate_order(data: dict) -> OrderCreate:

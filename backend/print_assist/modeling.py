@@ -59,5 +59,5 @@ def move_task(state, payload):
             reference=task['modelReference'], duration_seconds=task['duration_seconds'],
             filament_grams=task['filament_grams'], filament_type=task['filament_type'],
             color=task['color'], required_capabilities=task['required_capabilities'],
-            support_task=deepcopy(task.get('support_task'))))
+            visual_asset_id=task.get('visual_asset_id'), support_task=deepcopy(task.get('support_task'))))
     return result
