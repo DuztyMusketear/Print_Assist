@@ -7,3 +7,7 @@ simulator.
 
 See the [product specification](./SPEC.md) for the MVP scope, requirements,
 architecture, agent execution controls, and delivery plan.
+
+For development, follow [AGENTS.md](./AGENTS.md) and start navigation with the
+[repository knowledge map](./docs/knowledge-map.md). Use a separate feature,
+fix, documentation, or maintenance branch; update the map alongside file changes.
