@@ -24,13 +24,16 @@ graph LR
     MAP -->|indexes| JUDGING
     BUSINESS["docs/business-validation.md"] -->|supplies preparation for| JUDGING
     MAP -->|indexes| BUSINESS
+    README -->|links implementation roadmap| PLAN
+    README -->|links evidence checklist| JUDGING
+    README -->|links business hypotheses| BUSINESS
 ```
 
 ## File index
 
 | File | Purpose and owned behavior | Related files | Verification |
 | --- | --- | --- | --- |
-| [README.md](../README.md) | Product introduction and entry points for contributors. No runtime behavior. | Specification, instructions, map | Check relative links and consistency with spec. |
+| [README.md](../README.md) | Customer/value overview, planned web stack, honest implementation status, and contributor entry points. No runtime behavior. | Specification, instructions, map, plan, judging checklist, business brief | Check relative links and consistency with spec. |
 | [SPEC.md](../SPEC.md) | Customer, business outcomes, MVP scope, proposed architecture, agent controls, TDD policy, acceptance criteria, and pricing hypotheses. Requirements rather than implemented behavior. | README, instructions | Review requirements for consistency; preserve offline development and explicit live-demo gates. |
 | [AGENTS.md](../AGENTS.md) | Contributor/agent rules for branches, navigation, graph maintenance, tests, and authorization boundaries. No automated branch enforcement. | Specification, map | Compare rules with spec and current workflow. |
 | [docs/knowledge-map.md](knowledge-map.md) | This index and relationship graph. No runtime behavior. | All indexed files | Confirm links resolve, entries match files, and edges match inspected relationships. |
