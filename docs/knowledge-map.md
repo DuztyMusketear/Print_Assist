@@ -33,6 +33,8 @@ graph LR
     MAP -->|links source responsibilities| CODE
     DEV["docs/development.md"] -->|runs and verifies| CODE
     README -->|links setup| DEV
+    BACKLOG["docs/backlog.md"] -->|breaks down remaining work in| PLAN
+    MAP -->|indexes stories| BACKLOG
 ```
 
 ## File index
@@ -49,6 +51,7 @@ graph LR
 | [Market research](market-research.md) | Dated vendor comparison, attributed customer anecdotes, niche hypotheses, pricing implications, and research limits. No scope changes or customer validation claimed. | Business validation brief, specification | Review source links, distinguish old anecdotes from current vendor claims, and validate arithmetic/local links. |
 | [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for Phase 1. | Plan, setup, implementation files | Validate file links and update alongside code. |
 | [Development setup](development.md) | Native setup/run/check commands, restart semantics, coverage boundaries and actual platform status. | README, code map | Full check command and local-link review. |
+| [Remaining phase backlog](backlog.md) | Fifteen Jira-style stories for Phases 2-6 plus a deferred live-adapter story; priorities, dependencies and acceptance criteria. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
 
 ## How to extend the map
 
