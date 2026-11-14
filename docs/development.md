@@ -222,3 +222,12 @@ and 7 browser tests plus schema/build checks. Browser regression verifies canvas
 identity and floor height across refresh. Desktop 1440px and mobile 390px visual
 inspection found no horizontal overflow. Read-only feature review found no
 critical/important issues. Existing Vite bundle advisory remains.
+
+Guided printing verification (2026-11-14): root
+`.venv\Scripts\python.exe scripts/check.py coverage` passed 71 backend tests,
+116 frontend tests and 8 browser workflows with 100% statement/branch coverage,
+schema drift and type/build checks. Browser workflow imports a fractional-weight
+profile, approves it, inherits selected-model estimates, creates manual quantity,
+starts/pauses/resumes from Overview and uses automatic printing. Tests use no live
+models or hardware. Existing bundle-size advisory remains. Review findings have
+regression coverage, including manual next batches and late reset/navigation.

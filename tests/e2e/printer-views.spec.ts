@@ -47,7 +47,8 @@ test('WebGL failure retains readable printer statuses and fallback',async({page}
 test('approved visual model flows through ordering, scheduling and real progress',async({page})=>{
   await page.goto('/');
   await page.getByRole('tab',{name:'Modeling',exact:true}).click();
-  for(const [label,value] of [['Model name','Visual tower order'],['Model file reference','tower.stl'],['Estimated print minutes','120'],['Estimated filament grams','25'],['Filament type','PLA'],['Filament color','blue'],['Required printer capabilities (comma separated)','FFF']]) {
+  await page.getByText('Model preparation (team only)',{exact:true}).click();
+  for(const [label,value] of [['Model name','Visual tower order'],['Model file reference','tower.stl'],['Estimated print minutes','120'],['Estimated filament grams','25'],['Filament type','PLA'],['Filament color','blue']]) {
     await page.getByLabel(label,{exact:true}).fill(value);
   }
   await page.getByLabel('3D preview model',{exact:true}).selectOption('example-tower');
@@ -57,6 +58,7 @@ test('approved visual model flows through ordering, scheduling and real progress
   await task.getByRole('button',{name:'Send to review'}).click();
   await task.getByRole('button',{name:'Approve',exact:true}).click();
   await page.getByRole('tab',{name:'Orders',exact:true}).click();
+  await page.getByText('Custom order details',{exact:true}).click();
   await page.getByLabel('Print-ready product',{exact:true}).selectOption({label:'Visual tower order'});
   await page.getByLabel('Quantity',{exact:true}).fill('1');
   await page.getByLabel('Priority',{exact:true}).fill('999');

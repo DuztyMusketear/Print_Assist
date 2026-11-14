@@ -30,6 +30,7 @@ test('reset ignores a pre-reset refresh response and shows the replacement scena
   await user.click(screen.getByRole('checkbox',{name:/I understand/}));
   await user.click(screen.getByRole('button',{name:'Reset scenario'}));
   await user.click(screen.getByRole('tab',{name:'Orders'}));
+  await user.click(screen.getByText('Custom order details'));
   await screen.findByText(/No orders yet/);
   await act(async()=>finish(new Response(JSON.stringify(orderedState))));
   expect(screen.queryByText(/2 items/)).not.toBeInTheDocument();
@@ -109,6 +110,7 @@ test.each(['order','model'] as const)('late pre-reset %s replies cannot erase ne
     await user.click(screen.getByRole('tab',{name:kind==='order'?'Orders':'Modeling'}));
     if(kind==='model') await fillModel(user);
     else {
+      await user.click(screen.getByText('Custom order details'));
       await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-20T12:00');
       await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-21T12:00');
     }
@@ -152,13 +154,14 @@ test('retry after a rejected modeling change refreshes instead of resubmitting r
 });
 
 async function fillModel(user:ReturnType<typeof userEvent.setup>) {
+  const preparation=screen.getByText('Model preparation (team only)');
+  if(!preparation.closest('details')!.open) await user.click(preparation);
   await user.type(screen.getByLabelText('Model name'),'Planter');
   await user.type(screen.getByLabelText('Model file reference'),'planter.stl');
   await user.type(screen.getByLabelText('Estimated print minutes'),'60');
   await user.type(screen.getByLabelText('Estimated filament grams'),'30');
   await user.type(screen.getByLabelText('Filament type'),'PLA');
   await user.type(screen.getByLabelText('Filament color'),'blue');
-  await user.type(screen.getByLabelText('Required printer capabilities (comma separated)'),'FFF');
 }
 
 const modelTask={id:'model-1',title:'Planter',modelReference:'planter.stl',stage:'modeling',duration_seconds:3600,filament_grams:30,filament_type:'PLA',color:'blue',required_capabilities:['FFF']};
@@ -262,6 +265,7 @@ test('overview shows simulated printers and tabs open the order workspace',async
   expect(screen.queryByRole('heading',{name:'New production order'})).not.toBeInTheDocument();
   expect(screen.getByLabelText('Production summary')).toBeInTheDocument();
   await user.click(screen.getByRole('tab',{name:'Orders'}));
+  await user.click(screen.getByText('Custom order details'));
   expect(screen.getByRole('heading',{name:'New production order'})).toBeInTheDocument();
 });
 
@@ -408,7 +412,7 @@ test('overview displays the current job and its progress for a printer',async()=
   vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(current)));
   render(<App/>);
   expect(await screen.findByText(/Part 1/)).toBeInTheDocument();
-  expect(screen.getByText(/50%/)).toBeInTheDocument();
+  expect(screen.getAllByText(/50%/).length).toBeGreaterThan(0);
 });
 
 test('overview handles a job without progress fields',async()=>{
@@ -429,6 +433,7 @@ test('loads state, saves an order, and refreshes the queue with agents OFF',asyn
   expect(await screen.findByText(/No orders yet/)).toBeInTheDocument();
   expect(screen.getByText(/Agents OFF/)).toBeInTheDocument();
   await user.click(screen.getByRole('tab',{name:'Orders'}));
+  await user.click(screen.getByText('Custom order details'));
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
   await user.click(screen.getByRole('button',{name:'Add order'}));
@@ -456,6 +461,7 @@ test('uncertain save retry reuses the same idempotency key',async()=>{
   render(<App/>);
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Orders'}));
+  await user.click(screen.getByText('Custom order details'));
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
   await user.click(screen.getByRole('button',{name:'Add order'}));
@@ -477,6 +483,7 @@ test('a late refresh cannot replace a saved order with old state',async()=>{
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('button',{name:'Refresh queue'}));
   await user.click(screen.getByRole('tab',{name:'Orders'}));
+  await user.click(screen.getByText('Custom order details'));
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
   await user.click(screen.getByRole('button',{name:'Add order'}));
@@ -507,6 +514,7 @@ test('late submission result does not overwrite newer refreshed state',async()=>
   render(<App/>);
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Orders'}));
+  await user.click(screen.getByText('Custom order details'));
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
   await user.click(screen.getByRole('button',{name:'Add order'}));
@@ -527,6 +535,7 @@ test.each([false,true])('refresh during a save cannot hide the successfully save
   render(<App/>);
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Orders'}));
+  await user.click(screen.getByText('Custom order details'));
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
   await user.click(screen.getByRole('button',{name:'Add order'}));
@@ -547,6 +556,7 @@ test('replaying an uncertain save cannot roll back a newer queue revision',async
   render(<App/>);
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Orders'}));
+  await user.click(screen.getByText('Custom order details'));
   await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
   await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
   await user.click(screen.getByRole('button',{name:'Add order'}));
@@ -590,4 +600,98 @@ test('clock starts with the default speed for a legacy snapshot',async()=>{
   await user.click(screen.getByRole('button',{name:'Run clock'}));
   await screen.findByRole('button',{name:'Pause clock'});
   expect(JSON.parse(String(transport.mock.calls[1][1]!.body)).payload).toEqual({running:true,speed:60});
+});
+
+
+test.each(['automatic','manual'] as const)('approved model guides quantity and %s printing to the next tab',async(mode)=>{
+ const approved={...modelTask,stage:'approved'};
+ const profile={...state.artifacts[0],id:'model-'+modelTask.id,name:modelTask.title};
+ const snapshot={...state,modeling_tasks:[approved],artifacts:[...state.artifacts,profile]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(snapshot)))
+   .mockResolvedValueOnce(new Response(JSON.stringify({...snapshot,revision:1,running:mode==='automatic'})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('tab',{name:'Modeling'}));
+ await user.click(screen.getByRole('button',{name:'Next: choose quantity'}));
+ expect(screen.getByLabelText('Model to print')).toHaveValue(profile.id);
+ await user.click(screen.getByRole('button',{name:mode==='automatic'?'Start automatic printing':'Plan manual printing'}));
+ await waitFor(()=>expect(screen.getByRole('tab',{name:mode==='automatic'?'Overview':'Schedule'})).toHaveAttribute('aria-selected','true'));
+ expect(transport.mock.calls[1][0]).toBe('/api/orders/plan');
+ if(mode==='manual') await user.click(screen.getByRole('button',{name:'Next: monitor printers'}));
+ await user.click(screen.getByRole('button',{name:'2. Choose model and quantity'}));
+ await user.click(screen.getByRole('button',{name:'Add or prepare a model'}));
+ expect(screen.getByRole('tab',{name:'Modeling'})).toHaveAttribute('aria-selected','true');
+});
+
+test('uncertain quick printing retries the same atomic command',async()=>{
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
+ .mockRejectedValueOnce(new Error('Response lost')).mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,running:true})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('tab',{name:'Orders'}));
+ await user.click(screen.getByRole('button',{name:'Start automatic printing'}));
+ await screen.findAllByText('Response lost');
+ await user.click(screen.getByRole('button',{name:'Start automatic printing'}));
+ await waitFor(()=>expect(transport).toHaveBeenCalledTimes(3));
+ expect(transport.mock.calls[1][1]!.body).toBe(transport.mock.calls[2][1]!.body);
+});
+
+test('pending work can be started from the overview inspector',async()=>{
+ const printer={id:'printer-1',status:'reserved',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}};
+ const original={...state,printers:[printer],jobs:[{id:'job-1',status:'pending',printer_id:'printer-1'}]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(original))).mockResolvedValueOnce(new Response(JSON.stringify({...original,revision:1})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('button',{name:'Start print on Printer 1'}));
+ await waitFor(()=>expect(transport).toHaveBeenCalledTimes(2));expect(transport.mock.calls[1][0]).toBe('/api/start');
+});
+
+
+test('pausing a moving clock refreshes and retries a known revision conflict once',async()=>{
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,running:true})))
+ .mockResolvedValueOnce(new Response('',{status:409}))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...state,running:true,revision:2})))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...state,running:false,revision:3})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('button',{name:'Pause clock'}));
+ await screen.findByRole('button',{name:'Run clock'});
+ expect(transport).toHaveBeenCalledTimes(4);
+ expect(JSON.parse(String(transport.mock.calls[3][1]!.body)).expected_revision).toBe(2);
+});
+
+
+test('clock pause conflict never crosses a changed session',async()=>{
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,running:true})))
+ .mockResolvedValueOnce(new Response('',{status:409}))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...state,session_id:'00000000-0000-4000-8000-000000000099'})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('button',{name:'Pause clock'}));
+ await screen.findByText(/Production command failed/);expect(transport).toHaveBeenCalledTimes(3);
+});
+
+test('reset supersedes a pending clock-pause refresh',async()=>{
+ let finish!:(response:Response)=>void;
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,running:true})))
+ .mockResolvedValueOnce(new Response('',{status:409}))
+ .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...state,session_id:'00000000-0000-4000-8000-000000000099'})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('button',{name:'Pause clock'}));await waitFor(()=>expect(transport).toHaveBeenCalledTimes(3));
+ await user.click(screen.getByRole('tab',{name:'Printers'}));await user.click(screen.getByRole('checkbox',{name:/I understand/}));
+ await user.click(screen.getByRole('button',{name:'Reset scenario'}));
+ await screen.findByRole('button',{name:'Run clock'});
+ await act(async()=>finish(new Response(JSON.stringify(state))));
+ expect(transport).toHaveBeenCalledTimes(4);expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+
+test('a late quick-print result cannot navigate away from a reset session',async()=>{
+ let finish!:(response:Response)=>void;
+ vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
+ .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...state,session_id:'00000000-0000-4000-8000-000000000099'})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('tab',{name:'Orders'}));await user.click(screen.getByRole('button',{name:'Start automatic printing'}));
+ await user.click(screen.getByRole('tab',{name:'Printers'}));await user.click(screen.getByRole('checkbox',{name:/I understand/}));
+ await user.click(screen.getByRole('button',{name:'Reset scenario'}));
+ await waitFor(()=>expect(screen.getByRole('checkbox',{name:/I understand/})).not.toBeChecked());
+ await act(async()=>finish(new Response(JSON.stringify({...state,running:true,revision:1}))));
+ expect(screen.getByRole('tab',{name:'Printers'})).toHaveAttribute('aria-selected','true');
 });

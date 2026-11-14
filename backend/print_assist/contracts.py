@@ -48,6 +48,16 @@ class ScheduleCommand(BaseModel):
     payload: SchedulePayload
 
 
+class PlanOrderPayload(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    order: OrderCreate
+    mode: Literal['automatic','manual']
+
+
+class PlanOrderCommand(ScheduleCommand):
+    payload: PlanOrderPayload
+
+
 class StartPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
     job_id: Annotated[str, Field(min_length=1)]

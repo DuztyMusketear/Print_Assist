@@ -9,6 +9,7 @@ test('tracks a model through supports and review without external traffic',async
   });
   await page.goto('/');
   await page.getByRole('tab',{name:'Modeling'}).click();
+  await page.getByText('Model preparation (team only)',{exact:true}).click();
   await expect(page.getByRole('heading',{name:'Modeling dashboard'})).toBeVisible();
   const modelHelp=page.locator('#model-name-help');
   const helpIcon=page.getByRole('button',{name:'Help for Model name',exact:true});
@@ -28,7 +29,6 @@ test('tracks a model through supports and review without external traffic',async
   await page.getByLabel('Estimated filament grams',{exact:true}).fill('30');
   await page.getByLabel('Filament type',{exact:true}).fill('PLA');
   await page.getByLabel('Filament color',{exact:true}).fill('blue');
-  await page.getByLabel('Required printer capabilities (comma separated)',{exact:true}).fill('FFF');
   await page.getByRole('button',{name:'Add to modeling'}).click();
   await page.getByRole('button',{name:'Prepare supports'}).click();
   await page.getByRole('button',{name:'Send to review'}).click();

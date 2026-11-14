@@ -38,3 +38,24 @@ under the MIT license (see the installed package LICENSE). Type declarations
 are pinned to @types/three 0.187.0. No CDN, external decoder or model service is
 used. Future externally sourced printer/part assets need their own provenance
 and applicable license recorded alongside them.
+
+## Prepared model profiles
+
+The partner supplies geometry **and slicer-derived print time/filament weight**.
+Normal printing selects an approved profile and quantity; users should not guess
+these values or enter compatibility jargon. In Modeling, import profile JSON,
+review it through the existing stages, then choose **Next: choose quantity**.
+
+[Example profile](example-tower.profile.json) contains illustrative demo estimates,
+not measured/slicer-certified performance. Replace values with the prepared part's
+estimates; do not assume the example's 120 minutes / 25 g applies to other models.
+
+Required JSON fields: `title`, `modelReference`, positive integer
+`duration_seconds`, positive `filament_grams`, `filament_type` and `color`.
+Optional `required_capabilities` defaults to `["FFF"]` for these virtual filament
+printers; preparers can supply compatible requirements. Optional `visual_asset_id`
+must refer to a registered preview (for example `example-tower`). Profile metadata
+import does **not** upload/register the referenced STL or run a slicer. Continue
+using the asset registration instructions above until PA-305 implements that flow.
+Layer counts and toolpaths are not inferred from geometry; provenance/versioned
+slicer settings and safe local file ingestion are tracked in PA-305.

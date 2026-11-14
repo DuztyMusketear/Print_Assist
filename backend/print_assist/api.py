@@ -3,7 +3,7 @@ import os
 import asyncio
 from contextlib import asynccontextmanager
 from .monitoring import project
-from .contracts import ClockCommand
+from .contracts import ClockCommand, PlanOrderCommand
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -102,6 +102,13 @@ def create_app(path=None):
     def clock(command:ClockCommand):
         try:
             return project(service.clock(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/orders/plan',response_model=FactorySnapshot)
+    def plan_order(command:PlanOrderCommand):
+        try:
+            return project(service.plan_order(command))
         except ValueError as error:
             raise HTTPException(status_code=409,detail=str(error)) from error
 

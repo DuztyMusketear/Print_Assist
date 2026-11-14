@@ -6,6 +6,7 @@ import {ModelingBoard} from './ModelingBoard';
 test('selected catalog visual is passed to persisted modeling tasks',async()=>{
   const onCreate=vi.fn().mockResolvedValue(undefined);
   render(<ModelingBoard onCreate={onCreate} visualAssets={[{id:'example-tower',name:'Example tower',path:'/models/example-tower.stl',units:'mm',rotation_degrees:[0,0,0]}]}/>);
+  await userEvent.setup().click(screen.getByText('Model preparation (team only)'));
   fireEvent.change(screen.getByLabelText('Model name'),{target:{value:'Part'}});
   fireEvent.change(screen.getByLabelText('Model file reference'),{target:{value:'part.stl'}});
   const user=userEvent.setup();
@@ -16,6 +17,7 @@ test('selected catalog visual is passed to persisted modeling tasks',async()=>{
 
 test('explains model inputs with examples and offers common filament choices',async()=>{
   render(<ModelingBoard items={[]} onCreate={vi.fn()}/>);
+  await userEvent.setup().click(screen.getByText('Model preparation (team only)'));
   expect(screen.getByLabelText('Model name')).toHaveAccessibleDescription(/Dragon figurine/);
   expect(screen.getByLabelText('Model file reference')).toHaveAccessibleDescription(/does not upload/);
   expect(screen.getByLabelText('Estimated print minutes')).toHaveAccessibleDescription(/one item/);
@@ -59,4 +61,30 @@ test('explains when required task details are missing',()=>{
   render(<ModelingBoard/>);
   fireEvent.submit(screen.getByRole('button',{name:'Add to modeling'}).closest('form')!);
   expect(screen.getByRole('alert')).toHaveTextContent('Enter a model name and file reference');
+});
+
+
+test('prepared profile import supplies estimates and removes compatibility jargon',async()=>{
+ const onCreate=vi.fn().mockResolvedValue(undefined);const user=userEvent.setup();
+ render(<ModelingBoard onCreate={onCreate}/>);
+ const profile={title:'Tray',modelReference:'tray.stl',duration_seconds:600,filament_grams:25.125,filament_type:'PLA',color:'blue'};
+ const file=new File([JSON.stringify(profile)],'tray.json',{type:'application/json'});
+ Object.defineProperty(file,'text',{value:async()=>JSON.stringify(profile)});
+ await user.upload(screen.getByLabelText('Prepared model profile'),file);
+ await screen.findByText(/Profile ready: Tray/);
+ expect(screen.queryByLabelText(/Required printer capabilities/)).not.toBeInTheDocument();
+ await user.click(screen.getByRole('button',{name:'Add to modeling'}));
+ expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({...profile,required_capabilities:['FFF']}));
+});
+
+
+test('invalid or oversized profile imports report preparation guidance',async()=>{
+ const user=userEvent.setup();render(<ModelingBoard onCreate={vi.fn()}/>);
+ const invalid=new File(['{}'],'bad.json',{type:'application/json'});Object.defineProperty(invalid,'text',{value:async()=>'{}'});
+ await user.upload(screen.getByLabelText('Prepared model profile'),invalid);
+ expect(await screen.findByRole('alert')).toHaveTextContent('Ask the model preparer');
+ const oversized=new File(['large'],'large.json',{type:'application/json'});Object.defineProperty(oversized,'size',{value:1000001});
+ await user.upload(screen.getByLabelText('Prepared model profile'),oversized);
+ expect(await screen.findByRole('alert')).toHaveTextContent('too large');
+ await user.upload(screen.getByLabelText('Prepared model profile'),[]);
 });

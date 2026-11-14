@@ -59,8 +59,23 @@ export function mountScene(host:HTMLElement,options:SceneOptions) {
   const observer=new ResizeObserver(resize);observer.observe(host);
   controls.addEventListener('change',draw);
   host.append(renderer.domElement);resize();
+  let printing=false;let animation:number|undefined;
+  function animate(time:number) {
+    animation=undefined;
+    if(disposed||!printing||document.hidden) return;
+    head.position.x=nozzle.position.x=Math.sin(time/450)*15;
+    head.position.z=nozzle.position.z=Math.cos(time/600)*10;
+    draw();animation=requestAnimationFrame(animate);
+  }
+  function syncMotion() {
+    if(!printing||document.hidden) {
+      if(animation!==undefined) {cancelAnimationFrame(animation);animation=undefined;}
+      head.position.x=nozzle.position.x=0;head.position.z=nozzle.position.z=0;
+    } else if(animation===undefined) animation=requestAnimationFrame(animate);
+  }
+  document.addEventListener('visibilitychange',syncMotion);
   const handle={
-    update(progress:number,color:string) {
+    update(progress:number,color:string,active=false) {
       if(disposed) return;
       const nozzleHeight=options.placeholder||options.part?height*progress+10:80;
       gantry.position.y=nozzleHeight+20;head.position.y=nozzleHeight+14;nozzle.position.y=nozzleHeight-4;
@@ -69,7 +84,7 @@ export function mountScene(host:HTMLElement,options:SceneOptions) {
         partMaterial.color.setHex(colors[color.toLowerCase()] ?? 0x51c5bd);
         ghostMaterial.color.copy(partMaterial.color);
       }
-      draw();
+      printing=active&&progress<1;syncMotion();draw();
     },
     command(action:CameraCommand) {
       if(disposed) return;
@@ -88,6 +103,8 @@ export function mountScene(host:HTMLElement,options:SceneOptions) {
     },
     dispose() {
       if(disposed) return;disposed=true;
+      if(animation!==undefined) cancelAnimationFrame(animation);
+      document.removeEventListener('visibilitychange',syncMotion);
       observer.disconnect();controls.removeEventListener('change',draw);controls.dispose();
       renderer.domElement.removeEventListener('webglcontextlost',lost);
       const geometries=new Set<BufferGeometry>();const materials=new Set<Material>();

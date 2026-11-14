@@ -1,12 +1,12 @@
 import {useEffect,useRef,useState} from 'react';
 import {loadPart,type Part,type VisualAsset} from './assets';
 import {mountScene,type CameraCommand} from './scene';
-export type PrinterSceneProps={asset?:VisualAsset;progress:number;color:string;hasJob:boolean;label:string};
+export type PrinterSceneProps={asset?:VisualAsset;progress:number;color:string;hasJob:boolean;label:string;printing?:boolean};
 const cameras:[CameraCommand,string][]=[['left','Rotate left'],['right','Rotate right'],['zoom-in','Zoom in'],['zoom-out','Zoom out'],['pan-left','Pan left'],['pan-right','Pan right'],['reset','Reset camera']];
-export function PrinterScene({asset,progress,color,hasJob,label}:PrinterSceneProps) {
+export function PrinterScene({asset,progress,color,hasJob,label,printing=false}:PrinterSceneProps) {
   const host=useRef<HTMLDivElement>(null);
   const handle=useRef<ReturnType<typeof mountScene>|null>(null);
-  const latest=useRef({progress,color});latest.current={progress,color};
+  const latest=useRef({progress,color,printing});latest.current={progress,color,printing};
   const assetKey=JSON.stringify(asset);
   const [error,setError]=useState('');
   const [loading,setLoading]=useState(false);
@@ -23,14 +23,14 @@ export function PrinterScene({asset,progress,color,hasJob,label}:PrinterScenePro
           part=loaded;setFits(loaded.fits);
         }
         handle.current=mountScene(host.current!,{part,progress,color,placeholder:hasJob&&!asset,onError:setError});
-        handle.current.update(latest.current.progress,latest.current.color);
+        handle.current.update(latest.current.progress,latest.current.color,latest.current.printing);
       } catch(reason) {if(live)setError((reason as Error).message);}
       finally {if(live)setLoading(false);}
     }
     void start();
     return ()=>{live=false;controller.abort();handle.current?.dispose();handle.current=null;part?.geometry.dispose();};
   },[assetKey,hasJob]);
-  useEffect(()=>{handle.current?.update(progress,color);},[progress,color]);
+  useEffect(()=>{handle.current?.update(progress,color,printing);},[progress,color,printing]);
   return <div className="printer-scene" role="group" aria-label={label}>
     <div ref={host} className="printer-canvas" hidden={Boolean(error)} />
     {error && <p role="status">3D preview unavailable: {error}. Printer status and progress remain available.</p>}

@@ -152,7 +152,7 @@ graph LR
 | [model.test.ts](../frontend/src/printers/model.test.ts) | Empty, unknown, active, completed and invalid progress view states. | Frontend suite |
 | [assets.ts](../frontend/src/printers/assets.ts) | Bounded same-origin STL loading, geometry validation, explicit rotation, centering and volume warnings without rescaling. | `npm test --workspace frontend -- src/printers/assets.test.ts` |
 | [assets.test.ts](../frontend/src/printers/assets.test.ts) | ASCII/binary parsing, units/orientation, bounds, byte/triangle limits and invalid assets. | Frontend suite |
-| [scene.ts](../frontend/src/printers/scene.ts) | Procedural frame/bed/nozzle, demand rendering, clipping, orbit/camera commands, resize, context failure and GPU disposal. Three.js is third-party, bundled locally. | `npm test --workspace frontend -- src/printers/scene.test.ts` and real browser tests |
+| [scene.ts](../frontend/src/printers/scene.ts) | Procedural frame/bed/nozzle, idle demand rendering, activity-gated motion loop, clipping, orbit/camera commands, resize, context failure and GPU disposal. Three.js is third-party, bundled locally. | `npm test --workspace frontend -- src/printers/scene.test.ts` and real browser tests |
 | [scene.test.ts](../frontend/src/printers/scene.test.ts) | Real Three geometry and cameras with fake GPU boundary: clipping, commands, resizing, empty/placeholder scenes, failure and disposal. | Frontend suite |
 | [PrinterScene.tsx](../frontend/src/printers/PrinterScene.tsx) | Asynchronous asset lifecycle, stale-load disposal, fallback, fit warnings and accessible camera controls. | `npm test --workspace frontend -- src/printers/PrinterScene.test.tsx` |
 | [PrinterScene.test.tsx](../frontend/src/printers/PrinterScene.test.tsx) | Empty/loaded/stale/failed/context-lost view behavior and unmount cleanup. | Frontend suite |
@@ -231,3 +231,49 @@ graph LR
   SceneTests[scene.test.ts] -->|verifies camera and geometry preservation| Scene
   PrinterBrowser[printer-views.spec.ts] -->|verifies refresh identity and panel height| PrinterScene
 ```
+
+## Guided model-to-print workflow
+
+contracts.py/types.ts add PlanOrderCommand/Payload; api.py exposes atomic
+`/api/orders/plan`; service.py validates approved artifacts, creates an order,
+assigns jobs, preserves prior manual modes and starts the clock for automatic work.
+simulation.py now prepares subsequent manual batches as pending, without starting.
+App.tsx owns tab guidance, approved-profile selection and existing guarded command
+retry ownership. PrinterFloor.tsx selects cards/headers and shares inspection,
+pending start and controls across Overview/Printers. PrinterScene.tsx forwards
+clock/job activity; scene.ts animates illustrative head motion with visibility,
+pause and disposal cancellation. ModelingBoard.tsx imports prepared profile metadata,
+hides technical prep fields and links approved models to Orders. styles.css owns
+inspector/guidance/import presentation. Tests in the existing component/scene/App
+files cover selection, motion cancellation and profile/quantity navigation.
+
+| File | Responsibility / related behavior | Verification |
+| --- | --- | --- |
+| [QuickPrint.tsx](../frontend/src/components/QuickPrint.tsx) | Approved-profile selection, read-only per-part estimates, quantity, explicit editable demo deadlines and automatic/manual atomic plan payload. Composed by App. | QuickPrint tests and guided browser workflow |
+| [QuickPrint.test.tsx](../frontend/src/components/QuickPrint.test.tsx) | Modes, inherited metadata, unavailable models, model selection, date validation and retry-preserved choices. | Frontend suite |
+| [profile.ts](../frontend/src/dashboard/profile.ts) | Validates JSON profile fields/estimates and internal default virtual-printer compatibility; ModelingBoard imports metadata only. | Profile tests |
+| [profile.test.ts](../frontend/src/dashboard/profile.test.ts) | Complete/invalid metadata, positive estimates and compatibility/preview shape validation. | Frontend suite |
+| [test_quick_print.py](../backend/tests/integration/test_quick_print.py) | Atomic order planning, unknown-model rollback, replay, automatic clock and preservation of existing manual modes. | Backend integration suite |
+| [example-tower.profile.json](../frontend/public/models/example-tower.profile.json) | Downloadable example metadata with explicitly illustrative demo estimates and registered preview. | JSON validation and guided browser profile import |
+| [guided-printing.spec.ts](../tests/e2e/guided-printing.spec.ts) | Prepared decimal-weight profile approval, selected-model handoff, manual Overview start/pause/resume and automatic quantity navigation without external traffic. | Root full/coverage checks |
+
+```mermaid
+graph LR
+  ModelingBoard -->|validates partner metadata| Profile[profile.ts]
+  ModelingBoard -->|approved model ID and next tab| App
+  App -->|model and quantity| QuickPrint
+  QuickPrint -->|atomic plan via api.ts| API
+  Service -->|preserves manual mode| Scheduling
+  Simulation -->|next manual batch remains pending| Scheduling
+  PrinterFloor -->|activity flag| PrinterScene
+  PrinterScene -->|head motion and live geometry| Scene
+  GuidedBrowser[guided-printing.spec.ts] -->|verifies complete manual/automatic journey| App
+```
+
+App/api.ts additionally handle one bounded refresh/retry for a clock pause rejected
+by a known 409 revision conflict; ambiguous network failures retain their original
+retry envelope, and changed/superseded sessions are never retried. App tests cover
+pause success, changed session and reset while the conflict refresh is pending.
+
+QuickPrint's navigation is also scoped to its source session, so a delayed result
+cannot switch tabs after reset; App.test.tsx verifies that regression.

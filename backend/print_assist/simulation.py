@@ -38,4 +38,4 @@ def advance(state: dict, seconds: int) -> dict:
             record(result,'job_completed','Completed one item',source='simulation',order_id=order['id'],printer_id=printer['id'],job_id=job['id'])
             if order["successful_quantity"] == order["quantity"]:
                 order["status"] = "print_complete"
-    return schedule(result, "automatic", preserve_mode=True)
+    return schedule(schedule(result, "automatic", preserve_mode=True), "manual", preserve_mode=True)

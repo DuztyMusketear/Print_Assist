@@ -91,3 +91,17 @@ def test_ineligible_printer_never_advances_even_if_job_status_is_stale():
     result=advance(state,3600)
     assert result['jobs'][0]['elapsed_seconds']==0
     assert result['printers'][0]['material']==before['printers'][0]['material']
+
+
+def test_manual_quantity_prepares_the_next_batch_without_starting_it():
+    from print_assist.scenarios import scenario_state
+    from print_assist.scheduling import schedule,start_job
+    from print_assist.simulation import advance
+    state=scenario_state('seeded');state['orders']=state['orders'][:1]
+    state=schedule(state,'manual')
+    for job in list(state['jobs']): state=start_job(state,job['id'])
+    result=advance(state,7200)
+    assert result['orders'][0]['successful_quantity']==3
+    assert len(result['jobs'])==4
+    assert result['jobs'][-1]['status']=='pending'
+    assert not any(job['status']=='running' for job in result['jobs'])

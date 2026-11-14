@@ -9,6 +9,7 @@ test('offline order intake survives a browser reload without external traffic',a
   await page.goto('/');
   await expect(page.getByText('Agents OFF · Offline prototype')).toBeVisible();
   await page.getByRole('tab',{name:'Orders'}).click();
+  await page.getByText('Custom order details',{exact:true}).click();
   const initial=await page.locator('section li').count();
   await page.getByLabel('Quantity',{exact:true}).fill('3');
   await page.getByLabel('Production due (UTC)',{exact:true}).fill('2026-11-15T12:00');
@@ -18,6 +19,7 @@ test('offline order intake survives a browser reload without external traffic',a
   await expect(page.locator('section li').last()).toContainText('3 items');
   await page.reload();
   await page.getByRole('tab',{name:'Orders',exact:true}).click();
+  await page.getByText('Custom order details',{exact:true}).click();
   await expect(page.locator('section li')).toHaveCount(initial+1);
   expect(external).toEqual([]);
 });

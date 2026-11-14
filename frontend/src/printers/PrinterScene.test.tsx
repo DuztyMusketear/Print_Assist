@@ -63,7 +63,7 @@ test('poll snapshots and progress preserve the renderer and loaded model',async(
   const view=render(<PrinterScene {...props} asset={asset} hasJob/>);
   await waitFor(()=>expect(mountScene).toHaveBeenCalledOnce());
   view.rerender(<PrinterScene {...props} asset={{...asset,rotation_degrees:[0,0,0]}} hasJob progress={0.6} color="red"/>);
-  await waitFor(()=>expect(handle.update).toHaveBeenLastCalledWith(0.6,'red'));
+  await waitFor(()=>expect(handle.update).toHaveBeenLastCalledWith(0.6,'red',false));
   expect(mountScene).toHaveBeenCalledOnce();
   expect(loadPart).toHaveBeenCalledOnce();
   expect(handle.dispose).not.toHaveBeenCalled();

@@ -1,0 +1,12 @@
+{
+  "title": "Example tower (demo estimates)",
+  "modelReference": "models/example-tower.stl",
+  "duration_seconds": 7200,
+  "filament_grams": 25,
+  "filament_type": "PLA",
+  "color": "blue",
+  "required_capabilities": [
+    "FFF"
+  ],
+  "visual_asset_id": "example-tower"
+}

@@ -58,3 +58,42 @@ test('empty beds stay empty; missing models use a placeholder and context loss r
   expect(onError).toHaveBeenCalledWith(expect.stringContaining('3D context'));
   vi.unstubAllGlobals();
 });
+
+
+test('active printing moves the head and cancels animation on pause and dispose',()=>{
+ vi.stubGlobal('ResizeObserver',class {observe(){}disconnect(){}});
+ let frame!:FrameRequestCallback;
+ const request=vi.fn((callback:FrameRequestCallback)=>{frame=callback;return 1;});
+ const cancel=vi.fn();vi.stubGlobal('requestAnimationFrame',request);vi.stubGlobal('cancelAnimationFrame',cancel);
+ const host=document.createElement('div');
+ const handle=mountScene(host,{part:null,progress:0.4,color:'blue',placeholder:true,onError:vi.fn()});
+ handle.update(0.4,'blue',true);handle.update(0.5,'blue',true);
+ expect(request).toHaveBeenCalledOnce();
+ frame(200);
+ const scene=mocks.render.mock.calls.at(-1)![0] as Scene;
+ expect(scene.getObjectByName('print-head')!.position.x).not.toBe(0);
+ handle.update(0.4,'blue',false);
+ expect(cancel).toHaveBeenCalled();
+ expect(scene.getObjectByName('print-head')!.position.x).toBe(0);
+ handle.update(0.5,'blue',true);handle.dispose();
+ expect(cancel).toHaveBeenCalledTimes(2);
+ vi.unstubAllGlobals();
+});
+
+
+test('hidden documents suspend head motion and late frames cannot render disposed scenes',()=>{
+ vi.stubGlobal('ResizeObserver',class {observe(){}disconnect(){}});
+ let frame!:FrameRequestCallback;
+ vi.stubGlobal('requestAnimationFrame',vi.fn((callback:FrameRequestCallback)=>{frame=callback;return 2;}));
+ const cancel=vi.fn();vi.stubGlobal('cancelAnimationFrame',cancel);
+ const hidden=vi.spyOn(document,'hidden','get').mockReturnValue(false);
+ const handle=mountScene(document.createElement('div'),{part:null,progress:0.5,color:'blue',placeholder:true,onError:vi.fn()});
+ handle.update(0.5,'blue',true);
+ hidden.mockReturnValue(true);document.dispatchEvent(new Event('visibilitychange'));frame(100);
+ expect(cancel).toHaveBeenCalledOnce();
+ hidden.mockReturnValue(false);document.dispatchEvent(new Event('visibilitychange'));
+ handle.update(1,'blue',true);handle.update(0.5,'blue',true);handle.dispose();
+ const renders=mocks.render.mock.calls.length;frame(200);
+ expect(mocks.render).toHaveBeenCalledTimes(renders);
+ hidden.mockRestore();vi.unstubAllGlobals();
+});

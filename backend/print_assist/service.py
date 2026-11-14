@@ -52,6 +52,22 @@ class FactoryService:
     def advance(self, command) -> dict:
         return self._transition(command, "advance", lambda state: advance(state, command.payload.seconds))
 
+    def plan_order(self,command):
+        def plan(state):
+            from copy import deepcopy
+            result=deepcopy(state)
+            payload=command.payload.order.model_dump(mode='json')
+            if not any(artifact['id']==payload['artifact_id'] for artifact in result['artifacts']):
+                raise ValueError('Unknown artifact')
+            order=dict(id=str(uuid4()),**payload,status='queued',successful_quantity=0,schedule_mode=command.payload.mode)
+            result['orders'].append(order)
+            record(result,'order_created','Order added from prepared model profile',order_id=order['id'])
+            result=schedule(result,command.payload.mode,preserve_mode=True)
+            if command.payload.mode=='automatic':
+                result['running']=True
+            return result
+        return self._transition(command,'plan-order',plan)
+
     def clock(self,command):
         def configure(state):
             from copy import deepcopy

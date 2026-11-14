@@ -4,8 +4,8 @@ Sources: [specification](../SPEC.md), [MVP implementation plan](superpowers/plan
 [production overview plan](superpowers/plans/2026-11-14-production-overview.md),
 and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers.md).
 
-**Last audit: 2026-11-14, including local `feat/clock-forecast-monitoring` changes based
-on `e6066df`.** Clock/forecast/monitoring additions below await integration into `main`.
+**Last audit: 2026-11-14, including local `feat/guided-printing-workflow` changes based
+on `5d452c6`.** Clock/forecast/monitoring additions below await integration into `main`.
 These are local story IDs,
 not remote issues. Status reflects inspected code and tests; passing coverage
 for current code does not mean unimplemented acceptance criteria are complete.
@@ -51,7 +51,9 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 | PA-301 | Partial | Reviewable future schedule proposals, explicit material reservations and validated apply. |
 | PA-302 | Implemented | Conservative capacity/material estimates, deadline risk and unavailable reasons. |
 | PA-303 | Implemented | Serial one-second refresh, connection errors, simulated temperature telemetry and controls/history. |
-| PA-304 | To Do | Unified incoming-order review and manual-entry workflow. |
+| PA-304 | To Do | Incoming-order review/acceptance; guided manual/profile intake now exists. |
+| PA-305 | Partial | Prepared-model asset ingestion, estimate provenance and optional real layer/toolpath data. |
+| PA-306 | To Do | Explicit cancel/discard with scrap and consumed-material accounting. |
 | PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
 | PA-501, PA-502, PA-503 | To Do | Fake agent gateway, controls, budgets and cancellation/zero-inference safeguards. |
 | PA-601 | To Do | Simulated business metrics and matched scenario comparisons. |
@@ -491,3 +493,53 @@ As a presenter, I want optional live reasoning after the framework is verified.
 Implement against fake transports first; require backend demo mode, explicit
 operator enablement and finite budgets. Preserve every guard. This story does
 not authorize live calls or turn application agents on during development.
+
+## Reference-driven usability follow-up (2026-11-14)
+
+Local branch `feat/guided-printing-workflow` adds selectable Overview printer
+cards and the same inspection/manual control panel as Printers; illustrative
+head motion runs only while the clock/job run. Prepared-profile JSON imports
+carry partner-supplied time/weight/compatibility metadata through approval.
+Quick printing chooses an approved model and quantity, inherits estimates, and
+atomically plans automatic or manual work. Manual batches prepare further pending
+jobs as capacity frees; each still requires a user start. Workflow links guide
+Modeling -> Orders -> Schedule -> Overview. PA-304's incoming-order review remains
+outstanding; this is guided manual intake, not marketplace import or review.
+
+| Reference expectation | Delivered / remaining |
+| --- | --- |
+| Select printer from the Overview floor | Delivered: clickable cards/headings, shared progress/material/temperature/time inspector and pending start/pause/resume/offline controls. |
+| Watch printing happen | Delivered: illustrative head motion plus authoritative progress reveal. Real layer/toolpath animation remains PA-305; no layer numbers are invented. |
+| Choose model and quantity without guessing time/weight | Delivered for prepared approved profiles. Partner supplies slicer estimates; unknown/unprepared models cannot be queued by inventing estimates. |
+| Avoid printer capability jargon | Delivered: profile compatibility is internal; preparation-only fields use a separate disclosure. |
+| Add actual part files without editing application code | Remaining PA-305: current JSON imports metadata; team still registers STL geometry in the allowlisted catalog. |
+| Stop/discard a print | Pause/hold and offline are delivered. Explicit cancel/discard with consumed-material/scrap accounting remains PA-306. |
+
+### PA-305 ? Prepared-model ingestion and slicer provenance
+
+**Status:** Partial on `feat/guided-printing-workflow`. **P1.**
+Partner owns geometry and slicer estimates. Application owns validated metadata,
+local catalog/file registration, provenance and readiness guidance.
+
+- Current: import profile JSON with name/reference, duration, filament weight,
+  material/color and optional registered preview; approved models inherit values.
+- Add safe local geometry registration/upload with existing STL limits, units,
+  orientation and preview checks, without hand-editing the catalog.
+- Version estimate provenance (slicer/printer settings, material, profile revision,
+  source model identity); flag estimates stale when relevant settings change.
+- Import optional actual layer/toolpath metadata and display layer counts only
+  when supplied; raw STL alone cannot reliably determine print time/filament use.
+- Explicit incomplete-profile/draft editing and guided repair; approval/printing
+  must require prepared estimates, never arbitrary manufactured defaults.
+- Keep an automatic slicer adapter separately scoped and offline-testable; it is
+  a follow-on under SPEC, not a claim that slicing is implemented.
+
+### PA-306 ? Explicit print cancellation and discarded material
+
+**Status:** To Do. **P1.** Depends on lifecycle/recovery accounting.
+- Distinguish reversible pause/hold from irreversible cancel/discard in the UI.
+- Explain remaining requested quantity and consumed material before cancellation.
+- Record scrapped attempts and material exactly once; replacement attempts cannot
+  double-count success or reuse consumed filament. Test retries/reset/concurrency.
+
+These follow-ups are local requirements, not remote issues or external tasks.

@@ -5,12 +5,14 @@ import {printerView} from './model';
 import {PrinterScene} from './PrinterScene';
 import {PrinterControls,type ControlHandler} from '../components/ProductionControls';
 
-export function PrinterFloor({state,detailed,onControl}:{state:Snapshot;detailed:boolean;onControl?:ControlHandler}) {
+export function PrinterFloor({state,detailed,onControl,onStart}:{state:Snapshot;detailed:boolean;onControl?:ControlHandler;onStart?:(id:string)=>Promise<void>}) {
   const [selection,setSelection]=useState('');
   const [example,setExample]=useState(false);
   const [exampleProgress,setExampleProgress]=useState(50);
   const selected=state.printers.find(printer=>printer.id===selection) ?? state.printers[0];
   if(!selected) return <p>No virtual printers available</p>;
+  const selectedView=printerView(state,selected.id);
+  const selectedTelemetry=state.telemetry?.find(item=>item.printer_id===selected.id);
   const exampleAsset=state.visual_assets?.find(asset=>asset.id==='example-tower');
   const visible=detailed?[selected]:state.printers;
   return <section className={detailed?'printer-floor detailed':'printer-floor'}>
@@ -23,17 +25,29 @@ export function PrinterFloor({state,detailed,onControl}:{state:Snapshot;detailed
       const view=printerView(state,printer.id);
       const asset=state.visual_assets?.find(asset=>asset.id===view.artifact?.visual_asset_id);
       const demo=detailed && example;
-      return <article key={printer.id} className="printer-card">
-        <div className="printer-card-heading"><h3>{printerLabel(printer.id)}</h3><span className={'printer-status '+printer.status}>{printer.status}</span></div>
-        <PrinterScene label={`3D view of ${printerLabel(printer.id)}`} asset={demo?exampleAsset:asset} progress={demo?exampleProgress/100:view.progress} color={printer.material.color} hasJob={demo||Boolean(view.job)}/>
+      return <article key={printer.id} onClick={()=>setSelection(printer.id)} className={'printer-card'+(selected.id===printer.id?' selected':'')}>
+        <div className="printer-card-heading"><h3>{detailed?printerLabel(printer.id):<button className="inspect-printer" aria-label={`Inspect ${printerLabel(printer.id)}`} aria-pressed={selected.id===printer.id} onClick={()=>setSelection(printer.id)}>{printerLabel(printer.id)}</button>}</h3><span className={'printer-status '+printer.status}>{printer.status}</span></div>
+        <PrinterScene label={`3D view of ${printerLabel(printer.id)}`} asset={demo?exampleAsset:asset} progress={demo?exampleProgress/100:view.progress} color={printer.material.color} hasJob={demo||Boolean(view.job)} printing={!demo&&state.running&&printer.status==='running'&&view.job?.status==='running'}/>
         <p>{printer.material.color} {printer.material.type} · {Math.round(printer.material.grams)} g</p>
         <p className="printer-job">{view.job ? <>{partLabel(String(view.job.id))} · {Math.round(view.progress*100)}%</> : <>No active job</>}</p>
         <p className="muted printer-part-name">{view.artifact?.name ?? 'Ready for an assignment'}</p>
         <progress aria-label={`Print progress for ${printerLabel(printer.id)}`} max="1" value={view.progress}/>
         <div className="printer-telemetry">{state.telemetry?.filter(item=>item.printer_id===printer.id).map(item=><span key={item.printer_id}>Nozzle {item.nozzle_c} C / Bed {item.bed_c} C (simulated)</span>)}</div>
-        {detailed && onControl && <PrinterControls id={printer.id} status={printer.status} onControl={onControl}/>}
+
       </article>;
     })}</div>
+    <section className="printer-inspector" aria-label="Selected printer details">
+      <h3>{printerLabel(selected.id)} details</h3>
+      <dl className="inspection-metrics"><div><dt>Status</dt><dd>{selected.status}</dd></div>
+      <div><dt>Nozzle / bed (simulated)</dt><dd>{selectedTelemetry?`${selectedTelemetry.nozzle_c} C / ${selectedTelemetry.bed_c} C`:'Unavailable'}</dd></div>
+      <div><dt>Filament remaining</dt><dd>{Math.round(selected.material.grams)} g / {selected.material.color} {selected.material.type}</dd></div>
+      <div><dt>Print progress</dt><dd>{Math.round(selectedView.progress*100)}%</dd></div>
+      <div><dt>Model</dt><dd>{selectedView.artifact?.name ?? 'No model assigned'}</dd></div>
+      <div><dt>Print time remaining</dt><dd>{selectedView.job?`${Math.ceil(Math.max(0,Number(selectedView.job.duration_seconds ?? 0)-Number(selectedView.job.elapsed_seconds ?? 0))/60)} min`:'No active print'}</dd></div></dl>
+      {selectedView.job?.status==='pending' && onStart && <button onClick={()=>void onStart(String(selectedView.job!.id))}>Start print on {printerLabel(selected.id)}</button>}
+      {onControl && <PrinterControls key={selected.id} id={selected.id} status={selected.status} onControl={onControl}/>}
+      <p className="muted">Pause stops this printer and holds the part for resuming. Run the simulation clock to see printing advance.</p>
+    </section>
     <p className="scene-caption">Progress reveal is simulated geometry, not a sliced toolpath or print certification. Drag to orbit; use the buttons for keyboard controls.</p>
   </section>;
 }

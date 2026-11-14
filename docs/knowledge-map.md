@@ -64,7 +64,7 @@ graph LR
 | [Market research](market-research.md) | Dated vendor comparison, attributed customer anecdotes, niche hypotheses, pricing implications, and research limits. No scope changes or customer validation claimed. | Business validation brief, specification | Review source links, distinguish old anecdotes from current vendor claims, and validate arithmetic/local links. |
 | [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for order intake, modeling, virtual production and interactive 3D views. | Plan, setup, implementation files | Validate file links and update alongside code. |
 | [Development setup](development.md) | Native setup/run/check commands, restart semantics, coverage boundaries and actual platform status. | README, code map | Full check command and local-link review. |
-| [Remaining phase backlog](backlog.md) | Sixteen local stories for Phases 2-6 plus a deferred live-adapter story; audited status, remaining criteria, ownership and spec/plan references. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
+| [Remaining phase backlog](backlog.md) | Eighteen local stories for Phases 2-6 plus a deferred live-adapter story; audited status, remaining criteria, ownership and spec/plan references. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
 | [Production overview design](superpowers/specs/2026-11-14-production-overview-design.md) | Approved virtual printers, automatic/manual scheduling, dashboard tabs and AI ownership boundary. | Implementation plan, backlog, specification | Review design against agreed scope and shared contracts. |
 | [Production overview implementation plan](superpowers/plans/2026-11-14-production-overview.md) | Test-first tasks and partial-completion audit for virtual printer state, scheduling, dashboard and verification. | Production overview design, code map | Check task coverage against design and update as implementation evolves. |
 | [Interactive printer design](superpowers/specs/2026-11-14-interactive-printer-design.md) | Approved 3D printer/bed views, STL part assets and persisted visual associations. | Production overview design, specification, code map | Review contracts, scope and proposed defaults before implementation. |
@@ -75,6 +75,8 @@ graph LR
 | [Clock and monitoring plan](superpowers/plans/2026-11-14-clock-monitoring.md) | Single-owner accelerated clock, conservative forecasts and serial live polling. | SPEC, backlog, code map | Root coverage and browser checks. |
 
 | [Dashboard stability plan](superpowers/plans/2026-11-14-dashboard-stability.md) | Stable 3D refresh, friendly labels and compact dashboard based on user visual reference. | Code map, SPEC, production overview | Coverage/browser and layout inspection. |
+
+| [Guided printing plan](superpowers/plans/2026-11-14-guided-printing.md) | Overview inspection, visible simulated printing, prepared-profile intake and guided manual/automatic printing. | SPEC, backlog, handoff, code map | Root coverage and guided browser workflow. |
 
 ## How to extend the map
 
