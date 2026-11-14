@@ -1,6 +1,7 @@
 """Allowlisted local preview assets; production file references are never URLs."""
 ASSETS = [{"id": "example-tower", "name": "Example calibration tower", "path": "/models/example-tower.stl",
-           "units": "mm", "rotation_degrees": [0, 0, 0]}]
+           "units": "mm", "rotation_degrees": [0, 0, 0]},
+          {"id":"nist-test-artifact","name":"NIST AM Test Artifact","path":"/demo-models/nist-test-artifact.stl","units":"mm","rotation_degrees":[0,0,0]}]
 
 
 def known_visual_asset(value):

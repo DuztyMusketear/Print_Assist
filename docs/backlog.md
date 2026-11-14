@@ -632,3 +632,14 @@ keep blocked copies held for another proposal; they do not silently start when
 capacity returns. Chosen playback speed is visible/carried into review apply.
 Current verification: 80 backend, 134 frontend and 11 browser tests, all offline,
 100% statement/branch coverage, schema/build passed. Operator signoff still pending.
+
+## Published modeling/support work integration
+
+Origin main 3b01bbd is integrated with the production UI: separate support
+assessments, combined model/support review and artifact storage, safe unused-task
+removal, bundled NIST preview and demo asset. Legacy unassessed Supports/Review
+records are made actionable on restart; approved history remains unchanged.
+The NIST demo uses compatible blue PLA and its registered mesh can render on beds.
+Prepared-profile intake, guided quantities, scheduling proposals, material
+reservations and the compact dashboard remain intact. This does not implement
+AI geometry/support generation, slicing or the Phase 5 agent runtime.

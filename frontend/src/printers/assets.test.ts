@@ -49,3 +49,10 @@ test('rejects nonfinite geometry, excessive ASCII triangles and invalid binary l
   expect(tall.fits).toBe(false);
   expect(normalizePart(new BoxGeometry(10,300,10),[0,0,0]).fits).toBe(false);
 });
+
+
+test('bundled NIST preview uses the same bounded printer-bed loader',async()=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(triangle));
+ const part=await loadPart({...asset,path:'/demo-models/nist-test-artifact.stl'},new AbortController().signal);
+ expect(part.fits).toBe(true);part.geometry.dispose();
+});

@@ -8,7 +8,7 @@ from .scheduling import schedule, start_job
 from .simulation import advance
 from .scenarios import initial_state
 from .store import Store
-from .modeling import create_task, move_task
+from .modeling import create_task, move_task, initialize_support_tasks
 from .controls import control_printer
 from .scenarios import scenario_state
 from .activity import record
@@ -23,6 +23,7 @@ class FactoryService:
             if "printer_schema_version" not in state:
                 state["printers"] = initial_state()["printers"]
                 state["printer_schema_version"] = 1
+            initialize_support_tasks(state)
             for job in state["jobs"]:
                 if job["status"] == "running":
                     job["status"] = "paused"

@@ -41,7 +41,7 @@ export function parsePart(data:ArrayBuffer,rotation:number[]):Part {
 }
 
 export async function loadPart(asset:VisualAsset,signal:AbortSignal):Promise<Part> {
-  if(!/^\/models\/[a-zA-Z0-9_/-]+\.stl$/.test(asset.path) || asset.path.includes('..')) throw new Error('Only local catalog models are allowed');
+  if(!(asset.path==='/demo-models/nist-test-artifact.stl'||/^\/models\/[a-zA-Z0-9_/-]+\.stl$/.test(asset.path)) || asset.path.includes('..')) throw new Error('Only local catalog models are allowed');
   const response=await fetch(asset.path,{signal,redirect:'error'});
   if(!response.ok || !response.body) throw new Error('Unable to load part model');
   const reader=response.body.getReader();

@@ -82,6 +82,8 @@ graph LR
 
 | [Schedule proposal/start guidance plan](superpowers/plans/2026-11-14-schedule-proposals.md) | PA-301 future proposals and material commitments, PA-307 idle/new-print guidance and observable playback. | SPEC, backlog, code map | Root offline coverage and proposal browser workflow. |
 
+| [Modeling/support integration plan](superpowers/plans/2026-11-14-modeling-support-integration.md) | Published support assessment, removal and NIST preview integration with existing profiles/printer workflows and legacy upgrade. | SPEC, code map, model handoff | Root coverage, upgrade integration tests and review. |
+
 ## How to extend the map
 
 When implementation begins, add each source/configuration/test file to the table.

@@ -16,8 +16,9 @@ test('prepared profile guides model approval, manual inspection and automatic qu
  await page.getByRole('button',{name:'Add to modeling',exact:true}).click();
  const task=page.locator('.work-card').filter({has:page.getByRole('heading',{name:'Guided tower',exact:true})});
  await task.getByRole('button',{name:'Prepare supports',exact:true}).click();
- await task.getByRole('button',{name:'Send to review',exact:true}).click();
- await task.getByRole('button',{name:'Approve',exact:true}).click();
+ await task.getByLabel('Support requirement').selectOption('not-required');
+ await task.getByRole('button',{name:'Send model and support assessment to review',exact:true}).click();
+ await task.getByRole('button',{name:'Approve model and supports',exact:true}).click();
  await task.getByRole('button',{name:'Next: choose quantity',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Model to print',exact:true})).toHaveValue(/^model-/);
  await page.getByLabel('Number of copies',{exact:true}).fill('4');
@@ -30,12 +31,13 @@ test('prepared profile guides model approval, manual inspection and automatic qu
  await expect(page.locator('.printer-inspector').getByText('running',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Run clock',exact:true}).click();
  await expect(page.getByRole('button',{name:'Pause clock',exact:true})).toBeVisible();
+ // Keep this control workflow deterministic while the live-clock tests cover ticks.
+ await page.getByRole('button',{name:'Pause clock',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Run clock',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Pause Printer 2',exact:true}).click();
  await expect(page.locator('.printer-inspector').getByText('paused',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Resume Printer 2',exact:true}).click();
  await expect(page.locator('.printer-inspector').getByText('running',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Pause clock',exact:true}).click();
- await expect(page.getByRole('button',{name:'Run clock',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'2. Choose model and quantity',exact:true}).click();
  await page.getByLabel('Number of copies',{exact:true}).fill('2');
  await page.getByRole('button',{name:'Start automatic printing',exact:true}).click();

@@ -7,11 +7,11 @@ test('real 3D beds render; camera controls and example STL work offline',async({
     return route.continue();
   });
   await page.goto('/');
-  await expect(page.locator('canvas')).toHaveCount(3);
+  await expect(page.locator('.printer-canvas canvas')).toHaveCount(3);
   const beforeBox=await page.locator('.printer-floor').boundingBox();
-  await page.evaluate(()=>{(window as unknown as {savedCanvas:Element|null}).savedCanvas=document.querySelector('canvas');});
+  await page.evaluate(()=>{(window as unknown as {savedCanvas:Element|null}).savedCanvas=document.querySelector('.printer-canvas canvas');});
   await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.getByRole('button',{name:'Refresh queue',exact:true}).click()]);
-  expect(await page.evaluate(()=>(window as unknown as {savedCanvas:Element}).savedCanvas===document.querySelector('canvas'))).toBe(true);
+  expect(await page.evaluate(()=>(window as unknown as {savedCanvas:Element}).savedCanvas===document.querySelector('.printer-canvas canvas'))).toBe(true);
   expect((await page.locator('.printer-floor').boundingBox())?.height).toBe(beforeBox?.height);
 
   await expect(page.locator('.printer-canvas canvas')).toHaveCount(3);
@@ -55,8 +55,9 @@ test('approved visual model flows through ordering, scheduling and real progress
   await page.getByRole('button',{name:'Add to modeling',exact:true}).click();
   const task=page.locator('.work-card').filter({has:page.getByRole('heading',{name:'Visual tower order',exact:true})});
   await task.getByRole('button',{name:'Prepare supports'}).click();
-  await task.getByRole('button',{name:'Send to review'}).click();
-  await task.getByRole('button',{name:'Approve',exact:true}).click();
+  await task.getByLabel('Support requirement').selectOption('not-required');
+  await task.getByRole('button',{name:'Send model and support assessment to review'}).click();
+  await task.getByRole('button',{name:'Approve model and supports',exact:true}).click();
   await page.getByRole('tab',{name:'Orders',exact:true}).click();
   await page.getByText('Custom order details',{exact:true}).click();
   await page.getByLabel('Print-ready product',{exact:true}).selectOption({label:'Visual tower order'});

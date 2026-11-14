@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 
 test('compact overview keeps desktop panels aligned and stacks without mobile overflow',async({page})=>{
  await page.setViewportSize({width:1440,height:1000});await page.goto('/');
- await expect(page.locator('canvas')).toHaveCount(3);
+ await expect(page.locator('.printer-canvas canvas')).toHaveCount(3);
  const floor=await page.locator('.overview-main>.printer-floor').boundingBox();
  const sidebar=await page.getByRole('complementary',{name:'Production controls'}).boundingBox();
  const bottom=await page.locator('.overview-bottom').boundingBox();

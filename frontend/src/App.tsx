@@ -6,7 +6,6 @@ import {useMonitoring} from './monitoring';
 import {useEffect,useRef,useState} from 'react';
 import {readState,addOrder,scheduleOrders,productionCommand,modelingCommand,RejectedCommand,type Snapshot,type OrderInput} from './api';
 import type {components} from './types';
-import type {WorkflowAction} from './dashboard/workflow';
 import {OrderForm} from './components/OrderForm';
 import {OrderQueue} from './components/OrderQueue';
 import {ModelingBoard} from './dashboard/ModelingBoard';
@@ -26,7 +25,7 @@ export default function App() {
   const pending=useRef<{signature:string;key:string}|undefined>(undefined);
   const pendingCommand=useRef<{signature:string;body:Parameters<typeof productionCommand>[1]}|undefined>(undefined);
   const pendingModel=useRef<{signature:string;body:Parameters<typeof modelingCommand>[1]}|undefined>(undefined);
-  async function modelChange(path:Parameters<typeof modelingCommand>[0],payload:components['schemas']['ModelTaskCreate']|{task_id:string;action:WorkflowAction}) {
+  async function modelChange(path:Parameters<typeof modelingCommand>[0],payload:components['schemas']['ModelTaskCreate']|components['schemas']['ModelAction']) {
     ++sequence.current;
     const signature=JSON.stringify([path,payload,state!.session_id]);
     if(pendingModel.current && pendingModel.current.signature!==signature) throw new Error('Retry the previous modeling change first.');
@@ -128,7 +127,7 @@ export default function App() {
     <div className="dashboard-toolbar"><nav role="tablist" aria-label="Dashboard sections">{(['Overview','Orders','Printers','Schedule','Modeling'] as const).map(name=><button key={name} role="tab" aria-selected={tab===name} onClick={()=>setTab(name)}>{name}</button>)}</nav>
     <button className="secondary" onClick={()=>void load()}>Refresh queue</button></div>
     {tab!=='Overview' && workflowGuide}
-    {state && <div hidden={tab!=='Modeling'}><ModelingBoard key={state.session_id} visualAssets={state.visual_assets ?? []} items={state.modeling_tasks ?? []} onCreate={payload=>modelChange('/api/modeling/tasks',payload)} onProduction={modelId=>{setSelectedModel(modelId);setTab('Orders');}} onMove={(id,action)=>modelChange('/api/modeling/actions',{task_id:id,action})} onRetry={async()=>{if(pendingModel.current){const [path,payload]=JSON.parse(pendingModel.current.signature);await modelChange(path,payload);}else await load();}}/></div>}
+    {state && <div hidden={tab!=='Modeling'}><ModelingBoard key={state.session_id} visualAssets={state.visual_assets ?? []} items={state.modeling_tasks ?? []} onCreate={payload=>modelChange('/api/modeling/tasks',payload)} onProduction={modelId=>{setSelectedModel(modelId);setTab('Orders');}} onMove={(id,action,assessment)=>modelChange('/api/modeling/actions',{task_id:id,action,...(assessment?{support_assessment:assessment}:{})})} onRemove={id=>modelChange('/api/modeling/actions',{task_id:id,action:'remove'})} isArtifactInUse={id=>state.orders.some(order=>order.artifact_id===`model-${id}`)} onRetry={async()=>{if(pendingModel.current){const [path,payload]=JSON.parse(pendingModel.current.signature);await modelChange(path,payload);}else await load();}}/></div>}
     {state ? <>
 
       {tab==='Overview' && <PrintingGuidance state={state} onNewPrint={()=>setTab('Orders')} onSchedule={()=>setTab('Schedule')}/>}
