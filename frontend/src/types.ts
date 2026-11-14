@@ -4,6 +4,108 @@
  */
 
 export interface paths {
+    "/api/incidents/{incident_id}/proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recovery Proposal */
+        get: operations["recovery_proposal_api_incidents__incident_id__proposal_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/incidents/recover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recover */
+        post: operations["recover_api_incidents_recover_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/incidents/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Recovery */
+        post: operations["reject_recovery_api_incidents_reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/incidents/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clear Fault */
+        post: operations["clear_fault_api_incidents_clear_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/incidents/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recovery Policy */
+        post: operations["recovery_policy_api_incidents_policy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/incidents/inject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inject Fault */
+        post: operations["inject_fault_api_incidents_inject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orders/delete": {
         parameters: {
             query?: never;
@@ -494,6 +596,34 @@ export interface components {
             visual_asset_id?: string | null;
             support_task?: components["schemas"]["SupportTask"] | null;
         };
+        /** ClearFaultCommand */
+        ClearFaultCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ClearFaultPayload"];
+        };
+        /** ClearFaultPayload */
+        ClearFaultPayload: {
+            /** Incident Id */
+            incident_id: string;
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+            /** Refill Grams */
+            refill_grams?: number | null;
+        };
         /** ClockCommand */
         ClockCommand: {
             /**
@@ -596,6 +726,16 @@ export interface components {
         /** FactorySnapshot */
         FactorySnapshot: {
             /**
+             * Recovery Policy
+             * @default review
+             * @enum {string}
+             */
+            recovery_policy: "review" | "automatic";
+            /** Incidents */
+            incidents?: {
+                [key: string]: unknown;
+            }[];
+            /**
              * Session Id
              * Format: uuid
              */
@@ -640,6 +780,37 @@ export interface components {
             /** Visual Assets */
             visual_assets?: components["schemas"]["VisualAsset"][];
         };
+        /** FaultCommand */
+        FaultCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["FaultPayload"];
+        };
+        /** FaultPayload */
+        FaultPayload: {
+            /** Printer Id */
+            printer_id: string;
+            /**
+             * Fault Type
+             * @enum {string}
+             */
+            fault_type: "thermal" | "filament_runout" | "network_disconnect" | "nozzle_clog" | "insufficient_material";
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+        };
         /** Forecast */
         Forecast: {
             /**
@@ -661,6 +832,16 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** IncidentDecisionPayload */
+        IncidentDecisionPayload: {
+            /** Incident Id */
+            incident_id: string;
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
         };
         /** LibraryUpload */
         LibraryUpload: {
@@ -819,6 +1000,8 @@ export interface components {
              * Format: date-time
              */
             ship_by: string;
+            /** Recovery Holds */
+            recovery_holds?: string[];
             /** Requires Schedule Review */
             requires_schedule_review?: boolean;
             /**
@@ -908,6 +1091,10 @@ export interface components {
         };
         /** Printer */
         Printer: {
+            /** Fault */
+            fault?: {
+                [key: string]: unknown;
+            } | null;
             /** Id */
             id: string;
             /** Status */
@@ -950,6 +1137,74 @@ export interface components {
             color: string;
             /** Grams */
             grams: number;
+        };
+        /** RecoverCommand */
+        RecoverCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["RecoverPayload"];
+        };
+        /** RecoverPayload */
+        RecoverPayload: {
+            /** Incident Id */
+            incident_id: string;
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+            /** Proposal Id */
+            proposal_id: string;
+        };
+        /** RecoveryPolicyCommand */
+        RecoveryPolicyCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["RecoveryPolicyPayload"];
+        };
+        /** RecoveryPolicyPayload */
+        RecoveryPolicyPayload: {
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "review" | "automatic";
+        };
+        /** RejectRecoveryCommand */
+        RejectRecoveryCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["IncidentDecisionPayload"];
         };
         /** ResetCommand */
         ResetCommand: {
@@ -1289,6 +1544,202 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    recovery_proposal_api_incidents__incident_id__proposal_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recover_api_incidents_recover_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecoverCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_recovery_api_incidents_reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRecoveryCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_fault_api_incidents_clear_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClearFaultCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recovery_policy_api_incidents_policy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecoveryPolicyCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inject_fault_api_incidents_inject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FaultCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_order_api_orders_delete_post: {
         parameters: {
             query?: never;

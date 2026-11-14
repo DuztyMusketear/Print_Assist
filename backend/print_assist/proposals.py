@@ -20,7 +20,7 @@ def propose(state,mode):
    capacity[job['printer_id']]+=job['duration_seconds']
  assignments=[];blocked=[]
  for order in sorted(state['orders'],key=lambda o:(-o['priority'],o['production_due'],o['id'])):
-  if order['status']=='cancelled':continue
+  if order.get('recovery_holds') or order['status']=='cancelled':continue
   artifact=next(a for a in state['artifacts'] if a['id']==order['artifact_id'])
   existing=sum(j['order_id']==order['id'] and j['status'] in ACTIVE for j in state['jobs'])
   remaining=order['quantity']-order['successful_quantity']-existing

@@ -30,6 +30,7 @@ class FactoryService:
                     next(printer for printer in state["printers"] if printer["id"] == job["printer_id"])["status"] = "paused"
             state["session_id"] = str(uuid4())
             state["running"] = False
+            state['recovery_policy']='review'
             state["controls"] = {"agents_enabled": False, "automatic_triggers": False}
             db.execute("DELETE FROM commands")
             self.store.save(db, state)
@@ -41,6 +42,30 @@ class FactoryService:
     def proposal(self,mode):
         from .proposals import propose
         return propose(self.snapshot(),mode)
+
+    def inject_fault(self,command):
+        from .incidents import inject_fault
+        return self._transition(command,'inject-fault',lambda state:inject_fault(state,command.payload.model_dump(mode='json')))
+
+    def recovery_proposal(self,incident_id):
+        from .recovery import propose_recovery
+        return propose_recovery(self.snapshot(),incident_id)
+
+    def recover(self,command):
+        from .recovery import apply_recovery
+        return self._transition(command,'recover',lambda state:apply_recovery(state,command.payload.model_dump(mode='json')))
+
+    def reject_recovery(self,command):
+        from .recovery import reject_recovery
+        return self._transition(command,'reject-recovery',lambda state:reject_recovery(state,command.payload.model_dump(mode='json')))
+
+    def clear_fault(self,command):
+        from .recovery import clear_fault
+        return self._transition(command,'clear-fault',lambda state:clear_fault(state,command.payload.model_dump(mode='json')))
+
+    def recovery_policy(self,command):
+        from .recovery import set_recovery_policy
+        return self._transition(command,'recovery-policy',lambda state:set_recovery_policy(state,command.payload.model_dump(mode='json')))
 
     def apply_schedule(self,command):
         from .proposals import apply_proposal

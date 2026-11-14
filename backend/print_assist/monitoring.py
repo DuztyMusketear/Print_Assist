@@ -12,7 +12,7 @@ def project(state):
     stock={p['id']:p['material']['grams'] for p in state['printers']}
     ends={o['id']:[] for o in state['orders']}
     held=set()
-    for job in state['jobs']:
+    for job in sorted(state['jobs'],key=lambda j:(j['status']!='running',j.get('estimated_start',''),j['id'])):
         if job['status'] not in {'running','pending','paused','planned'}: continue
         order=next(o for o in state['orders'] if o['id']==job['order_id'])
         artifact=next(a for a in state['artifacts'] if a['id']==order['artifact_id'])
@@ -35,6 +35,7 @@ def project(state):
                 ends[order['id']]=[(max(completed)-now).total_seconds()]
             else: reason='Completion time was not recorded'
         if order.get('requires_schedule_review'): reason='Awaiting reviewed schedule application'
+        if order.get('recovery_holds'): reason='Incident recovery review required'
         count=order['quantity']-order['successful_quantity']-len(ends[order['id']])
         if order.get('schedule_mode')=='manual' and count>0: reason='Manual work requires an explicit start'
         if not reason:

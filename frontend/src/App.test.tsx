@@ -7,6 +7,15 @@ vi.mock('./components/useOrderEstimate',()=>({useOrderEstimate:()=>({estimate:un
 vi.mock('./printers/scene',()=>({mountScene:()=>({command:()=>{},update:()=>{},dispose:()=>{}})}));
 import {state,orderedState} from './test-fixtures';
 
+test('incident policy commands use shared guarded transport from overview and printer inspection',async()=>{
+ const transport=vi.spyOn(globalThis,'fetch').mockImplementation(async()=>new Response(JSON.stringify(state)));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.selectOptions(screen.getByLabelText('Simulation recovery policy'),'automatic');
+ expect(transport.mock.calls.at(-1)?.[0]).toBe('/api/incidents/policy');
+ await user.click(screen.getByRole('tab',{name:'Printers'}));await user.selectOptions(screen.getByLabelText('Simulation recovery policy'),'automatic');
+ expect(JSON.parse(String(transport.mock.calls.at(-1)?.[1]?.body))).toMatchObject({session_id:state.session_id,expected_revision:0,payload:{mode:'automatic'}});
+});
+
 test('major tabs follow model to order to schedule and land on overview',async()=>{
  vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(state)));
  render(<App/>);await screen.findByText(/No orders yet/);

@@ -60,22 +60,22 @@ under `backend/print_assist/`, and `docs/code-map.md`.
 commands and additive incident/recovery-policy snapshot defaults. Route commands
 through `_transition`; persist using Store's existing snapshot transaction.
 
-- [ ] Write failing tests for each of five faults on varied active printer IDs;
+- [x] Write failing tests for each of five faults on varied active printer IDs;
   assert immediate isolation, unchanged healthy jobs, unchanged successful quantity,
   interrupted failure/waste and unstarted queue holds. Assert no consumed-stock refund.
-- [ ] Add repeated source-event/idempotency tests, duplicate open fault rejection,
+- [x] Add repeated source-event/idempotency tests, duplicate open fault rejection,
   invalid printer/type/clearance, session/revision conflicts, restart history and
   legacy snapshot upgrade tests. Stock correction and printed waste remain distinct.
-- [ ] Add hold-bypass regressions: clock ticks, ordinary automatic/manual scheduling,
+- [x] Add hold-bypass regressions: clock ticks, ordinary automatic/manual scheduling,
   normal proposal application, manual start and printer resume/online must not
   recreate or start incident-owned held parts. Healthy unheld existing work continues.
-- [ ] Run the targeted unit/integration tests and verify intended failures.
-- [ ] Implement safe transitions, persistent evidence/diagnosis and incident actions.
+- [x] Run the targeted unit/integration tests and verify intended failures.
+- [x] Implement safe transitions, persistent evidence/diagnosis and incident actions.
   Capture pre-isolation state once; keep faulted equipment unavailable to normal
   pause/resume/online/start commands until valid explicit simulated clearance.
   Record per-part owning incident IDs; generic schedule review cannot clear these
   holds, and approved recovery authorization is scoped to its enumerated parts.
-- [ ] Run affected tests and root schema generation/check as contracts change;
+- [x] Run affected tests and root schema generation/check as contracts change;
   record results and commit a focused local change.
 
 ## Task 2: Forecast impacts and detect boundary faults
@@ -92,18 +92,18 @@ after: dict) -> dict` produces per-part and per-order deltas and assignment chan
 `refresh_incidents(state: dict) -> dict` records recovery outcomes without rewriting
 immutable before/applied comparisons.
 
-- [ ] Write failing tests for interrupted and queued part timelines, completed parts,
+- [x] Write failing tests for interrupted and queued part timelines, completed parts,
   split customer orders, indirect queue delays, unchanged healthy active attempts,
   positive/negative/unknown changes, late/unavailable completion and explicit UTC.
-- [ ] Write a failing boundary test: one printer exhausts its remaining stock halfway
+- [x] Write a failing boundary test: one printer exhausts its remaining stock halfway
   through an advance, another completes normally, stock never becomes negative,
   exactly one incident is created and no failed item counts as successful output.
-- [ ] Implement projections using existing saved estimates/current reservations;
+- [x] Implement projections using existing saved estimates/current reservations;
   never derive whole-order completion from only the currently visible partial jobs.
-- [ ] Split advancement at completion/material exhaustion boundaries; send generated
+- [x] Split advancement at completion/material exhaustion boundaries; send generated
   faults through deterministic isolation, then continue healthy work. Preserve
   original thermal/connection evidence alongside isolated current telemetry.
-- [ ] Verify targeted tests, remaining material ledger consistency and root coverage
+- [x] Verify targeted tests, remaining material ledger consistency and root coverage
   before the focused local commit.
 
 ## Task 3: Validate and atomically apply recovery
@@ -121,29 +121,29 @@ immutable before/applied comparisons.
 `set_recovery_policy(state: dict, payload: dict) -> dict` controls simulation-only
 automation. Add corresponding typed proposal, command and response models.
 
-- [ ] Write failing tests for moved unstarted queues, full-duration replacements,
+- [x] Write failing tests for moved unstarted queues, full-duration replacements,
   retry lineage across another fault, split orders and successful-count invariants.
   Healthy running/paused work is immutable; movable healthy queues may change.
-- [ ] Fault two printers on the same order before applying either proposal. Each
+- [x] Fault two printers on the same order before applying either proposal. Each
   proposal recovers only its incident-owned parts; apply/reject/clear of one cannot
   release the other hold or omit waste/history. Shared-order completion stays unknown
   until all required parts are resolved, and a new fault invalidates old previews.
-- [ ] Test priority/deadline ordering, renamed printers, capability/type/color mismatch,
+- [x] Test priority/deadline ordering, renamed printers, capability/type/color mismatch,
   reserved stock, unavailable printers, no-feasible escalation, partial and late
   review, and inclusion of indirectly affected orders in comparisons.
-- [ ] Test stale fingerprint/session/revision, reset with reused IDs, idempotent
+- [x] Test stale fingerprint/session/revision, reset with reused IDs, idempotent
   retries, simultaneous conflicting apply and rollback of all reservations/jobs/report
   changes if validation fails. Preview must not mutate state.
-- [ ] Test review-default and automatic-opt-in behavior separately from agent controls;
+- [x] Test review-default and automatic-opt-in behavior separately from agent controls;
   only complete compatible on-time approved automatic work can apply without review.
   Manual work/held quantities remain gated; unsafe printer clearance is never automatic.
-- [ ] Implement a deterministic planner adapter that excludes unsafe equipment,
+- [x] Implement a deterministic planner adapter that excludes unsafe equipment,
   preserves approved quantity bounds/active jobs, retains unstarted part identity,
   creates linked replacement attempts and produces complete schedule comparisons.
-- [ ] Apply all assignments, reservations, order holds, incident actions and schedule
+- [x] Apply all assignments, reservations, order holds, incident actions and schedule
   changes atomically. Preserve per-order manual/automatic mode and planned queue
   sequence. Dispatch automatic work when healthy compatible printers become free.
-- [ ] Verify tests, schema/coverage and transactional restart behavior, then commit.
+- [x] Verify tests, schema/coverage and transactional restart behavior, then commit.
 
 ## Task 4: Dashboard incidents, impact and recovery controls
 
@@ -159,21 +159,21 @@ command callback; it presents selected incident/report and recovery proposal/act
 Injection uses the selected printer ID and source event ID; clearance/recovery use
 incident IDs. No controls use hardcoded printer IDs or scenario outcomes.
 
-- [ ] Write failing component tests for injection on selected active equipment,
+- [x] Write failing component tests for injection on selected active equipment,
   visible safety isolation, incident history, deterministic summary source, direct
   and indirect impacts, original/revised assignments/ETAs, deltas, waste and risks.
-- [ ] Test unknown/partial completion, blocked mitigations, rejection, automatic-policy
+- [x] Test unknown/partial completion, blocked mitigations, rejection, automatic-policy
   restrictions, repair/refill validation and recovered-work progress independently
   from equipment clearance. Verify key order-color/status labels remain visible.
-- [ ] Test stale confirmation after ticking/reset, loading/errors, focus traversal,
+- [x] Test stale confirmation after ticking/reset, loading/errors, focus traversal,
   keyboard access and source revision forwarding. Review while the clock is paused
   should be straightforward; global pause must be explicit, not fault containment.
-- [ ] Implement compact Overview summaries with a selected incident detail view;
+- [x] Implement compact Overview summaries with a selected incident detail view;
   show before/after tables, outstanding actions and persistent history. Add clear
   simulated injection/repair controls to printer details and updated fault visuals.
-- [ ] Show a concise deterministic operational/business summary in panel and activity;
+- [x] Show a concise deterministic operational/business summary in panel and activity;
   label its source without pretending an LLM or orchestrator was invoked.
-- [ ] Run relevant Vitest tests/coverage and build, inspect desktop/mobile density,
+- [x] Run relevant Vitest tests/coverage and build, inspect desktop/mobile density,
   update maps/docs and commit locally.
 
 ## Task 5: Repeatable fault-to-completion demonstration
@@ -183,29 +183,37 @@ incident IDs. No controls use hardcoded printer IDs or scenario outcomes.
 **Modify:** `docs/backlog.md`, `docs/development.md`, `SPEC.md`,
 `docs/code-map.md`, `docs/knowledge-map.md` and evidence for PA-401/402/403.
 
-- [ ] Add a browser workflow that starts real simulated jobs, advances enough to
+- [x] Add a browser workflow that starts real simulated jobs, advances enough to
   consume stock, injects a fault, verifies immediate local isolation and healthy
   progress, reviews direct/indirect impacts, applies recovery and completes exactly
   the requested quantities. Verify failure history/waste and no duplicate output.
-- [ ] Add automatic-policy, blocked/escalation, rejected/stale review and duplicate
+- [x] Add automatic-policy, blocked/escalation, rejected/stale review and duplicate
   retry/reset cases. Repair/repeat the scenario with different printer IDs; ensure
   agent controls stay off and any non-loopback traffic fails the test.
-- [ ] Check narrow/mobile status warnings and impact tables without page overflow;
+- [x] Check narrow/mobile status warnings and impact tables without page overflow;
   reset must remove holds/history/policy and allow the workflow to repeat.
-- [ ] Run `.venv\Scripts\python.exe scripts/check.py coverage` from root. Require
+- [x] Run `.venv\Scripts\python.exe scripts/check.py coverage` from root. Require
   passing unit/integration/browser/schema/build checks and 100% application coverage.
-- [ ] Request independent read-only review, address concrete findings with red/green
+- [x] Request independent read-only review, address concrete findings with red/green
   tests, record exact results/limitations and preview the completed demonstration.
-- [ ] Commit completed work locally; merge/push require a new explicit instruction.
+- [x] Commit completed work locally; merge/push require a new explicit instruction.
 
 ## Execution status
 
-Planning only. All implementation checkboxes remain open. Fault containment,
-recovery policy, schedule-impact reporting and incident UI are not yet implemented.
-The previous dashboard checkpoint is committed locally and tested; this plan does
-not alter application behavior or claim completion of Phase 4.
+Offline fault containment, recovery policy, schedule impact reporting and incident UI
+are implemented. The final root verification results are recorded in development.md.
+Live AI orchestration and physical equipment adapters remain outside this phase.
 
 Independent read-only builder review found two gaps, now addressed: all ordinary
 dispatch paths must enforce incident holds, and simultaneous faults on the same
 order need per-part incident ownership. Regression steps and affected source files
 are explicit above. Preview versions persist with decisions, not read-only fetches.
+
+
+Implementation rulings: use one cohesive local feature commit after integrated
+verification rather than committing temporarily incompatible schema/UI steps. Impact
+regressions live with test_recovery.py instead of an additional test_schedule_impact.py;
+both application modules retain full branch coverage. Independent review fixed idle
+incident resolution, explicit unassigned-part rows and persistent decision/evidence
+access. Actual preview inspection removed long internal part IDs, collapsed optional
+lineage detail and distinguished unassigned work from blocked incident parts.

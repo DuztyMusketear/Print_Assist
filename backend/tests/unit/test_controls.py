@@ -81,7 +81,9 @@ def test_invalid_scenarios_and_material_shortage_are_atomic():
     with pytest.raises(ValueError,match='Unknown scenario'):scenario_state('missing')
     state=working();state['printers'][0]['material']['grams']=0
     before=deepcopy(state)
-    with pytest.raises(ValueError,match='Insufficient filament'):advance(state,3600)
+    result=advance(state,3600)
+    assert result['printers'][0]['status']=='faulted'
+    assert result['incidents'][0]['fault_type']=='filament_runout'
     assert state==before
 
 

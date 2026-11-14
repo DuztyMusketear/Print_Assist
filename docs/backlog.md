@@ -55,7 +55,7 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 | PA-305 | Partial | Bounded STL upload/library and reusable estimates implemented; versioned slicer provenance and actual layer/toolpath data remain. |
 | PA-306 | Partial | Confirmed unstarted queued-order deletion/release implemented; active cancel/discard and scrap accounting remain. |
 | PA-307 | Implemented; operator verification pending | Idle/new-print guidance and visible start/pause/resume pass browser tests; verify with user. |
-| PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
+| PA-401, PA-402, PA-403 | Implemented offline; operator review pending | Persistent isolation, owned-part recovery, schedule impact and resettable browser demonstrations. |
 | PA-501, PA-502, PA-503 | To Do | Fake agent gateway, controls, budgets and cancellation/zero-inference safeguards. |
 | PA-601 | To Do | Simulated business metrics and matched scenario comparisons. |
 | PA-602 | Partial | Production serving, portable packaging and broader platform verification. |
@@ -67,8 +67,8 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 1. Operator-check the new saved-model/upload -> quantity/deadline -> timeline ->
    confirmation journey (PA-303/304/307), including example-feed matching. Maintain
    the delivered clock, forecasting, proposals and material commitments.
-2. Implement deterministic faults and reviewed recovery (PA-401/402/403), including
-   waste/replacement quantity accounting and a browser failure-to-completion demo.
+2. Operator-review delivered deterministic faults and recovery (PA-401/402/403),
+   including waste, indirect schedule impacts and the failure-to-completion demo.
 3. Complete the guarded fake orchestration framework (PA-501/502/503) against agreed
    recovery/tool contracts; live inference remains a separate gated follow-on.
 4. Add simulated outcome metrics, repeatable packaging and rehearsal (PA-601/602/603).
@@ -281,19 +281,18 @@ implementation instead of silently treating it as an existing requirement.
 Branch: `feat/fault-recovery`. Epic outcome: a disruption is contained and a
 reviewed recovery can restore production without corrupting fulfillment.
 
-The user's expanded fault-management outline is captured in the proposed
+The user's expanded fault-management outline is captured in the implemented
 [fault/recovery design](superpowers/specs/2026-11-14-fault-recovery-design.md) and
 [implementation plan](superpowers/plans/2026-11-14-fault-recovery.md). It adds durable
 incidents, before/after part and order comparisons (including indirect delays),
 failed-print waste, bounded opt-in automatic simulation recovery, operator escalation
-and an Incidents & Schedule Impact panel. These are planned, not implemented; the
-existing PA-401/402/403 status below remains unchanged.
+and an Incidents & Schedule Impact panel. The offline implementation covers these requirements; live agent orchestration remains Phase 5.
 
 ### PA-401 — Inject and safely isolate faults
 
-**Status:** To Do (audit 2026-11-14).
+**Status:** Implemented offline; operator review pending (2026-11-14).
 
-No fault injection or deterministic isolation workflow exists.
+All five faults isolate equipment deterministically, persist evidence/waste and hold affected parts.
 
 **Evidence / references:** SPEC 6-7, 10; MVP plan Task 4.
 
@@ -310,9 +309,9 @@ Acceptance criteria:
 
 ### PA-402 — Review and apply a validated recovery
 
-**Status:** To Do (audit 2026-11-14).
+**Status:** Implemented offline; operator review pending (2026-11-14).
 
-No recovery proposals, approval/rejection or replacement-attempt workflow exists.
+Typed proposals, guarded apply/reject, retry lineage, partial followups and independent bounded automatic recovery are implemented.
 
 **Evidence / references:** SPEC 6-7, 10; MVP plan Task 4.
 
@@ -329,9 +328,9 @@ Acceptance criteria:
 
 ### PA-403 — Demonstrate failure-to-completion in the browser
 
-**Status:** To Do (audit 2026-11-14).
+**Status:** Implemented offline; operator review pending (2026-11-14).
 
-Existing browser tests cover intake/modeling/3D production progress, not a fault-to-recovery workflow.
+Browser workflows cover fault isolation, impact review, exact completion, rejection/staleness, automatic policy and reset/repeat.
 
 **Evidence / references:** SPEC 6, 10, 12; MVP plan Task 4.
 
@@ -571,7 +570,7 @@ current sidebar text explicitly marks orchestration as planned.
 | 1: Foundation | Implemented | Maintain persisted intake, validation and offline checks. |
 | 2: Virtual production | Core engine implemented; user start experience needs verification | Three printers, assignment, material/quantity accounting, clock and reset exist. Close PA-307 before claiming the user can reliably operate the floor. |
 | 3: Scheduling/dashboard | Partial | Compact 3D dashboard, forecasting, profiles and guided printing exist. PA-301 proposals/reservations, PA-304 incoming review, PA-305 asset/provenance work, PA-306 cancel/scrap and PA-307 usability remain. |
-| 4: Faults/recovery | To Do | Fault injection, deterministic isolation, reviewed recovery and complete recovery demonstration. |
+| 4: Faults/recovery | Implemented offline | Five fault types, reviewed/bounded automatic recovery, persistent part/order impacts and resettable demo; operator review pending. |
 | 5: Agent framework | To Do | Offline fake gateway, explicit controls, budgets, cancellation and tool/run activity. Live provider remains separately gated PA-701. |
 | 6: Metrics/packaging/demo | Partial preparation | Business metrics/comparisons, portable serving/package and full demo/rehearsal evidence remain. |
 

@@ -19,7 +19,8 @@ def blocked_reason(printers,artifact):
 
 def schedule(state: dict, mode: str = "automatic", preserve_mode: bool = False) -> dict:
     result = deepcopy(state)
-    for job_id in [j['id'] for j in result['jobs'] if j['status']=='planned']:
+    planned=sorted((j for j in result['jobs'] if j['status']=='planned'),key=lambda j:(j.get('estimated_start',''),j['id']))
+    for job_id in [j['id'] for j in planned]:
         job=next(j for j in result['jobs'] if j['id']==job_id)
         printer=next(p for p in result['printers'] if p['id']==job['printer_id'])
         if printer['status']=='idle':
@@ -27,7 +28,7 @@ def schedule(state: dict, mode: str = "automatic", preserve_mode: bool = False) 
             if job['schedule_mode']=='automatic': result=start_job(result,job['id'])
     orders = sorted(result["orders"], key=lambda order: (-order["priority"], order["production_due"], order["id"]))
     for order in orders:
-        if order.get('requires_schedule_review') or order['status']=='cancelled':
+        if order.get('recovery_holds') or order.get('requires_schedule_review') or order['status']=='cancelled':
             continue
         if not preserve_mode or not order.get("schedule_mode"):
             order["schedule_mode"] = mode

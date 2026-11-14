@@ -315,6 +315,7 @@ class ModelActionCommand(ScheduleCommand):
 
 
 class Order(OrderCreate):
+    recovery_holds: list[str] = Field(default_factory=list)
     requires_schedule_review: bool = Field(default_factory=bool)
     id: UUID
     status: str
@@ -334,6 +335,7 @@ class PrinterMaterial(BaseModel):
 
 
 class Printer(BaseModel):
+    fault: dict | None = None
     id: str
     status: str
     capabilities: list[str]
@@ -366,6 +368,8 @@ class Telemetry(BaseModel):
 
 
 class FactorySnapshot(BaseModel):
+    recovery_policy: Literal['review','automatic'] = 'review'
+    incidents: list[dict] = Field(default_factory=list)
     session_id: UUID
     revision: int
     simulation_time: AwareDatetime
@@ -387,3 +391,49 @@ class FactorySnapshot(BaseModel):
 
 def validate_order(data: dict) -> OrderCreate:
     return OrderCreate.model_validate(data)
+
+
+class FaultPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    printer_id: str
+    fault_type: Literal['thermal','filament_runout','network_disconnect','nozzle_clog','insufficient_material']
+    event_id: UUID
+
+
+class FaultCommand(ScheduleCommand):
+    payload: FaultPayload
+
+
+class IncidentDecisionPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    incident_id: str
+    confirmed: bool = False
+
+
+class RecoverPayload(IncidentDecisionPayload):
+    proposal_id: str
+
+
+class ClearFaultPayload(IncidentDecisionPayload):
+    refill_grams: Annotated[float | None, Field(gt=0, allow_inf_nan=False)] = None
+
+
+class RecoveryPolicyPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    mode: Literal['review','automatic']
+
+
+class RecoverCommand(ScheduleCommand):
+    payload: RecoverPayload
+
+
+class RejectRecoveryCommand(ScheduleCommand):
+    payload: IncidentDecisionPayload
+
+
+class ClearFaultCommand(ScheduleCommand):
+    payload: ClearFaultPayload
+
+
+class RecoveryPolicyCommand(ScheduleCommand):
+    payload: RecoveryPolicyPayload

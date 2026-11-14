@@ -1,7 +1,7 @@
 # Fault management and dynamic rescheduling design
 
-Status: proposed implementation design from the user's fault-management outline.
-No fault/recovery runtime behavior is implemented by this document.
+Status: implemented offline on feat/fault-recovery following the user's instruction
+to implement this plan. Verification and preview evidence are in docs/development.md.
 
 ## Goal and boundaries
 
@@ -43,7 +43,7 @@ A separate event bus or optimization service would add state coordination withou
 helping a three-printer offline demonstration. An LLM-directed dispatcher would make
 safety and repeatability dependent on inference; it is not the recovery authority.
 
-These are proposed builder choices, not claims of user approval:
+Implementation choices retained from the reviewed plan:
 
 - Require operator review by default, matching the existing spec.
 - Offer a separate opt-in simulation recovery policy for complete, compatible,

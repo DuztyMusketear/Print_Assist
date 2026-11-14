@@ -1,3 +1,4 @@
+import {IncidentPanel} from './components/IncidentPanel';
 import {PrintingGuidance} from './components/PrintingGuidance';
 import {ScheduleProposal} from './components/ScheduleProposal';
 import {ModelLibrary} from './components/ModelLibrary';
@@ -151,13 +152,13 @@ export default function App() {
       </div>}
       {tab==='Overview' && <div className="overview-workspace"><div className="overview-main">
         <PrinterFloor onNewPrint={()=>setTab('Orders')} selectedId={selectedPrinter} onSelect={setSelectedPrinter} state={state} detailed={false} onStart={job_id=>command('/api/start',{job_id})} onControl={(printer_id,action)=>command('/api/printers/control',{printer_id,action})}/>
-        <PrintTimeline state={state}/><div className="overview-bottom"><OrderQueue compact state={state}/><ActivityFeed events={state.events}/></div>
+        <PrintTimeline state={state}/><IncidentPanel key={state.session_id} selectedPrinter={selectedPrinter} state={state} onCommand={(path,payload,revision)=>command(path,payload,false,true,revision)}/><div className="overview-bottom"><OrderQueue compact state={state}/><ActivityFeed events={state.events}/></div>
       </div><aside className="overview-sidebar" aria-label="Production controls">
         <ScenarioReset onReset={scenario=>command('/api/scenarios/reset',{scenario})}/>
         <section className="workflow-panel"><h2>Manual workflow</h2>{workflowGuide}</section>
-        <section className="orchestration-placeholder"><h2>Orchestration</h2><p>Chat, fault recovery and agent activity controls are planned. Manual production works with agents off.</p></section>
+        <section className="orchestration-placeholder"><h2>Orchestration</h2><p>Live agent orchestration is planned. Simulated fault recovery works with agents off.</p></section>
       </aside></div>}
-      {tab==='Printers' && <><PrinterFloor onNewPrint={()=>setTab('Orders')} selectedId={selectedPrinter} onSelect={setSelectedPrinter} state={state} detailed onStart={job_id=>command('/api/start',{job_id})} onControl={(printer_id,action)=>command('/api/printers/control',{printer_id,action})}/><ScenarioReset onReset={scenario=>command('/api/scenarios/reset',{scenario})}/></>}
+      {tab==='Printers' && <><PrinterFloor onNewPrint={()=>setTab('Orders')} selectedId={selectedPrinter} onSelect={setSelectedPrinter} state={state} detailed onStart={job_id=>command('/api/start',{job_id})} onControl={(printer_id,action)=>command('/api/printers/control',{printer_id,action})}/><IncidentPanel key={state.session_id} selectedPrinter={selectedPrinter} state={state} onCommand={(path,payload,revision)=>command(path,payload,false,true,revision)}/><ScenarioReset onReset={scenario=>command('/api/scenarios/reset',{scenario})}/></>}
       {tab==='Schedule' && <OrderDrafts key={state.session_id} state={state} proposal={schedulePreview} onRevise={(payload,revision)=>command('/api/orders/revise',payload,false,true,revision)} onDelete={(payload,revision)=>command('/api/orders/delete',payload,false,true,revision)}/>}
       {tab==='Schedule' && <ScheduleProposal guided autoPreview={autoPreview>0} onPreview={setSchedulePreview} onPause={()=>void command('/api/clock',{running:false,speed:(state.clock_speed ?? 60) as 1|60|300|3600})} initialSpeed={reviewSpeed} key={state.session_id+autoPreview} state={state} onApply={applyReviewedSchedule}/>}
 

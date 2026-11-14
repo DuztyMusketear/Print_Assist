@@ -327,6 +327,18 @@ applied automatically.
   supported actions, such as rescheduling or restarting a job.
 - The user can see and apply/reject the recovery plan. The simulator records the
   outcome.
+- Persist incident identity, triggering/current simulated telemetry, affected parts,
+  failed-print waste and recovery actions. Duplicate events cannot duplicate output.
+- Keep an immutable pre-isolation schedule and compare original/revised assignments
+  and completion at part and customer-order levels, including indirect queue delays.
+  Order completion is the latest required part; unresolved parts mean unknown ETA.
+- Preserve healthy active prints and completed output. Restart failed parts at full
+  estimated cost, retain consumed material as waste and protect each incident's holds.
+- A separate opt-in simulation policy may apply only complete, compatible, on-time
+  recovery plans. Review remains the startup/reset default; faulted equipment always
+  needs explicit simulated clearance. Agent controls never authorize safety bypasses.
+- Overview includes Incidents & Schedule Impact, history, risks, progress and a
+  concise summary explicitly labeled as deterministic when no agent is invoked.
 
 ### Demonstration and observability
 

@@ -31,6 +31,7 @@ export function PrinterFloor({state,detailed,onControl,onStart,selectedId,onSele
         <PrinterScene compact={!detailed} label={`3D view of ${printerLabel(printer.id)}`} asset={demo?exampleAsset:asset} progress={demo?exampleProgress/100:view.progress} color={printer.material.color} hasJob={demo||Boolean(view.job)} printing={!demo&&state.running&&printer.status==='running'&&view.job?.status==='running'}/>
         <p className="printer-job">{view.job ? <>{partLabel(String(view.job.id))} · {Math.round(view.progress*100)}%</> : <>No active job</>}</p>
         <p className="muted printer-part-name">{view.artifact?.name ?? 'Ready for an assignment'}</p>
+        {printer.fault && <p className="fault-warning">Isolated: {String(printer.fault.type).replaceAll('_',' ')}. Simulated repair required.</p>}
         <progress aria-label={`Print progress for ${printerLabel(printer.id)}`} max="1" value={view.progress}/>
 
 

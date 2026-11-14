@@ -6,6 +6,11 @@ import {state,orderedState} from '../test-fixtures';
 vi.mock('./PrinterScene',()=>({PrinterScene:({label,printing}:{label:string;printing?:boolean})=><div role="group" aria-label={label} data-printing={String(printing)}/> }));
 const printers=[1,2,3].map(number=>({id:`printer-${number}`,status:'idle',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}}));
 const asset={id:'example-tower',name:'Example tower',path:'/models/example-tower.stl',units:'mm' as const,rotation_degrees:[0,0,0] as [number,number,number]};
+
+test('isolated floor cards retain a visible fault cause and repair warning',()=>{
+ render(<PrinterFloor state={{...state,printers:[{...printers[0],status:'faulted',fault:{type:'thermal'}}]}} detailed={false}/>);
+ expect(screen.getByText('Isolated: thermal. Simulated repair required.')).toBeInTheDocument();
+});
 test('overview shows three views; detail selection and example preview remain local',async()=>{
   const user=userEvent.setup();const snapshot={...state,printers,visual_assets:[asset]};
   const view=render(<PrinterFloor state={snapshot} detailed={false}/>);

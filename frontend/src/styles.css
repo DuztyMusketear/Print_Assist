@@ -88,3 +88,18 @@ header{height:76px;padding:0;gap:18px;flex-direction:row;align-items:center}
 .timeline-lane{min-height:64px}.timeline-track{height:64px}.timeline-axis{height:36px}.print-timeline .page-intro{margin-bottom:12px}
 .timeline-job.paused,.timeline-job.pending{background:var(--order-fill);border-color:var(--order-color)}
 .timeline-order-key{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:12px 0}.timeline-order-key li{display:flex;align-items:center;gap:9px;min-width:0;max-width:100%;padding:8px 10px;background:var(--order-fill);border:1px solid var(--order-color);border-radius:6px}.timeline-order-key li>div{min-width:0}.timeline-order-key strong{display:block;font-size:11px;overflow-wrap:anywhere}.timeline-order-key small{display:block;font-size:10px;color:#d5e0eb;margin-top:5px}.order-color-swatch{width:10px;height:10px;flex-shrink:0;background:var(--order-color);border-radius:50%}.timeline-key-help{font-size:10px;color:var(--muted);line-height:1.5}.timeline-job{background:var(--order-fill);border-color:var(--order-color);color:#eef4fb}.timeline-job>summary small{color:#c3d0de}.timeline-job.late,.timeline-job.conflict{background:var(--order-fill);border-color:var(--order-color);outline:2px solid #ff9e90;outline-offset:1px}.timeline-job.order-finish{border-right-width:5px}.timeline-job>summary>.timeline-end-marker{position:absolute;right:1px;top:0;color:var(--order-color);font-size:10px}.incoming-demo-guide{font-size:12px;margin:12px 0;color:var(--muted);line-height:1.6}.incoming-demo-guide>summary{cursor:pointer;color:#a8c9d9}.incoming-demo-guide ol{padding-left:20px}.incoming-demo-guide li{margin:7px 0}
+
+.incident-panel {min-width:0; margin-top:1rem;}
+.incident-panel label {display:block; margin:.65rem 0;}
+.incident-panel input[type="checkbox"] {width:auto; margin-right:.5rem;}
+.incident-panel button {margin:.25rem .5rem .25rem 0;}
+.incident-impact-scroll {overflow-x:auto; max-width:100%; margin:1rem 0;}
+.incident-impact-scroll table {min-width:680px; width:100%; font-size:.8rem;}
+.incident-impact-scroll th,.incident-impact-scroll td {padding:.5rem; text-align:left; vertical-align:top; overflow-wrap:anywhere;}
+.incident-panel select {max-width:100%;}
+
+.fault-warning {color:#f39a90; font-weight:600;}
+.incident-evidence dd {overflow-wrap:anywhere; margin-left:1rem;}
+.incident-evidence dl>div {margin:.35rem 0;}
+
+.incident-evidence p,.incident-evidence summary {overflow-wrap:anywhere;}

@@ -475,6 +475,8 @@ graph LR
 
 ## Compact planning, confirmed queue management and incoming simulation
 
+
+
 QuickPrint.tsx keeps library selection, searches saved models and groups the model
 summary, copy stepper and deadline into compact controls. Packing and direct/manual
 starts stay secondary. Draft feasibility exposes real quantity/date alternatives;
@@ -551,4 +553,34 @@ graph LR
   Shop -->|matched held order| ScheduleProposal
   Cards -->|remaining work and conflict projection| View[scheduleView]
   PrintTimeline -->|calendar ticks, order colors and guarded finish groups| View
+```
+
+## Fault isolation and recovery implementation
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [incidents.py](../backend/print_assist/incidents.py) | Pure injected equipment isolation, source-event deduplication, failed-part waste, per-incident holds and evidence; transactional service/API persist its output. Calls schedule-impact capture and policy recovery hooks. | Incident unit/integration tests and root coverage |
+| [test_incidents.py](../backend/tests/unit/test_incidents.py) | All five injected faults, original-state/healthy-output invariants, consumed material, invalid/duplicate events and held scheduling. | `.venv\Scripts\python.exe -m pytest backend/tests/unit/test_incidents.py` |
+| [test_incident_commands.py](../backend/tests/integration/test_incident_commands.py) | Typed fault HTTP command, persistence/restart, deduplication and validation errors. | Backend integration/full suite |
+| [recovery.py](../backend/print_assist/recovery.py) | Incident-owned recovery proposals, compatible redistribution, guarded application/rejection, repair/refill, independent simulation policy and durable progress. | Recovery unit/integration tests and full coverage |
+| [schedule_impact.py](../backend/print_assist/schedule_impact.py) | Immutable schedule capture and original/revised part/order assignments, completion deltas, risks and waste, including indirectly affected orders. | Recovery tests and full coverage |
+| [test_recovery.py](../backend/tests/unit/test_recovery.py) | Retry lineage, holds, healthy-work invariants, partial/shared incidents, policy and simulation exhaustion boundaries. | Backend coverage |
+| [test_recovery_workflow.py](../backend/tests/integration/test_recovery_workflow.py) | Typed recovery routes, session/revision/idempotency validation, persistence and complete workflow. | Backend integration/full suite |
+| [IncidentPanel.tsx](../frontend/src/components/IncidentPanel.tsx) | Selected-printer fault injection, incident history, honest deterministic summaries, schedule impacts, guarded decisions, simulation policy and clearance. App forwards guarded source revisions through api.ts. | IncidentPanel/App/browser tests |
+| [IncidentPanel.test.tsx](../frontend/src/components/IncidentPanel.test.tsx) | Fault/decision payloads, stale/reset previews, risk/unknown impacts, clearance acknowledgement and failure feedback. | Frontend coverage |
+| [fault-recovery.spec.ts](../tests/e2e/fault-recovery.spec.ts) | Offline fault isolation, reviewed/automatic recovery, exact quantities, repeat/reset and stale/rejected workflows. | Root full/coverage |
+
+```mermaid
+graph LR
+    FaultAPI[api.py fault command] -->|transactional mutation| FaultService[FactoryService]
+    FaultService -->|pure isolation| Incidents[incidents.py]
+    Incidents -->|durable evidence| FaultStore[Store snapshot]
+    Incidents -->|immutable pre-fault projection| Impact[schedule_impact.py]
+    Incidents -->|bounded automatic policy| Recovery[recovery.py]
+    Recovery -->|safe queued dispatch| Scheduler[scheduling.py]
+    Recovery -->|part and order comparisons| Impact
+    Panel[IncidentPanel] -->|guarded source revisions| FaultAPI
+    App -->|snapshot and selected printer| Panel
+    RecoveryTests[test_recovery.py] -->|validates quantity and safety invariants| Recovery
+    IncidentTests[test_incidents.py] -->|verifies isolation and holds| Incidents
 ```

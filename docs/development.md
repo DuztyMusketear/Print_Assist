@@ -452,3 +452,38 @@ remains; no physical printing, live shop calls or application agents ran.
 Restored the existing preview database with clock and agents off. Actual two-order
 schedule colors/key/final markers were visually inspected; the mobile preview has no
 page overflow. Previewing did not apply/start orders or reset saved simulation data.
+
+
+## Fault recovery verification - 2026-11-14
+
+Implemented all five simulated faults with immediate local isolation, persistent
+source-event deduplication/evidence, consumed-material waste and incident-owned part
+holds. Recovery preserves healthy active work and compares original/revised part
+and order schedules, including indirect delays. Apply/reject uses transactional
+session/revision/idempotency guards. Partial followups and repeated faults retain
+lineage; completed output is never duplicated. Automatic simulation recovery is a
+separate opt-in for complete compatible on-time automatic work. Startup/reset
+returns to review; simulated equipment clearance remains explicit.
+
+Material exhaustion splits advancement at the boundary and continues healthy work.
+Stock is never refunded as scrap; injection stock corrections and printed waste are
+separate. Incidents retain immutable before/applied comparisons, decisions, telemetry,
+action outcomes and progress distinct from equipment repair. Unknown/unallocated
+part timing is explicit. Overview/Printers expose Incidents & Schedule Impact,
+deterministic summaries, mitigation advice, order/part comparisons and history.
+Optional lineage starts collapsed with friendly part/attempt labels. Live agent
+orchestration remains future work; no inference, external shop or hardware ran.
+
+Final root `.venv\Scripts\python.exe scripts/check.py coverage` exited 0:
+**149 backend + 248 frontend + 20 browser tests (417 total)**; 100% application
+statement/branch coverage, schema drift, TypeScript and production build pass.
+Existing Vite bundle-size advisory remains. Browser tests cover isolation, exact
+fulfillment, reset/repeat on another printer, stale/rejected review, automatic policy
+and mobile containment. Independent review findings were fixed with regressions:
+idle-incident resolution, explicit unassigned parts, durable decision/evidence
+visibility and readable identifiers.
+
+Actual desktop and 375px expanded-evidence previews had no page errors or page
+overflow. A separate ignored fault-demo database runs on ports 8000/5173 with agents
+and clock off; the previous preview database is preserved. The demo has one thermal
+incident awaiting review and two healthy active jobs with the clock paused.

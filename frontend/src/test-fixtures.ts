@@ -1,5 +1,6 @@
 import type { Snapshot } from './api';
 export const state:Snapshot = {
+  recovery_policy:'review',
   session_id:'00000000-0000-4000-8000-000000000001', revision:0,
   simulation_time:'2026-11-15T00:00:00Z', running:false, clock_speed:60, printers:[], jobs:[],events:[],orders:[],
   controls:{agents_enabled:false,automatic_triggers:false},

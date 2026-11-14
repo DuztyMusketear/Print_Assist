@@ -38,6 +38,51 @@ def create_app(path=None):
                 pass
     app = FastAPI(lifespan=lifespan,title="Print Assist", version="0.1.0")
 
+    from .contracts import FaultCommand
+    from .contracts import RecoverCommand, RejectRecoveryCommand, ClearFaultCommand, RecoveryPolicyCommand
+
+    @app.get('/api/incidents/{incident_id}/proposal')
+    def recovery_proposal(incident_id:str):
+        try:
+            return service.recovery_proposal(incident_id)
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/incidents/recover',response_model=FactorySnapshot)
+    def recover(command:RecoverCommand):
+        try:
+            return project(service.recover(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/incidents/reject',response_model=FactorySnapshot)
+    def reject_recovery(command:RejectRecoveryCommand):
+        try:
+            return project(service.reject_recovery(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/incidents/clear',response_model=FactorySnapshot)
+    def clear_fault(command:ClearFaultCommand):
+        try:
+            return project(service.clear_fault(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/incidents/policy',response_model=FactorySnapshot)
+    def recovery_policy(command:RecoveryPolicyCommand):
+        try:
+            return project(service.recovery_policy(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/incidents/inject',response_model=FactorySnapshot)
+    def inject_fault(command:FaultCommand):
+        try:
+            return project(service.inject_fault(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
     @app.post('/api/orders/delete',response_model=FactorySnapshot)
     def delete_order(command:DeleteOrderCommand):
         try:
