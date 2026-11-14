@@ -281,6 +281,14 @@ implementation instead of silently treating it as an existing requirement.
 Branch: `feat/fault-recovery`. Epic outcome: a disruption is contained and a
 reviewed recovery can restore production without corrupting fulfillment.
 
+The user's expanded fault-management outline is captured in the proposed
+[fault/recovery design](superpowers/specs/2026-11-14-fault-recovery-design.md) and
+[implementation plan](superpowers/plans/2026-11-14-fault-recovery.md). It adds durable
+incidents, before/after part and order comparisons (including indirect delays),
+failed-print waste, bounded opt-in automatic simulation recovery, operator escalation
+and an Incidents & Schedule Impact panel. These are planned, not implemented; the
+existing PA-401/402/403 status below remains unchanged.
+
 ### PA-401 — Inject and safely isolate faults
 
 **Status:** To Do (audit 2026-11-14).

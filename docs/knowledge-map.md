@@ -55,6 +55,10 @@ graph LR
     COMPACTPLAN["Compact order/schedule plan"] -->|implements| COMPACTDESIGN["Compact planning design"]
     MAP -->|indexes| COMPACTPLAN
     COMPACTDESIGN -->|extends guided workflow| WORKFLOW
+    FAULTDESIGN["Fault/recovery design (planned)"] -->|extends phase 4 requirements| SPEC
+    FAULTPLAN["Fault/recovery plan (planned)"] -->|test-first implementation of| FAULTDESIGN
+    MAP -->|indexes proposed work| FAULTDESIGN
+    MAP -->|indexes proposed work| FAULTPLAN
 ```
 
 ## File index
@@ -96,6 +100,8 @@ graph LR
 New guided workflow references:
 
 - [Compact order/schedule design](superpowers/specs/2026-11-14-compact-order-schedule-design.md): compact intake, confirmed queued management, calendar axis and incoming simulation; relates to the guided design, SPEC and code map; verify against browser and offline checks.
+- [Fault/recovery design](superpowers/specs/2026-11-14-fault-recovery-design.md): proposed isolation, redistribution, before/after part/order impacts, persistence and review/automatic simulation policy; relates to SPEC/PA-401/402/403 and inspected scheduler/service. Verify against user requirements and implementation evidence before claiming runtime support.
+- [Fault/recovery plan](superpowers/plans/2026-11-14-fault-recovery.md): proposed test-first backend, impact, recovery, dashboard and resettable demo milestones; relates to the design and Phase 4 backlog. Check links/consistency now; root coverage/schema/build/browser checks are future implementation gates.
 - [Compact order/schedule plan](superpowers/plans/2026-11-14-compact-order-schedule.md): test-first tasks, constraints and execution evidence for the refinement; verify using root coverage/schema/build/browser commands.
 - [Guided model/order design](superpowers/specs/2026-11-14-guided-model-order-design.md): saved models, bounded STL uploads, example shop feed, reviewed timelines and user navigation; verify against SPEC and workflow browser tests.
 - [Guided model/order plan](superpowers/plans/2026-11-14-guided-model-orders.md): test-first backend/UI tasks, guarded contracts, scope and execution evidence; verify using root coverage/schema/build/browser checks.
