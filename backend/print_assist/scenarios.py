@@ -4,7 +4,7 @@
 def initial_state() -> dict:
     return {
         "session_id": "", "revision": 0, "printer_schema_version": 1,
-        "simulation_time": "2026-11-15T00:00:00Z", "running": False,
+        "simulation_time": "2026-11-15T00:00:00Z", "running": False, "clock_speed": 60,
         "printers": [
             {"id": f"printer-{number}", "status": "idle", "capabilities": ["FFF"],
              "material": {"type": "PLA", "color": "blue", "grams": 1000}}

@@ -1,7 +1,7 @@
 import type { Snapshot } from './api';
 export const state:Snapshot = {
   session_id:'00000000-0000-4000-8000-000000000001', revision:0,
-  simulation_time:'2026-11-15T00:00:00Z', running:false, printers:[], jobs:[],events:[],orders:[],
+  simulation_time:'2026-11-15T00:00:00Z', running:false, clock_speed:60, printers:[], jobs:[],events:[],orders:[],
   controls:{agents_enabled:false,automatic_triggers:false},
   artifacts:[{id:'figure-pla-blue',name:'Blue PLA figure',revision:1,reference:'fixture.gcode',
     filament_type:'PLA',color:'blue',duration_seconds:7200,filament_grams:25,required_capabilities:['FFF']}],

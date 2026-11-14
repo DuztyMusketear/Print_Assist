@@ -52,6 +52,33 @@ class FactoryService:
     def advance(self, command) -> dict:
         return self._transition(command, "advance", lambda state: advance(state, command.payload.seconds))
 
+    def clock(self,command):
+        def configure(state):
+            from copy import deepcopy
+            result=deepcopy(state)
+            result['running']=command.payload.running
+            result['clock_speed']=command.payload.speed
+            record(result,'clock_changed','Clock '+('running' if result['running'] else 'paused'))
+            return result
+        return self._transition(command,'clock',configure)
+
+    def tick(self):
+        with self.lock, self.store.transaction() as db:
+            state=self.store.load(db)
+            if state['running']:
+                original=state
+                try:
+                    state=schedule(state,'automatic',preserve_mode=True)
+                    speed=state.get('clock_speed',60)
+                    for offset in range(0,speed,300):
+                        state=advance(state,min(300,speed-offset))
+                except (ValueError,RecursionError) as error:
+                    state=original
+                    state['running']=False
+                    record(state,'clock_stopped','Clock paused: '+str(error),source='system',status='blocked')
+                state['revision']+=1
+                self.store.save(db,state)
+
     def printer_control(self,command):
         return self._transition(command,'printer-control',lambda state: control_printer(state,command.payload.printer_id,command.payload.action))
 

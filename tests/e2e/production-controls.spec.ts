@@ -48,3 +48,23 @@ test('seeded production can pause, go offline, resume and complete before reset'
   expect(cleared.controls).toEqual({agents_enabled:false,automatic_triggers:false});
   expect(external).toEqual([]);
 });
+
+
+test('automatic clock advances the live floor and updates forecasts without refresh',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('tab',{name:'Printers',exact:true}).click();
+  await page.getByLabel('Scenario',{exact:true}).selectOption('seeded');
+  await page.getByRole('checkbox',{name:/I understand/}).check();
+  await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
+  await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
+  await page.getByRole('tab',{name:'Schedule',exact:true}).click();
+  await page.getByRole('button',{name:'Schedule automatically',exact:true}).click();
+  await expect(page.locator('section li').filter({hasText:'running'}).first()).toBeVisible();
+  await expect(page.getByText(/Estimated print completion:/).first()).toBeVisible();
+  await page.getByLabel('Clock speed',{exact:true}).selectOption('3600');
+  await expect.poll(async()=> (await (await page.request.get('/api/state')).json()).clock_speed).toBe(3600);
+  await page.getByRole('button',{name:'Run clock',exact:true}).click();
+  await expect(page.getByText(/completed.*of 4 requested/)).toContainText(/3 completed|4 completed/,{timeout:12000});
+  await page.getByRole('button',{name:'Pause clock',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Run clock',exact:true})).toBeVisible();
+});

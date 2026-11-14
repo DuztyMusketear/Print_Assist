@@ -21,8 +21,7 @@ alternative local setup, not a prerequisite for native development.
 ## Current implementation audit - 2026-11-14
 
 Phase 1 is implemented; Tasks 2 and 3 have partial production/dashboard foundations.
-The original Task 2/3 completion checkboxes remain open because the accelerated
-clock, schedule proposals/estimates and live monitoring remain incomplete.
+The original Task 2/3 completion checkboxes remain open because reviewable schedule proposals and material reservations remain incomplete. The local clock/monitoring follow-up adds run/pause, forecasts and live telemetry.
 The local [production controls follow-up](2026-11-14-production-controls.md)
 adds pause/resume/offline/online, scenario resets, activity and manual workflow
 verification; those additions await integration into main.

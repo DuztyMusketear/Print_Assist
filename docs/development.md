@@ -185,3 +185,21 @@ schema drift and type/build checks passed. The command includes the full offline
 suite. Review regressions cover late pre-reset order/model/schedule responses,
 retry receipt ownership, competing commands and material preservation. Existing
 Vite bundle-size guidance remains; other platforms remain unverified.
+
+## Clock and monitoring follow-up
+
+Run/Pause controls select 1x, 60x, 300x or 3600x. One backend lifespan owner
+uses fixed steps, never wall-time catch-up. Reset/restart pause. Bounded batches
+protect short-job workloads; known simulation errors pause with an activity event.
+Live refresh waits for the preceding automatic read and cleans up on unmount.
+Forecasts share compatible capacity and filament, assume immediate automatic
+scheduling and supplied estimates, and explain manual/held work. Recorded completed
+work retains its finish time. Packing/shipping remain separate. Temperatures
+are deterministic status illustrations, labeled simulated.
+
+Verification on Windows/Chromium (2026-11-14):
+`.venv\Scripts\python.exe scripts/check.py coverage` passed 69 backend,
+96 frontend and 7 browser tests; 100% statement/branch coverage, schema drift and
+production build passed. Browser workflow confirms automatic progress and live
+forecast display. Read-only review findings have regression coverage. No models
+or physical printers ran. Vite retains its existing large-bundle advisory.

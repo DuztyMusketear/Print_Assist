@@ -174,6 +174,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/clock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clock */
+        post: operations["clock_api_clock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -255,6 +272,32 @@ export interface components {
             /** Visual Asset Id */
             visual_asset_id?: string | null;
         };
+        /** ClockCommand */
+        ClockCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ClockPayload"];
+        };
+        /** ClockPayload */
+        ClockPayload: {
+            /** Running */
+            running: boolean;
+            /**
+             * Speed
+             * @enum {integer}
+             */
+            speed: 1 | 60 | 300 | 3600;
+        };
         /** CommandEnvelope */
         CommandEnvelope: {
             /**
@@ -294,6 +337,15 @@ export interface components {
             simulation_time: string;
             /** Running */
             running: boolean;
+            /**
+             * Clock Speed
+             * @default 60
+             */
+            clock_speed: number;
+            /** Forecasts */
+            forecasts?: components["schemas"]["Forecast"][];
+            /** Telemetry */
+            telemetry?: components["schemas"]["Telemetry"][];
             /** Printers */
             printers: components["schemas"]["Printer"][];
             /** Orders */
@@ -311,6 +363,23 @@ export interface components {
             modeling_tasks?: components["schemas"]["ModelTask"][];
             /** Visual Assets */
             visual_assets?: components["schemas"]["VisualAsset"][];
+        };
+        /** Forecast */
+        Forecast: {
+            /**
+             * Order Id
+             * Format: uuid
+             */
+            order_id: string;
+            /** Completion */
+            completion: string | null;
+            /**
+             * Risk
+             * @enum {string}
+             */
+            risk: "on_time" | "late" | "unavailable";
+            /** Reason */
+            reason: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -575,6 +644,17 @@ export interface components {
         StartPayload: {
             /** Job Id */
             job_id: string;
+        };
+        /** Telemetry */
+        Telemetry: {
+            /** Printer Id */
+            printer_id: string;
+            /** Nozzle C */
+            nozzle_c: number;
+            /** Bed C */
+            bed_c: number;
+            /** Simulated */
+            simulated: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -899,6 +979,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ResetCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clock_api_clock_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClockCommand"];
             };
         };
         responses: {

@@ -175,3 +175,30 @@ graph LR
   Contract -->|selector choices| ModelingBoard
   Assets -->|loads same-origin fixture| STL[example-tower.stl]
 ```
+
+## Clock, forecasting and live monitoring
+
+The clock follow-up extends api.py with a cancellable one-owner FastAPI lifespan
+loop and typed clock route; service.py serializes fixed ticks and clock commands.
+contracts.py/types.ts carry clock speed, Forecast and Telemetry contracts.
+App.tsx connects Run/Pause/speed and polling; OrderQueue.tsx shows estimates,
+risk and unavailable reasons; App.test.tsx covers these controls and legacy speed.
+test-fixtures.ts includes clock speed. scenarios.py resets speed and pauses.
+production-controls.spec.ts also verifies automatic progress via live polling.
+
+| File | Purpose, relationships and verification |
+| --- | --- |
+| [monitoring.py](../backend/print_assist/monitoring.py) | Pure read projections: conservative shared printer/material forecasting and illustrative temperatures; API response projection. Verify with monitoring backend tests. |
+| [test_monitoring.py](../backend/tests/unit/test_monitoring.py) | Forecast capacity, deadlines, holds, material; clock run/pause/replay/reset and real lifespan shutdown/restart. `python -m pytest backend/tests/unit/test_monitoring.py`. |
+| [monitoring.ts](../frontend/src/monitoring.ts) | Recursive one-second polling, no overlapping automatic reads, ref-based latest callback and unmount cleanup. Verify monitoring hook tests. |
+| [monitoring.test.tsx](../frontend/src/monitoring.test.tsx) | Fake-timer proof of non-overlap and cleanup. `npm test --workspace frontend -- src/monitoring.test.tsx`. |
+
+```mermaid
+graph LR
+  App -->|serial background reads| Poll[monitoring.ts]
+  API -->|read-only projection| Forecast[monitoring.py]
+  API -->|lifespan fixed ticks| Service
+  Forecast -->|typed response| Contracts[contracts.py]
+  ClockTests[test_monitoring.py] -->|verifies owner and estimates| API
+  PollTests[monitoring.test.tsx] -->|verifies scheduling and cleanup| Poll
+```

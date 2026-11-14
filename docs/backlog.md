@@ -4,8 +4,8 @@ Sources: [specification](../SPEC.md), [MVP implementation plan](superpowers/plan
 [production overview plan](superpowers/plans/2026-11-14-production-overview.md),
 and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers.md).
 
-**Last audit: 2026-11-14, including local `feat/production-controls` changes based
-on `dc07d7d`.** Controls/reset additions below await integration into `main`.
+**Last audit: 2026-11-14, including local `feat/clock-forecast-monitoring` changes based
+on `e6066df`.** Clock/forecast/monitoring additions below await integration into `main`.
 These are local story IDs,
 not remote issues. Status reflects inspected code and tests; passing coverage
 for current code does not mean unimplemented acceptance criteria are complete.
@@ -46,11 +46,11 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 | Stories | Status | Remaining outcome |
 | --- | --- | --- |
 | PA-201 | Implemented | Maintain compatibility, assignment reasons/events and competing-command safety. |
-| PA-202 | Partial | Configurable accelerated clock with explicit run/pause and one simulation owner. |
+| PA-202 | Implemented | Single-owner fixed-step clock, configurable speed, run/pause and restart/reset pause. |
 | PA-203 | Implemented | Seeded/empty resets, new-session guards and safe lost-response replay. |
 | PA-301 | Partial | Reviewable future schedule proposals, explicit material reservations and validated apply. |
-| PA-302 | To Do | Completion estimates, deadline risk and infeasibility explanations. |
-| PA-303 | Partial | Automatic refresh and temperature telemetry; controls/history now exist. |
+| PA-302 | Implemented | Conservative capacity/material estimates, deadline risk and unavailable reasons. |
+| PA-303 | Implemented | Serial one-second refresh, connection errors, simulated temperature telemetry and controls/history. |
 | PA-304 | To Do | Unified incoming-order review and manual-entry workflow. |
 | PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
 | PA-501, PA-502, PA-503 | To Do | Fake agent gateway, controls, budgets and cancellation/zero-inference safeguards. |
@@ -61,12 +61,12 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 
 ## Next development order and traceability
 
-1. Finish PA-202's accelerated run/pause clock with one backend owner. Printer
+1. Clock, forecasting and live monitoring are implemented locally. Next: PA-301 reviewable proposals and material reservations. Printer
    controls, assignment explanations/history and PA-203 resets are implemented
    by the [production controls plan](superpowers/plans/2026-11-14-production-controls.md).
    Reference SPEC sections 6-7 and MVP plan Task 2.
-2. Complete PA-301/PA-302 schedule proposals, reservation rules and estimates;
-   then PA-303 live monitoring/history. Reference SPEC section 6 and plan Task 3.
+2. Complete PA-301 reviewable schedule proposals and reservation rules;
+   maintain the delivered forecasts and live monitoring. Reference SPEC section 6 and plan Task 3.
 3. Design PA-304 as the agreed combined intake workflow; it can proceed alongside
    operational work once its contracts are agreed. Direct manual order entry
    already exists; incoming acceptance/rejection is additional scope.
@@ -126,13 +126,13 @@ Acceptance criteria:
 
 ### PA-202 — Advance, pause and complete simulated work
 
-**Status:** Partial (audit 2026-11-14).
+**Status:** Implemented on `feat/clock-forecast-monitoring` (audit 2026-11-14).
 
 Manual clock advancement, material consumption, successful quantity accounting,
 automatic/manual starts and pause/resume/offline/online controls exist. Paused or
 offline printers preserve attempts and stock; resume rechecks remaining material.
-Zero advance is a no-op. Remaining: configurable accelerated run/pause clock,
-single-owner timer lifecycle and no wall-time catch-up after restart.
+Zero advance is a no-op. Implemented follow-up: configurable 1/60/300/3600x fixed-step clock,
+one cancellable backend owner and no wall-time catch-up after restart.
 
 **Evidence / references:** [simulation.py](../backend/print_assist/simulation.py), [API](../backend/print_assist/api.py), [scheduling tests](../backend/tests/unit/test_scheduling.py). SPEC 6; MVP plan Task 2.
 
@@ -204,9 +204,9 @@ Acceptance criteria:
 
 ### PA-302 — Display estimates and deadline risk
 
-**Status:** To Do (audit 2026-11-14).
+**Status:** Implemented on `feat/clock-forecast-monitoring` (audit 2026-11-14).
 
-Order due/ship-by timestamps are displayed, but no completion estimate or risk calculation exists. Implement estimate assumptions, exact deadline boundaries and explanations for missing capacity/material.
+Read-only forecasts now share printer capacity and remaining material across orders. Exact due-time completion is on time; held/manual work and unavailable resources explain missing estimates. Assumptions: immediate automatic scheduling, supplied duration/material estimates, no future outages, and packing/shipping separate.
 
 **Evidence / references:** [OrderQueue](../frontend/src/components/OrderQueue.tsx). SPEC 6, 10; MVP plan Task 3.
 
@@ -223,12 +223,12 @@ Acceptance criteria:
 
 ### PA-303 — Operate the floor through a live production dashboard
 
-**Status:** Partial (audit 2026-11-14).
+**Status:** Implemented on `feat/clock-forecast-monitoring` (audit 2026-11-14).
 
 Tabs, real printer/job/progress/material state, 3D views, explicit refresh,
 stale-response guards, activity history and printer controls exist. Browser tests
 cover manual-start completion, paused/offline stock preservation and reset.
-Remaining: non-overlapping automatic refresh and temperature telemetry.
+Serial one-second automatic refresh and deterministic simulated nozzle/bed telemetry now exist. Temperatures illustrate printer status and are not physical measurements.
 
 **Evidence / references:** [App](../frontend/src/App.tsx), [PrinterFloor](../frontend/src/printers/PrinterFloor.tsx), [3D browser tests](../tests/e2e/printer-views.spec.ts). SPEC 6; MVP plan Task 3 and interactive printer plan.
 

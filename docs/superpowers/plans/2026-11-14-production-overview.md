@@ -20,8 +20,8 @@ when implementing follow-ups; do not infer completion from passing code coverage
 | Task | Current state | Remaining work |
 | --- | --- | --- |
 | 1 | Implemented | Maintain old-data compatibility when adding fields. Printer migration and typed API/generation exist. |
-| 2 | Partial | Controls, assignment explanations/events and concurrent/material checks added by the local production-controls follow-up. Accelerated run/pause clock and future reservation semantics remain. |
-| 3 | Implemented foundation | Existing tabs, real state, controls and history are connected. PA-302/303 still require estimates/risk, automatic refresh and telemetry. 3D views were added by the separate interactive printer plan. |
+| 2 | Partial | Controls, assignment explanations/events and concurrent/material checks added by the local production-controls follow-up. Local clock/monitoring follow-up adds the accelerated clock; proposal/reservation semantics remain. |
+| 3 | Implemented foundation | Existing tabs, real state, controls and history are connected. Local clock/monitoring follow-up adds PA-302/303 estimates/risk, automatic refresh and simulated telemetry. 3D views were added by the separate interactive printer plan. |
 | 4 | Partial | Offline, visual-model progression, manual completion, pause/offline and scenario reset workflows exist; later recovery workflows remain incomplete. |
 
 The unchecked multi-condition steps below remain open wherever any requirement

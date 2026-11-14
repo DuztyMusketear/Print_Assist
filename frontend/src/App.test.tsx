@@ -2,6 +2,7 @@ import {act,render,screen,waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {test,expect,vi} from 'vitest';
 import App from './App';
+vi.mock('./monitoring',()=>({useMonitoring:()=>{}}));
 vi.mock('./printers/scene',()=>({mountScene:()=>({command:()=>{},dispose:()=>{}})}));
 import {state,orderedState} from './test-fixtures';
 
@@ -555,4 +556,38 @@ test('replaying an uncertain save cannot roll back a newer queue revision',async
   await user.click(screen.getByRole('button',{name:'Add order'}));
   await waitFor(()=>expect(screen.queryByRole('alert')).not.toBeInTheDocument());
   expect(screen.getByText(/5 items/)).toBeInTheDocument();
+});
+
+
+test('clock controls configure speed and pause running simulation',async()=>{
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,clock_speed:300})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:2,clock_speed:300,running:true})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:3,clock_speed:300,running:false})));
+  const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+  await user.selectOptions(screen.getByLabelText('Clock speed'),'300');
+  await waitFor(()=>expect(transport).toHaveBeenCalledTimes(2));
+  await user.click(screen.getByRole('button',{name:'Run clock'}));
+  await user.click(await screen.findByRole('button',{name:'Pause clock'}));
+  await screen.findByRole('button',{name:'Run clock'});
+  expect(JSON.parse(String(transport.mock.calls[3][1]!.body)).payload).toEqual({running:false,speed:300});
+});
+
+test.each([null,'2026-11-15T04:00:00Z'])('overview displays forecast and simulated telemetry (%s)',async(completion)=>{
+  vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...orderedState,
+    forecasts:[{order_id:orderedState.orders[0].id,completion,risk:completion?'on_time':'unavailable',reason:'Capacity estimate'}],
+    telemetry:[{printer_id:'printer-1',nozzle_c:210,bed_c:60}]})));
+  render(<App/>);await screen.findByText(/Estimated print completion:/);
+  expect(screen.getByText(/nozzle 210 C/)).toBeInTheDocument();
+  expect(screen.getByText(/Capacity estimate/)).toHaveTextContent(completion ?? 'Unavailable');
+});
+
+
+test('clock starts with the default speed for a legacy snapshot',async()=>{
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,clock_speed:undefined})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,running:true,revision:1})));
+  const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+  await user.click(screen.getByRole('button',{name:'Run clock'}));
+  await screen.findByRole('button',{name:'Pause clock'});
+  expect(JSON.parse(String(transport.mock.calls[1][1]!.body)).payload).toEqual({running:true,speed:60});
 });

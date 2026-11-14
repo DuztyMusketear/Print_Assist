@@ -1,3 +1,4 @@
+import {useMonitoring} from './monitoring';
 import {useEffect,useRef,useState} from 'react';
 import {readState,addOrder,scheduleOrders,productionCommand,modelingCommand,RejectedCommand,type Snapshot,type OrderInput} from './api';
 import type {components} from './types';
@@ -44,6 +45,7 @@ export default function App() {
     }
   }
   useEffect(()=>{void load();},[]);
+  useMonitoring(load);
   async function submit(payload:OrderInput) {
     ++sequence.current;
     const signature=JSON.stringify([state!.session_id,payload]);
@@ -98,6 +100,12 @@ export default function App() {
     <button className="secondary" onClick={()=>void load()}>Refresh queue</button>
     {state && <div hidden={tab!=='Modeling'}><ModelingBoard key={state.session_id} visualAssets={state.visual_assets ?? []} items={state.modeling_tasks ?? []} onCreate={payload=>modelChange('/api/modeling/tasks',payload)} onMove={(id,action)=>modelChange('/api/modeling/actions',{task_id:id,action})} onRetry={async()=>{if(pendingModel.current){const [path,payload]=JSON.parse(pendingModel.current.signature);await modelChange(path,payload);}else await load();}}/></div>}
     {state ? <>
+      <section aria-label="Simulation clock"><h2>Simulation clock</h2><p>{state.simulation_time} / {state.running?'Running':'Paused'} / Live refresh every second</p>
+        <label>Clock speed <select aria-label="Clock speed" value={state.clock_speed ?? 60} onChange={event=>void command('/api/clock',{running:state.running,speed:Number(event.target.value) as 1|60|300|3600})}>{[1,60,300,3600].map(speed=><option key={speed} value={speed}>{speed}x</option>)}</select></label>
+        <button onClick={()=>void command('/api/clock',{running:!state.running,speed:(state.clock_speed ?? 60) as 1|60|300|3600})}>{state.running?'Pause clock':'Run clock'}</button>
+      </section>
+      {(tab==='Overview'||tab==='Printers') && <section><h2>Simulated temperatures</h2><p>Illustrative telemetry; not measured hardware temperatures.</p>{state.telemetry?.map(item=><p key={String(item.printer_id)}>{String(item.printer_id)}: nozzle {String(item.nozzle_c)} C / bed {String(item.bed_c)} C</p>)}</section>}
+
       {(tab==='Overview'||tab==='Printers') && <PrinterFloor state={state} detailed={tab==='Printers'} onControl={(printer_id,action)=>command('/api/printers/control',{printer_id,action})}/> }
       {tab==='Printers' && <ScenarioReset onReset={scenario=>command('/api/scenarios/reset',{scenario})}/>}
       {(tab==='Overview'||tab==='Schedule') && <ActivityFeed events={state.events}/>}

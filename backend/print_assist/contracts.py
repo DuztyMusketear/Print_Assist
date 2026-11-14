@@ -58,6 +58,16 @@ class AdvancePayload(BaseModel):
     seconds: Annotated[int, Field(strict=True, ge=0)]
 
 
+class ClockPayload(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    running: bool
+    speed: Literal[1,60,300,3600]
+
+
+class ClockCommand(ScheduleCommand):
+    payload: ClockPayload
+
+
 class StartCommand(ScheduleCommand):
     payload: StartPayload
 
@@ -178,11 +188,28 @@ class ActivityEvent(BaseModel):
     message: str = ''
 
 
+class Forecast(BaseModel):
+    order_id: UUID
+    completion: AwareDatetime | None
+    risk: Literal['on_time','late','unavailable']
+    reason: str
+
+
+class Telemetry(BaseModel):
+    printer_id: str
+    nozzle_c: int
+    bed_c: int
+    simulated: bool
+
+
 class FactorySnapshot(BaseModel):
     session_id: UUID
     revision: int
     simulation_time: AwareDatetime
     running: bool
+    clock_speed: int = 60
+    forecasts: list[Forecast] = Field(default_factory=list)
+    telemetry: list[Telemetry] = Field(default_factory=list)
     printers: list[Printer]
     orders: list[Order]
     jobs: list[dict]

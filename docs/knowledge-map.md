@@ -72,6 +72,8 @@ graph LR
 | [Part model handoff](../frontend/public/models/README.md) | STL convention, catalog registration, limits, example provenance and optional printer replacement notes. | visual_assets.py, modeling form, printer loader | Verify catalog paths and offline browser loading. |
 | [Production controls plan](superpowers/plans/2026-11-14-production-controls.md) | Pause/resume/offline/online, deterministic scenario reset, events and retry/session safety; accelerated clock remains subsequent work. | SPEC, MVP plan, backlog, code map | Root coverage/full commands and regression review. |
 
+| [Clock and monitoring plan](superpowers/plans/2026-11-14-clock-monitoring.md) | Single-owner accelerated clock, conservative forecasts and serial live polling. | SPEC, backlog, code map | Root coverage and browser checks. |
+
 ## How to extend the map
 
 When implementation begins, add each source/configuration/test file to the table.
