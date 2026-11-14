@@ -17,6 +17,7 @@ test('offline order intake survives a browser reload without external traffic',a
   await expect(page.locator('section li')).toHaveCount(initial+1);
   await expect(page.locator('section li').last()).toContainText('3 items');
   await page.reload();
+  await page.getByRole('tab',{name:'Orders',exact:true}).click();
   await expect(page.locator('section li')).toHaveCount(initial+1);
   expect(external).toEqual([]);
 });

@@ -25,13 +25,13 @@ graph LR
 | File | Owned behavior / relationships | Verification |
 | --- | --- | --- |
 | [backend/print_assist/__init__.py](../backend/print_assist/__init__.py) | Package marker; no initialization side effects. | Backend suite/imports |
-| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, visual asset metadata/validated new associations, command and snapshot schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration/test_orders_api.py` |
-| [scenarios.py](../backend/print_assist/scenarios.py) | Deterministic empty-orders seed with three idle virtual printers and one print-ready artifact reference. | Service/API tests |
+| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, visual metadata, printer/reset commands and entity-linked activity schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration` |
+| [scenarios.py](../backend/print_assist/scenarios.py) | Deterministic seeded/empty-order baselines with three idle virtual printers, print-ready artifact and disabled controls. | Service/production-controls tests |
 | [store.py](../backend/print_assist/store.py) | SQLite transactions, snapshot storage, command-result table and connection lifetime. | Store/service tests |
-| [service.py](../backend/print_assist/service.py) | One-owner authoritative intake, legacy printer-state initialization, session/revision checks, idempotency and atomic order/events. | `python -m pytest backend/tests/unit/test_service.py` |
-| [scheduling.py](../backend/print_assist/scheduling.py) | Deterministic automatic/manual assignment and manual start/resume transitions. | `python -m pytest backend/tests/unit/test_scheduling.py` |
-| [simulation.py](../backend/print_assist/simulation.py) | Deterministic print progression, completion and material use. | `python -m pytest backend/tests/unit/test_scheduling.py` |
-| [api.py](../backend/print_assist/api.py) | Offline app factory, state, order, schedule, start and advance routes and conflict responses. | `python -m pytest backend/tests/integration` |
+| [service.py](../backend/print_assist/service.py) | One-owner transactional intake/production, session/revision/replay checks, atomic reset and current-reset receipt lifetime. | Service and production-controls tests |
+| [scheduling.py](../backend/print_assist/scheduling.py) | Deterministic automatic/manual assignment, blocked explanations, assignment events and material-revalidated start/resume. | Scheduling and controls unit tests |
+| [simulation.py](../backend/print_assist/simulation.py) | Deterministic eligible-printer progression, completion events and bounded material consumption; paused/offline work is frozen. | Scheduling and controls unit tests |
+| [api.py](../backend/print_assist/api.py) | Offline app factory, typed intake/modeling/production/control/reset routes and conflict responses. | `python -m pytest backend/tests/integration` |
 | [backend/tests/conftest.py](../backend/tests/conftest.py) | Shared order fixture and outbound socket guard (numeric loopback allowed). | Backend suite |
 | [test_orders.py](../backend/tests/unit/test_orders.py) | Invalid inputs and normalized/equal-boundary deadlines. | Backend unit suite |
 | [test_scheduling.py](../backend/tests/unit/test_scheduling.py) | Initial scheduling priority and distinct-printer behavior. | `python -m pytest backend/tests/unit/test_scheduling.py` |
@@ -40,7 +40,7 @@ graph LR
 | [test_checks.py](../backend/tests/unit/test_checks.py) | Root runner executes subprocesses and propagates failure without continuing. | Backend unit suite |
 | [test_orders_api.py](../backend/tests/integration/test_orders_api.py) | Real app/SQLite HTTP behavior, response schema, offline operation with fake credentials. | Backend integration suite |
 | [frontend/src/main.tsx](../frontend/src/main.tsx) | DOM mounting and stylesheet import only. | Browser test/build |
-| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs and printer overview, state loading, retry key ownership, stale-response suppression and order composition. Delegates 3D views to PrinterFloor. | Frontend App tests |
+| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs, state loading, control/reset composition, retry ownership and late-response suppression across session replacement. Delegates 3D views to PrinterFloor. | Frontend App tests |
 | [api.ts](../frontend/src/api.ts) | HTTP transport and actionable save/load errors. | Frontend transport tests |
 | [types.ts](../frontend/src/types.ts) | Generated OpenAPI types; do not hand-edit. | `python scripts/schema.py --check` |
 | [styles.css](../frontend/src/styles.css) | Responsive visual layout for intake, modeling, queue, tooltips and 3D printer/control panels. No business logic. | Build/browser review |
@@ -48,13 +48,39 @@ graph LR
 | [OrderQueue.tsx](../frontend/src/components/OrderQueue.tsx) | Empty state, saved quantity/deadlines/status and completion display. | Frontend OrderQueue tests |
 | [test-setup.ts](../frontend/src/test-setup.ts) | DOM cleanup, mock restoration and default fetch denial. | Frontend suite |
 | [test-fixtures.ts](../frontend/src/test-fixtures.ts) | Complete typed empty/ordered snapshot fixtures. | Frontend suite/typecheck |
-| [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, overlapping refresh/save, retry key reuse, busy state, late success/failure handling. | `npm test` |
+| [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, control/reset retries, cross-session overlapping reads/mutations, retry-key preservation and stale success/failure handling. | `npm test` |
 | [api.test.ts](../frontend/src/api.test.ts) | Transport command body and load/conflict/validation errors. | `npm test` |
 | [OrderForm.test.tsx](../frontend/src/components/OrderForm.test.tsx) | Field explanations, submit payload, rejected-input preservation and invalid deadline feedback. | `npm test` |
 | [OrderQueue.test.tsx](../frontend/src/components/OrderQueue.test.tsx) | Empty and saved order presentation. | `npm test` |
 | [scripts/check.py](../scripts/check.py) | Portable unit/full/coverage orchestration; short-circuits on failure; per-run outputs. | Runner unit tests and all three check modes |
 | [scripts/schema.py](../scripts/schema.py) | Offline OpenAPI generation, TS generation and drift check in temporary storage. | Full/coverage modes |
 | [order-intake.spec.ts](../tests/e2e/order-intake.spec.ts) | Browser-to-real-backend creation and reload persistence; fails external requests. | `npm run e2e` |
+
+## Production controls and reset
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [activity.py](../backend/print_assist/activity.py) | Entity-linked production events and repeated blocked-reason suppression, shared by controls/scheduling/simulation/reset. | Controls unit tests |
+| [controls.py](../backend/print_assist/controls.py) | Pure pause/resume/offline/online transitions; preserves held attempts and requires explicit resume after coming online. | `python -m pytest backend/tests/unit/test_controls.py` |
+| [test_controls.py](../backend/tests/unit/test_controls.py) | Frozen progress/stock, pending manual work, valid and rejected transitions, resume validation, material accounting and assignment explanations. | Backend unit suite |
+| [test_production_controls.py](../backend/tests/integration/test_production_controls.py) | Typed API/replay/atomicity, concurrent reset and assignment, receipt retirement, fresh inventory/custom data and disabled flags. | Backend integration suite |
+| [ProductionControls.tsx](../frontend/src/components/ProductionControls.tsx) | State-specific printer actions, acknowledged scenario replacement, newest-first activity and legacy event compatibility. | ProductionControls component tests |
+| [ProductionControls.test.tsx](../frontend/src/components/ProductionControls.test.tsx) | Allowed actions, busy/failure states, reset acknowledgment and readable old/new events. | `npm test --workspace frontend -- src/components/ProductionControls.test.tsx` |
+| [production-controls.spec.ts](../tests/e2e/production-controls.spec.ts) | Real seeded/manual workflow, paused/offline stock preservation, explicit resume, full requested quantity completion and empty reset without external requests. | Root full/coverage checks |
+
+```mermaid
+graph LR
+  App -->|selected printer actions| ProductionControls
+  ProductionControls -->|typed requests via App and api.ts| API
+  Service -->|pure lifecycle transitions| Controls[controls.py]
+  Service -->|replacement baseline| Scenarios[scenarios.py]
+  Controls -->|available-work assignment| Scheduling[scheduling.py]
+  Scheduling -->|assignment and blocked events| Activity[activity.py]
+  Simulation[simulation.py] -->|completion events| Activity
+  Controls -->|control events| Activity
+  ProductionControls -->|renders snapshot history| ActivityFeed
+  ControlsBrowser[production-controls.spec.ts] -->|verifies manual production and reset| App
+```
 
 ## Configuration and documentation
 
@@ -130,7 +156,7 @@ graph LR
 | [scene.test.ts](../frontend/src/printers/scene.test.ts) | Real Three geometry and cameras with fake GPU boundary: clipping, commands, resizing, empty/placeholder scenes, failure and disposal. | Frontend suite |
 | [PrinterScene.tsx](../frontend/src/printers/PrinterScene.tsx) | Asynchronous asset lifecycle, stale-load disposal, fallback, fit warnings and accessible camera controls. | `npm test --workspace frontend -- src/printers/PrinterScene.test.tsx` |
 | [PrinterScene.test.tsx](../frontend/src/printers/PrinterScene.test.tsx) | Empty/loaded/stale/failed/context-lost view behavior and unmount cleanup. | Frontend suite |
-| [PrinterFloor.tsx](../frontend/src/printers/PrinterFloor.tsx) | Compact overview and single selected detailed printer, model association and explicitly local example-progress controls. | `npm test --workspace frontend -- src/printers/PrinterFloor.test.tsx` |
+| [PrinterFloor.tsx](../frontend/src/printers/PrinterFloor.tsx) | Compact overview and selected detailed printer, optional production controls, model association and local example-progress controls. | PrinterFloor and App tests |
 | [PrinterFloor.test.tsx](../frontend/src/printers/PrinterFloor.test.tsx) | Printer selection, example isolation, empty state and artifact progress. | Frontend suite |
 | [example-tower.stl](../frontend/public/models/example-tower.stl) | Original deterministic stepped example mesh in millimeters/Z-up; no real production certification. | STL loader and browser checks |
 | [Model handoff](../frontend/public/models/README.md) | Partner-facing instructions and asset provenance. | Link/catalog consistency review |

@@ -9,6 +9,9 @@ from .simulation import advance
 from .scenarios import initial_state
 from .store import Store
 from .modeling import create_task, move_task
+from .controls import control_printer
+from .scenarios import scenario_state
+from .activity import record
 
 
 class FactoryService:
@@ -49,22 +52,42 @@ class FactoryService:
     def advance(self, command) -> dict:
         return self._transition(command, "advance", lambda state: advance(state, command.payload.seconds))
 
+    def printer_control(self,command):
+        return self._transition(command,'printer-control',lambda state: control_printer(state,command.payload.printer_id,command.payload.action))
+
+    def reset(self,command):
+        def replace(state):
+            result=scenario_state(command.payload.scenario)
+            result['session_id']=str(uuid4())
+            record(result,'scenario_reset','Reset to '+command.payload.scenario+' scenario',source='system')
+            return result
+        return self._transition(command,'reset',replace)
+
     def _transition(self, command, name, transition) -> dict:
         canonical = json.dumps({"command": name, "payload": command.payload.model_dump(mode="json")}, sort_keys=True)
+        if name=='reset':
+            canonical=json.dumps({'command':name,'source_session':str(command.session_id),'payload':command.payload.model_dump(mode='json')},sort_keys=True)
         key = str(command.idempotency_key)
         with self.lock, self.store.transaction() as db:
             state = self.store.load(db)
+            previous = db.execute("SELECT payload, result FROM commands WHERE key=?", (key,)).fetchone()
+            if name=='reset' and previous and previous[0]==canonical:
+                # Reset and restart atomically clear older receipts; canonical includes the source session.
+                return json.loads(previous[1])
             if str(command.session_id) != state["session_id"]:
                 raise ValueError("Stale session; refresh state before submitting")
-            previous = db.execute("SELECT payload, result FROM commands WHERE key=?", (key,)).fetchone()
             if previous:
                 if previous[0] != canonical:
                     raise ValueError("Idempotency key already used with a different payload")
                 return json.loads(previous[1])
             if command.expected_revision != state["revision"]:
                 raise ValueError("Stale revision; refresh state before submitting")
+            before=state
             state = transition(state)
-            state["revision"] += 1
+            if name=='reset':
+                db.execute('DELETE FROM commands')
+            elif state!=before:
+                state["revision"] += 1
             self.store.save(db, state)
             db.execute("INSERT INTO commands VALUES (?, ?, ?)", (key, canonical, json.dumps(state)))
             return state

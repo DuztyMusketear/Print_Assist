@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from .contracts import AdvanceCommand, CommandEnvelope, FactorySnapshot, ScheduleCommand, StartCommand
 from .service import FactoryService
 from .contracts import ModelTaskCommand, ModelActionCommand
+from .contracts import PrinterControlCommand, ResetCommand
 
 
 def create_app(path=None):
@@ -63,5 +64,19 @@ def create_app(path=None):
             return service.advance(command)
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post('/api/printers/control',response_model=FactorySnapshot)
+    def printer_control(command:PrinterControlCommand):
+        try:
+            return service.printer_control(command)
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/scenarios/reset',response_model=FactorySnapshot)
+    def reset(command:ResetCommand):
+        try:
+            return service.reset(command)
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
 
     return app

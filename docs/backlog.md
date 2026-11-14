@@ -4,12 +4,15 @@ Sources: [specification](../SPEC.md), [MVP implementation plan](superpowers/plan
 [production overview plan](superpowers/plans/2026-11-14-production-overview.md),
 and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers.md).
 
-**Last audit: 2026-11-14, against `main` at `2b71df7`.** These are local story IDs,
+**Last audit: 2026-11-14, including local `feat/production-controls` changes based
+on `dc07d7d`.** Controls/reset additions below await integration into `main`.
+These are local story IDs,
 not remote issues. Status reflects inspected code and tests; passing coverage
 for current code does not mean unimplemented acceptance criteria are complete.
 Phase 1 is implemented. Phases 2 and 3 have working foundations but remain partial.
 
-**Status key:** Partial = implemented behavior exists but acceptance gaps remain;
+**Status key:** Implemented = acceptance behavior delivered on the audited branch;
+Partial = implemented behavior exists but acceptance gaps remain;
 To Do = the story's primary workflow is not implemented; Deferred = gated follow-on.
 The acceptance criteria below are the completion contract, including those already
 implemented. The status notes identify what still needs work.
@@ -42,12 +45,12 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 
 | Stories | Status | Remaining outcome |
 | --- | --- | --- |
-| PA-201 | Partial | Explain blocked assignments and record typed assignment/rejection events. |
-| PA-202 | Partial | Pause/offline controls, configurable accelerated clock and remaining lifecycle verification. |
-| PA-203 | Partial | Select/reset seeded and empty scenarios with new-session stale-work rejection. |
+| PA-201 | Implemented | Maintain compatibility, assignment reasons/events and competing-command safety. |
+| PA-202 | Partial | Configurable accelerated clock with explicit run/pause and one simulation owner. |
+| PA-203 | Implemented | Seeded/empty resets, new-session guards and safe lost-response replay. |
 | PA-301 | Partial | Reviewable future schedule proposals, explicit material reservations and validated apply. |
 | PA-302 | To Do | Completion estimates, deadline risk and infeasibility explanations. |
-| PA-303 | Partial | Live refresh, telemetry, history and full manual operation workflow. |
+| PA-303 | Partial | Automatic refresh and temperature telemetry; controls/history now exist. |
 | PA-304 | To Do | Unified incoming-order review and manual-entry workflow. |
 | PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
 | PA-501, PA-502, PA-503 | To Do | Fake agent gateway, controls, budgets and cancellation/zero-inference safeguards. |
@@ -58,8 +61,10 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 
 ## Next development order and traceability
 
-1. Finish PA-201/PA-202 controls, material/lifecycle checks and event foundations;
-   then PA-203 reset/scenarios. Reference SPEC sections 6-7 and MVP plan Task 2.
+1. Finish PA-202's accelerated run/pause clock with one backend owner. Printer
+   controls, assignment explanations/history and PA-203 resets are implemented
+   by the [production controls plan](superpowers/plans/2026-11-14-production-controls.md).
+   Reference SPEC sections 6-7 and MVP plan Task 2.
 2. Complete PA-301/PA-302 schedule proposals, reservation rules and estimates;
    then PA-303 live monitoring/history. Reference SPEC section 6 and plan Task 3.
 3. Design PA-304 as the agreed combined intake workflow; it can proceed alongside
@@ -97,11 +102,14 @@ three virtual printers with accurate quantities and filament accounting.
 
 ### PA-201 — Assign work to compatible printers
 
-**Status:** Partial (audit 2026-11-14).
+**Status:** Implemented on `feat/production-controls` (audit 2026-11-14).
 
-Three printers, compatibility/material checks, distinct attempts and transactional schedule/replay guards exist. Remaining: visible per-order rejection reasons, assignment/rejection activity events and focused competing-assignment workflow evidence.
+Three printers, compatibility/material checks, distinct attempts and transactional
+schedule/replay guards exist. Assignment and blocked-order events explain missing
+capacity, capability, material/color or stock. Concurrent scheduling accepts one
+mutation; replay preserves attempts and material. The dashboard displays history.
 
-**Evidence / references:** [scheduling.py](../backend/print_assist/scheduling.py), [service.py](../backend/print_assist/service.py), [scheduling tests](../backend/tests/unit/test_scheduling.py). SPEC 6-7; MVP plan Task 2.
+**Evidence / references:** [scheduling.py](../backend/print_assist/scheduling.py), [service.py](../backend/print_assist/service.py), [controls tests](../backend/tests/unit/test_controls.py), [concurrency/API tests](../backend/tests/integration/test_production_controls.py). SPEC 6-7; MVP plan Task 2.
 
 **P0 · Depends on:** Phase 1.
 As an operator, I want to assign queued work to available compatible printers
@@ -120,7 +128,11 @@ Acceptance criteria:
 
 **Status:** Partial (audit 2026-11-14).
 
-Manual clock advancement, material consumption, successful quantity accounting, automatic/manual starts and restart resume exist. Remaining: user-operated pause/offline/resume transitions, configurable accelerated run/pause clock, and lifecycle/material/concurrency checks across those controls.
+Manual clock advancement, material consumption, successful quantity accounting,
+automatic/manual starts and pause/resume/offline/online controls exist. Paused or
+offline printers preserve attempts and stock; resume rechecks remaining material.
+Zero advance is a no-op. Remaining: configurable accelerated run/pause clock,
+single-owner timer lifecycle and no wall-time catch-up after restart.
 
 **Evidence / references:** [simulation.py](../backend/print_assist/simulation.py), [API](../backend/print_assist/api.py), [scheduling tests](../backend/tests/unit/test_scheduling.py). SPEC 6; MVP plan Task 2.
 
@@ -140,11 +152,16 @@ Acceptance criteria:
 
 ### PA-203 — Reset to repeatable scenarios
 
-**Status:** Partial (audit 2026-11-14).
+**Status:** Implemented on `feat/production-controls` (audit 2026-11-14).
 
-Restart preserves state, changes session, pauses running jobs and keeps agent controls off. Remaining: seeded/empty scenario selection, atomic reset command/UI and delayed-response/command invalidation across reset. Restart is not a reset feature.
+Seeded/empty selection and acknowledged atomic reset replace orders, attempts,
+inventory, modeling tasks, custom artifacts and history. Each reset changes
+session, pauses simulation and disables agent/automatic flags. Exact reset
+retries replay their receipt without reverting newer state; later resets retire
+older receipts. Delayed reads/commands cannot restore pre-reset state or clear
+new-session retry keys. Restart separately retains manufacturing state paused.
 
-**Evidence / references:** [scenarios.py](../backend/print_assist/scenarios.py), [service.py](../backend/print_assist/service.py), [API integration tests](../backend/tests/integration/test_orders_api.py). SPEC 6-7, 10; MVP plan Task 2.
+**Evidence / references:** [scenarios.py](../backend/print_assist/scenarios.py), [service.py](../backend/print_assist/service.py), [reset/API tests](../backend/tests/integration/test_production_controls.py), [late-response tests](../frontend/src/App.test.tsx), [browser workflow](../tests/e2e/production-controls.spec.ts). SPEC 6-7, 10; MVP plan Task 2.
 
 **P0 · Depends on:** PA-202.
 As a presenter, I want seeded and empty-order scenarios so that demos can be repeated.
@@ -166,7 +183,10 @@ should run next, and which orders may miss their production deadlines.
 
 **Status:** Partial (audit 2026-11-14).
 
-Immediate deterministic assignment orders by priority/deadline and uses revision/replay guards. Remaining: a reviewable schedule proposal and validated application, future-capacity planning, explicit planned-material reservation semantics and reasons for unassigned work.
+Immediate deterministic assignment orders by priority/deadline, explains blocked
+work and uses revision/replay guards. Remaining: a reviewable schedule proposal
+and validated application, future-capacity planning and explicit planned-material
+reservation semantics.
 
 **Evidence / references:** [scheduling.py](../backend/print_assist/scheduling.py), [service.py](../backend/print_assist/service.py). SPEC 6-7; MVP plan Task 3.
 
@@ -205,7 +225,10 @@ Acceptance criteria:
 
 **Status:** Partial (audit 2026-11-14).
 
-Tabs, real printer/job/progress/material state, 3D views, refresh and stale-response guards exist. Remaining: non-overlapping automatic refresh, temperature telemetry, activity history, full printer controls and browser completion across the manual workflow.
+Tabs, real printer/job/progress/material state, 3D views, explicit refresh,
+stale-response guards, activity history and printer controls exist. Browser tests
+cover manual-start completion, paused/offline stock preservation and reset.
+Remaining: non-overlapping automatic refresh and temperature telemetry.
 
 **Evidence / references:** [App](../frontend/src/App.tsx), [PrinterFloor](../frontend/src/printers/PrinterFloor.tsx), [3D browser tests](../tests/e2e/printer-views.spec.ts). SPEC 6; MVP plan Task 3 and interactive printer plan.
 

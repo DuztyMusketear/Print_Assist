@@ -1,5 +1,19 @@
 """Deterministic scheduling transitions."""
 from copy import deepcopy
+from .activity import record
+
+
+def blocked_reason(printers,artifact):
+    idle=[printer for printer in printers if printer['status']=='idle']
+    if not idle:
+        return 'No idle printer is available'
+    capable=[printer for printer in idle if set(artifact['required_capabilities']).issubset(printer['capabilities'])]
+    if not capable:
+        return 'Available printers lack required capabilities'
+    material=[printer for printer in capable if printer['material']['type']==artifact['filament_type'] and printer['material']['color']==artifact['color']]
+    if not material:
+        return 'Available printers have a different filament type or color'
+    return 'Insufficient filament for the remaining work'
 
 
 def schedule(state: dict, mode: str = "automatic", preserve_mode: bool = False) -> dict:
@@ -19,10 +33,14 @@ def schedule(state: dict, mode: str = "automatic", preserve_mode: bool = False) 
                             and item["material"]["color"] == artifact["color"]
                             and item["material"]["grams"] >= artifact["filament_grams"]), None)
             if printer is None:
+                record(result,'assignment_blocked',blocked_reason(result['printers'],artifact),
+                       source='simulation' if preserve_mode else 'user',status='blocked',order_id=order['id'])
                 break
             printer["status"] = "running" if mode == "automatic" else "reserved"
             attempt = sum(job["order_id"] == order["id"] for job in result["jobs"]) + 1
             result["jobs"].append({"id": f"{order['id']}-{attempt}", "order_id": order["id"], "printer_id": printer["id"], "status": "running" if mode == "automatic" else "pending", "elapsed_seconds": 0, "duration_seconds": artifact["duration_seconds"]})
+            record(result,'job_assigned','Assigned work to '+printer['id'],source='simulation' if preserve_mode else 'user',
+                   order_id=order['id'],printer_id=printer['id'],job_id=result['jobs'][-1]['id'])
     return result
 
 
@@ -34,6 +52,15 @@ def start_job(state: dict, job_id: str) -> dict:
     printer = next(printer for printer in result["printers"] if printer["id"] == job["printer_id"])
     if printer["status"] not in ("reserved", "paused"):
         raise ValueError("Printer is unavailable")
+    order=next(order for order in result['orders'] if order['id']==job['order_id'])
+    artifact=next(artifact for artifact in result['artifacts'] if artifact['id']==order['artifact_id'])
+    if not set(artifact['required_capabilities']).issubset(printer['capabilities']):
+        raise ValueError('Printer lacks required capabilities')
+    remaining=artifact['filament_grams']*(1-job.get('elapsed_seconds',0)/artifact['duration_seconds'])
+    if printer['material']['type']!=artifact['filament_type'] or printer['material']['color']!=artifact['color'] or printer['material']['grams']+1e-9<remaining:
+        raise ValueError('Printer filament does not meet remaining requirements')
     printer["status"] = "running"
     job["status"] = "running"
+    job.pop('suspended_status',None)
+    record(result,'job_started','Started work on '+printer['id'],order_id=order['id'],printer_id=printer['id'],job_id=job['id'])
     return result

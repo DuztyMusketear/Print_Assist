@@ -21,9 +21,12 @@ alternative local setup, not a prerequisite for native development.
 ## Current implementation audit - 2026-11-14
 
 Phase 1 is implemented; Tasks 2 and 3 have partial production/dashboard foundations.
-The original Task 2/3 completion checkboxes remain open because controls, scenario
-reset, schedule proposals/estimates, monitoring and some workflow evidence remain
-incomplete. Tasks 4-6 remain outstanding; native setup/research preparation are
+The original Task 2/3 completion checkboxes remain open because the accelerated
+clock, schedule proposals/estimates and live monitoring remain incomplete.
+The local [production controls follow-up](2026-11-14-production-controls.md)
+adds pause/resume/offline/online, scenario resets, activity and manual workflow
+verification; those additions await integration into main.
+Tasks 4-6 remain outstanding; native setup/research preparation are
 supporting pieces, not full milestone acceptance. Additional persisted modeling
 and interactive STL views are implemented under their focused plans.
 

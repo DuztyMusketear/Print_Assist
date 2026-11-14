@@ -66,6 +66,25 @@ class AdvanceCommand(ScheduleCommand):
     payload: AdvancePayload
 
 
+class PrinterControlPayload(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    printer_id: Annotated[str,Field(min_length=1)]
+    action: Literal['pause','resume','offline','online']
+
+
+class PrinterControlCommand(ScheduleCommand):
+    payload: PrinterControlPayload
+
+
+class ResetPayload(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    scenario: Literal['empty','seeded']
+
+
+class ResetCommand(ScheduleCommand):
+    payload: ResetPayload
+
+
 class Artifact(BaseModel):
     id: str
     name: str
@@ -150,8 +169,13 @@ class Printer(BaseModel):
 
 class ActivityEvent(BaseModel):
     type: str
-    order_id: UUID
+    order_id: UUID | None = None
     timestamp: AwareDatetime
+    printer_id: str | None = None
+    job_id: str | None = None
+    source: Literal['user','simulation','system'] = 'user'
+    status: Literal['accepted','blocked'] = 'accepted'
+    message: str = ''
 
 
 class FactorySnapshot(BaseModel):

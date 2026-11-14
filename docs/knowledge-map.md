@@ -46,6 +46,8 @@ graph LR
     PRINTER3D["Interactive printer design"] -->|extends visualization of| DESIGN
     MAP -->|indexes design| PRINTER3D
     PRINTER3D -->|implemented by| VIEW3D["Interactive printer plan"]
+    BACKLOG -->|controls and reset follow-up| CONTROLS["Production controls plan"]
+    CONTROLS -->|implements lifecycle requirements| SPEC
 ```
 
 ## File index
@@ -68,6 +70,7 @@ graph LR
 | [Interactive printer design](superpowers/specs/2026-11-14-interactive-printer-design.md) | Approved 3D printer/bed views, STL part assets and persisted visual associations. | Production overview design, specification, code map | Review contracts, scope and proposed defaults before implementation. |
 | [Interactive printer implementation](superpowers/plans/2026-11-14-interactive-printers.md) | Test-first tasks, constraints and recorded implementation choices for 3D views. | Interactive printer design, code map | Full/coverage commands and feature review. |
 | [Part model handoff](../frontend/public/models/README.md) | STL convention, catalog registration, limits, example provenance and optional printer replacement notes. | visual_assets.py, modeling form, printer loader | Verify catalog paths and offline browser loading. |
+| [Production controls plan](superpowers/plans/2026-11-14-production-controls.md) | Pause/resume/offline/online, deterministic scenario reset, events and retry/session safety; accelerated clock remains subsequent work. | SPEC, MVP plan, backlog, code map | Root coverage/full commands and regression review. |
 
 ## How to extend the map
 

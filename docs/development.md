@@ -162,3 +162,26 @@ and browsers remains unverified. Vite reports an approximately 813 kB main JS
 bundle after the new 3D dependency; code splitting is a future performance task,
 not a functional failure. The renderer is demand-driven with no continuous idle
 animation loop. No official Prusa CAD asset is included.
+
+## Production controls and repeatable scenarios
+
+In Printers, select a printer to pause/resume or take it offline/online. Held work
+preserves progress and material; bringing a printer online requires an explicit
+resume before held work continues. Pending manual work stays pending. Schedule
+continues to offer manual/automatic assignment and explicit one-hour advances;
+an automatic accelerated clock is still backlog work.
+
+Printers also offers Empty/Seeded scenario reset with a required acknowledgment.
+Reset replaces orders, attempts, inventory, modeling tasks, custom artifacts and
+history, changes the session, pauses simulation and disables agent flags. It does
+not remove repository model files. Seeded orders use the bundled example tower.
+Overview/Schedule show activity and blocked assignment explanations. Uncertain
+production commands expose an explicit retry that preserves the original key.
+
+Verification (2026-11-14, local `feat/production-controls`):
+`.venv\Scripts\python.exe scripts/check.py coverage` passed 61 backend tests,
+91 frontend tests and 6 browser workflows with 100% statement/branch coverage;
+schema drift and type/build checks passed. The command includes the full offline
+suite. Review regressions cover late pre-reset order/model/schedule responses,
+retry receipt ownership, competing commands and material preservation. Existing
+Vite bundle-size guidance remains; other platforms remain unverified.

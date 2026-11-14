@@ -2,8 +2,9 @@ import {useState} from 'react';
 import type {Snapshot} from '../api';
 import {printerView} from './model';
 import {PrinterScene} from './PrinterScene';
+import {PrinterControls,type ControlHandler} from '../components/ProductionControls';
 
-export function PrinterFloor({state,detailed}:{state:Snapshot;detailed:boolean}) {
+export function PrinterFloor({state,detailed,onControl}:{state:Snapshot;detailed:boolean;onControl?:ControlHandler}) {
   const [selection,setSelection]=useState('');
   const [example,setExample]=useState(false);
   const [exampleProgress,setExampleProgress]=useState(50);
@@ -27,6 +28,7 @@ export function PrinterFloor({state,detailed}:{state:Snapshot;detailed:boolean})
         <p>{printer.material.color} {printer.material.type} · {printer.material.grams} g</p>
         {view.job && <p>Job {String(view.job.id)} · {Math.round(view.progress*100)}%</p>}
         {view.artifact && <p className="muted">{view.artifact.name}</p>}
+        {detailed && onControl && <PrinterControls id={printer.id} status={printer.status} onControl={onControl}/>}
       </article>;
     })}</div>
     <p className="scene-caption">Progress reveal is simulated geometry, not a sliced toolpath or print certification. Drag to orbit; use the buttons for keyboard controls.</p>

@@ -140,6 +140,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/printers/control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Printer Control */
+        post: operations["printer_control_api_printers_control_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scenarios/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset */
+        post: operations["reset_api_scenarios_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -148,16 +182,34 @@ export interface components {
         ActivityEvent: {
             /** Type */
             type: string;
-            /**
-             * Order Id
-             * Format: uuid
-             */
-            order_id: string;
+            /** Order Id */
+            order_id?: string | null;
             /**
              * Timestamp
              * Format: date-time
              */
             timestamp: string;
+            /** Printer Id */
+            printer_id?: string | null;
+            /** Job Id */
+            job_id?: string | null;
+            /**
+             * Source
+             * @default user
+             * @enum {string}
+             */
+            source: "user" | "simulation" | "system";
+            /**
+             * Status
+             * @default accepted
+             * @enum {string}
+             */
+            status: "accepted" | "blocked";
+            /**
+             * Message
+             * @default
+             */
+            message: string;
         };
         /** AdvanceCommand */
         AdvanceCommand: {
@@ -419,6 +471,32 @@ export interface components {
             capabilities: string[];
             material: components["schemas"]["PrinterMaterial"];
         };
+        /** PrinterControlCommand */
+        PrinterControlCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["PrinterControlPayload"];
+        };
+        /** PrinterControlPayload */
+        PrinterControlPayload: {
+            /** Printer Id */
+            printer_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "pause" | "resume" | "offline" | "online";
+        };
         /** PrinterMaterial */
         PrinterMaterial: {
             /** Type */
@@ -427,6 +505,30 @@ export interface components {
             color: string;
             /** Grams */
             grams: number;
+        };
+        /** ResetCommand */
+        ResetCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ResetPayload"];
+        };
+        /** ResetPayload */
+        ResetPayload: {
+            /**
+             * Scenario
+             * @enum {string}
+             */
+            scenario: "empty" | "seeded";
         };
         /** ScheduleCommand */
         ScheduleCommand: {
@@ -731,6 +833,72 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AdvanceCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    printer_control_api_printers_control_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrinterControlCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_api_scenarios_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetCommand"];
             };
         };
         responses: {
