@@ -37,6 +37,14 @@ class FactoryService:
         with self.lock, self.store.transaction() as db:
             return self.store.load(db)
 
+    def proposal(self,mode):
+        from .proposals import propose
+        return propose(self.snapshot(),mode)
+
+    def apply_schedule(self,command):
+        from .proposals import apply_proposal
+        return self._transition(command,'apply-schedule',lambda state:apply_proposal(state,command.payload.proposal_id,command.payload.mode,command.payload.clock_speed))
+
     def schedule(self, command: ScheduleCommand) -> dict:
         return self._transition(command, "schedule", lambda state: schedule(state, command.payload.mode))
 
@@ -62,9 +70,13 @@ class FactoryService:
             order=dict(id=str(uuid4()),**payload,status='queued',successful_quantity=0,schedule_mode=command.payload.mode)
             result['orders'].append(order)
             record(result,'order_created','Order added from prepared model profile',order_id=order['id'])
+            if command.payload.review_only:
+                order['requires_schedule_review']=True
+                return result
             result=schedule(result,command.payload.mode,preserve_mode=True)
             if command.payload.mode=='automatic':
                 result['running']=True
+                result['clock_speed']=command.payload.clock_speed
             return result
         return self._transition(command,'plan-order',plan)
 

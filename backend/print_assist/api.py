@@ -7,6 +7,8 @@ from .contracts import ClockCommand, PlanOrderCommand
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from typing import Literal
+from .contracts import ScheduleProposal, ApplyScheduleCommand
 
 from .contracts import AdvanceCommand, CommandEnvelope, FactorySnapshot, ScheduleCommand, StartCommand
 from .service import FactoryService
@@ -109,6 +111,17 @@ def create_app(path=None):
     def plan_order(command:PlanOrderCommand):
         try:
             return project(service.plan_order(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.get('/api/schedule/proposal',response_model=ScheduleProposal)
+    def proposal(mode:Literal['automatic','manual']='automatic'):
+        return service.proposal(mode)
+
+    @app.post('/api/schedule/apply',response_model=FactorySnapshot)
+    def apply_schedule(command:ApplyScheduleCommand):
+        try:
+            return project(service.apply_schedule(command))
         except ValueError as error:
             raise HTTPException(status_code=409,detail=str(error)) from error
 

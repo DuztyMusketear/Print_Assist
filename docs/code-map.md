@@ -313,3 +313,50 @@ The guided-printing browser scenario pauses the clock before creating another
 order, then lets automatic planning restart it; test mutations remain deterministic
 under the existing revision guard. Compact rows disclose timing details rather
 than expanding every row, and unassigned work has an explicit station label.
+
+## Reviewable scheduling, reservations and idle start guidance
+
+contracts.py/types.ts add typed proposals, assignments, blocked quantities,
+apply commands and aggregate material commitments. api.py exposes read-only
+GET /api/schedule/proposal and guarded POST /api/schedule/apply. service.py
+uses snapshot-based preview and existing transactional revision/receipt guards
+for apply. scheduling.py dispatches planned attempts before assigning more work,
+counts them against requested quantity and excludes their committed material.
+monitoring.py exposes the derived ledger and respects queued manual dependencies.
+App.tsx wires preview/apply through existing uncertain-command receipt handling,
+Overview guidance and idle-printer links to Orders. PrinterFloor.tsx exposes that
+link in both views. QuickPrint.tsx selects automatic playback speed (60x default);
+plan_order applies the explicitly chosen speed, avoiding inherited fast playback.
+styles.css owns readiness/review presentation. Existing App, QuickPrint and API
+integration tests cover navigation and inherited-fast-clock behavior.
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [proposals.py](../backend/print_assist/proposals.py) | Pure priority/deadline/ID future capacity allocation, held-equipment exclusion, blocked quantities, deterministic state hash and validated creation of planned attempts. | Proposal unit and API tests |
+| [reservations.py](../backend/print_assist/reservations.py) | Remaining filament commitments for planned/pending/running/paused attempts; free stock and aggregate ledger derive once from unique attempts, without reservation-time stock deduction. | Proposal lifecycle/API tests |
+| [test_proposals.py](../backend/tests/unit/test_proposals.py) | Read-only deterministic future plans, full/partial material capacity, held/manual dependencies, pending dispatch, offline preservation and exact consumption. | Backend unit suite |
+| [test_schedule_proposals_api.py](../backend/tests/integration/test_schedule_proposals_api.py) | Preview purity, typed modes, stale apply/reset rejection, receipt replay and competing applies reserving once. | Backend integration suite |
+| [PrintingGuidance.tsx](../frontend/src/components/PrintingGuidance.tsx) | Empty/completed, waiting, running and paused-clock explanations with new-print and scheduling links. | PrintingGuidance/App tests |
+| [PrintingGuidance.test.tsx](../frontend/src/components/PrintingGuidance.test.tsx) | Real work/clock state messaging and navigation callbacks. | Frontend suite |
+| [ScheduleProposal.tsx](../frontend/src/components/ScheduleProposal.tsx) | Preview/apply UI, future slots/material/blocked work, assumptions, stale guards, mode locking during requests, error feedback and commitment display. | ScheduleProposal/App tests |
+| [ScheduleProposal.test.tsx](../frontend/src/components/ScheduleProposal.test.tsx) | Preview/apply, stale/read failures, blocked/empty/manual plans, ledger and mode lock. | Frontend suite |
+| [schedule-proposals.spec.ts](../tests/e2e/schedule-proposals.spec.ts) | Idle new-print journey, real animated pixel change, pause/resume, read-only future proposal, apply/stock commitments and completion with released reservations. | Root full/coverage suite |
+
+```mermaid
+graph LR
+  App -->|idle new-print links| PrintingGuidance
+  App -->|guarded proposal application| ScheduleProposal
+  API -->|pure snapshot preview| Proposals[proposals.py]
+  Service -->|atomic validated apply| Proposals
+  Proposals -->|activate eligible queued attempts| Scheduling
+  Scheduling -->|uncommitted stock| Reservations[reservations.py]
+  Monitoring -->|snapshot ledger| Reservations
+  ProposalBrowser[schedule-proposals.spec.ts] -->|verifies visible printing and commitments| App
+```
+
+Review-first intake uses PlanOrderPayload.review_only and Order.requires_schedule_review.
+The service persists the hold atomically; automatic/manual schedulers skip it until
+application, while already approved planned attempts can run. Partial application
+keeps unassigned quantities held. QuickPrint/App carry the selected playback speed
+to ScheduleProposal and ApplySchedulePayload; automatic apply honors it. Tests cover
+holding through clock advancement, partial approval/online capacity changes and speed.

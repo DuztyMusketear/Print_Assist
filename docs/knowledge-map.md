@@ -80,6 +80,8 @@ graph LR
 
 | [Compact overview plan](superpowers/plans/2026-11-14-compact-overview.md) | Reference-driven header, floor/telemetry, lower table/log and scenario sidebar layout, preserving interactive 3D. | Code map, guided printing plan, SPEC | Root coverage and responsive browser checks. |
 
+| [Schedule proposal/start guidance plan](superpowers/plans/2026-11-14-schedule-proposals.md) | PA-301 future proposals and material commitments, PA-307 idle/new-print guidance and observable playback. | SPEC, backlog, code map | Root offline coverage and proposal browser workflow. |
+
 ## How to extend the map
 
 When implementation begins, add each source/configuration/test file to the table.

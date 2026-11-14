@@ -740,3 +740,31 @@ test('detailed inspector retains manual start in the compact layout',async()=>{
  await waitFor(()=>expect(transport).toHaveBeenCalledTimes(2));
  expect(transport.mock.calls[1][0]).toBe('/api/start');
 });
+
+
+test('idle overview start guidance opens model and quantity selection',async()=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('button',{name:'Start a new print'}));
+ expect(screen.getByLabelText('Model to print')).toBeInTheDocument();
+});
+
+
+test('idle inspector opens model selection and waiting work opens reviewable scheduling',async()=>{
+ const initial={...orderedState,printers:[{id:'printer-1',status:'idle',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}}]};
+ const proposal={id:'hash',session_id:initial.session_id,revision:initial.revision,mode:'automatic',assumptions:'Estimate',assignments:[{order_id:initial.orders[0].id,printer_id:'printer-1',start:'now',finish:'later',filament_grams:25,duration_seconds:60}],blocked:[]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(initial))).mockResolvedValueOnce(new Response(JSON.stringify(proposal))).mockResolvedValueOnce(new Response(JSON.stringify({...initial,revision:2})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/2 items/);
+ await user.click(screen.getByRole('button',{name:'Choose a model for Printer 1'}));expect(screen.getByLabelText('Model to print')).toBeInTheDocument();
+ await user.click(screen.getByRole('tab',{name:'Overview'}));await user.click(screen.getByRole('button',{name:'Review waiting work'}));
+ await user.click(screen.getByRole('button',{name:'Preview schedule'}));await screen.findByText(/25 g \//);await user.click(screen.getByRole('button',{name:'Apply reviewed schedule'}));
+ await waitFor(()=>expect(transport).toHaveBeenCalledTimes(3));expect(transport.mock.calls[2][0]).toBe('/api/schedule/apply');
+ await user.click(screen.getByRole('tab',{name:'Printers'}));await user.click(screen.getByRole('button',{name:'Choose a model for Printer 1'}));expect(screen.getByLabelText('Model to print')).toBeInTheDocument();
+});
+
+
+test('review-first intake guides to Schedule without claiming printing has started',async()=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state))).mockResolvedValueOnce(new Response(JSON.stringify({...orderedState,revision:1})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);await user.click(screen.getByRole('button',{name:'Start a new print'}));
+ await user.click(screen.getByRole('button',{name:'Review schedule first'}));await waitFor(()=>expect(screen.getByRole('tab',{name:'Schedule'})).toHaveAttribute('aria-selected','true'));
+});

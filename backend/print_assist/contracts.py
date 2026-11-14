@@ -51,12 +51,51 @@ class ScheduleCommand(BaseModel):
 class PlanOrderPayload(BaseModel):
     model_config=ConfigDict(extra='forbid')
     order: OrderCreate
+    review_only: bool = False
     mode: Literal['automatic','manual']
+    clock_speed: Literal[1,60,300,3600] = 60
 
 
 class PlanOrderCommand(ScheduleCommand):
     payload: PlanOrderPayload
 
+
+class ApplySchedulePayload(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    proposal_id: Annotated[str,Field(min_length=1)]
+    clock_speed: Literal[1,60,300,3600] = 60
+    mode: Literal['automatic','manual']
+
+class ApplyScheduleCommand(ScheduleCommand):
+    payload: ApplySchedulePayload
+
+class ScheduleAssignment(BaseModel):
+    order_id: str
+    printer_id: str
+    start: AwareDatetime
+    finish: AwareDatetime
+    filament_grams: float
+    duration_seconds: int
+
+class ScheduleBlocked(BaseModel):
+    order_id: str
+    quantity: int
+    reason: str
+
+class ScheduleProposal(BaseModel):
+    id: str
+    session_id: str
+    revision: int
+    mode: Literal['automatic','manual']
+    assignments: list[ScheduleAssignment]
+    blocked: list[ScheduleBlocked]
+    assumptions: str
+
+class MaterialReservation(BaseModel):
+    printer_id: str
+    stock_grams: float
+    reserved_grams: float
+    available_grams: float
 
 class StartPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -163,6 +202,7 @@ class ModelActionCommand(ScheduleCommand):
 
 
 class Order(OrderCreate):
+    requires_schedule_review: bool = Field(default_factory=bool)
     id: UUID
     status: str
     successful_quantity: int
@@ -218,6 +258,7 @@ class FactorySnapshot(BaseModel):
     simulation_time: AwareDatetime
     running: bool
     clock_speed: int = 60
+    material_reservations: list[MaterialReservation] = Field(default_factory=list)
     forecasts: list[Forecast] = Field(default_factory=list)
     telemetry: list[Telemetry] = Field(default_factory=list)
     printers: list[Printer]

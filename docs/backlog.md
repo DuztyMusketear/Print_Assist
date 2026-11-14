@@ -49,13 +49,13 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 | PA-201 | Implemented | Maintain compatibility, assignment reasons/events and competing-command safety. |
 | PA-202 | Implemented | Single-owner fixed-step clock, configurable speed, run/pause and restart/reset pause. |
 | PA-203 | Implemented | Seeded/empty resets, new-session guards and safe lost-response replay. |
-| PA-301 | Partial | Reviewable future schedule proposals, explicit material reservations and validated apply. |
+| PA-301 | Implemented locally | Future slot preview, validated atomic apply and remaining-material reservation ledger. |
 | PA-302 | Implemented | Conservative capacity/material estimates, deadline risk and unavailable reasons. |
 | PA-303 | Partial | Monitoring/controls implemented; operator cannot clearly get active prints. Close PA-307 and verify the user journey. |
 | PA-304 | To Do | Incoming-order review/acceptance; guided manual/profile intake now exists. |
 | PA-305 | Partial | Prepared-model asset ingestion, estimate provenance and optional real layer/toolpath data. |
 | PA-306 | To Do | Explicit cancel/discard with scrap and consumed-material accounting. |
-| PA-307 | To Do / P0 | Explain idle/completed/no-work state and provide an obvious working start-print path. |
+| PA-307 | Implemented; operator verification pending | Idle/new-print guidance and visible start/pause/resume pass browser tests; verify with user. |
 | PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
 | PA-501, PA-502, PA-503 | To Do | Fake agent gateway, controls, budgets and cancellation/zero-inference safeguards. |
 | PA-601 | To Do | Simulated business metrics and matched scenario comparisons. |
@@ -187,12 +187,12 @@ should run next, and which orders may miss their production deadlines.
 
 ### PA-301 — Produce and apply a feasible schedule
 
-**Status:** Partial (audit 2026-11-14).
+**Status:** Implemented on `feat/schedule-proposals-start-guidance` (2026-11-14).
 
 Immediate deterministic assignment orders by priority/deadline, explains blocked
-work and uses revision/replay guards. Remaining: a reviewable schedule proposal
-and validated application, future-capacity planning and explicit planned-material
-reservation semantics.
+work and uses revision/replay guards. New read-only proposals include future slots, filament, blocked quantities and
+assumptions. Atomic hash/session/revision-aware application creates planned
+attempts, with remaining-material commitments and manual-start preservation.
 
 **Evidence / references:** [scheduling.py](../backend/print_assist/scheduling.py), [service.py](../backend/print_assist/service.py). SPEC 6-7; MVP plan Task 3.
 
@@ -576,7 +576,7 @@ against the labeled example profile while waiting for the real assets.
 
 ### PA-307 - Make idle-to-active printing obvious and verify it with the operator
 
-**Status:** To Do. **P0.** Next action before new feature expansion.
+**Status:** Implemented on `feat/schedule-proposals-start-guidance`; operator verification pending. **P0.**
 
 User reports that all printers remain idle; pause and offline controls work, but
 active printing has not been successfully reached in their experience. Do not
@@ -608,3 +608,27 @@ Recent completed code verification at 5d490dc: 71 backend, 125 frontend and 9
 browser tests with 100% statement/branch coverage. Those results cover implemented
 paths and do not resolve this reported usability/acceptance gap. This update is
 documentation only; no jobs were created, reset or started for this audit.
+
+## PA-301/307 implementation follow-up
+
+Current local branch implements future proposals and derived reservations. Apply
+reserves once per planned/active attempt; physical stock decreases only with
+consumption. Paused/offline work keeps commitments, fulfilled jobs release them,
+and later automatic forecasts do not skip a queued manual hold. Preview/apply
+must use the same unchanged session/revision; pause the clock during review.
+Slots assume model estimates and immediate manual starts, not guaranteed dates.
+
+Overview now explains no work versus completed/waiting/paused-clock states and
+links directly to new-print or scheduling actions. Idle inspection offers model
+selection. Automatic quick printing explicitly selects playback speed (60x default)
+so a prior fast clock does not make new activity disappear unexpectedly.
+Browser tests verify actual animated image changes, pause/resume, preview purity,
+reservations and full completion. PA-307 remains pending the operator confirming
+that the new path is clear in the preview; automated success is not user signoff.
+
+Review-first intake is available beside automatic/manual printing. It creates a
+held order with no jobs/reservations until reviewed apply. Partial applications
+keep blocked copies held for another proposal; they do not silently start when
+capacity returns. Chosen playback speed is visible/carried into review apply.
+Current verification: 80 backend, 134 frontend and 11 browser tests, all offline,
+100% statement/branch coverage, schema/build passed. Operator signoff still pending.

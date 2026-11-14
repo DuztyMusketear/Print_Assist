@@ -9,10 +9,12 @@ test('prepared model supplies estimates and automatic/manual orders need only qu
  render(<QuickPrint state={state} onQueue={onQueue} onModels={vi.fn()}/>);
  expect(screen.getByText(/120 min per part/)).toHaveTextContent('25 g');
  await user.clear(screen.getByLabelText('Number of copies'));await user.type(screen.getByLabelText('Number of copies'),'3');
+ await user.selectOptions(screen.getByLabelText('Automatic playback speed'),'1');
  await user.click(screen.getByRole('button',{name:'Start automatic printing'}));
  expect(onQueue).toHaveBeenLastCalledWith(expect.objectContaining({mode:'automatic',order:expect.objectContaining({quantity:3,artifact_id:'figure-pla-blue'})}));
  await user.click(screen.getByRole('button',{name:'Plan manual printing'}));
  expect(onQueue).toHaveBeenLastCalledWith(expect.objectContaining({mode:'manual'}));
+ await user.click(screen.getByRole('button',{name:'Review schedule first'}));expect(onQueue).toHaveBeenLastCalledWith(expect.objectContaining({review_only:true,mode:'automatic'}));
 });
 
 

@@ -1,5 +1,6 @@
 """Read-only conservative estimates and illustrative simulated telemetry."""
 from copy import deepcopy
+from .reservations import ledger
 from datetime import datetime, timedelta
 
 
@@ -12,15 +13,16 @@ def project(state):
     ends={o['id']:[] for o in state['orders']}
     held=set()
     for job in state['jobs']:
-        if job['status'] not in {'running','pending','paused'}: continue
+        if job['status'] not in {'running','pending','paused','planned'}: continue
         order=next(o for o in state['orders'] if o['id']==job['order_id'])
         artifact=next(a for a in state['artifacts'] if a['id']==order['artifact_id'])
         pid=job['printer_id']
         remaining=artifact['duration_seconds']-job.get('elapsed_seconds',0)
         grams=artifact['filament_grams']*remaining/artifact['duration_seconds']
-        if job['status']=='running' and printers[pid]['status']=='running' and stock[pid]>=grams:
-            available[pid]=remaining;stock[pid]-=grams;ends[order['id']].append(remaining)
-        else: held.add(order['id'])
+        if ((job['status']=='running' and printers[pid]['status']=='running') or (job['status']=='planned' and job['schedule_mode']=='automatic' and available[pid] is not None)) and stock[pid]+1e-9>=grams:
+            available[pid]=(available[pid] or 0)+remaining;stock[pid]-=grams;ends[order['id']].append(available[pid])
+        else:
+            held.add(order['id']);available[pid]=None
     forecasts=[]
     for order in sorted(state['orders'],key=lambda o:(-o['priority'],o['production_due'],o['id'])):
         artifact=next(a for a in state['artifacts'] if a['id']==order['artifact_id'])
@@ -31,6 +33,7 @@ def project(state):
             if completed:
                 ends[order['id']]=[(max(completed)-now).total_seconds()]
             else: reason='Completion time was not recorded'
+        if order.get('requires_schedule_review'): reason='Awaiting reviewed schedule application'
         count=order['quantity']-order['successful_quantity']-len(ends[order['id']])
         if order.get('schedule_mode')=='manual' and count>0: reason='Manual work requires an explicit start'
         if not reason:
@@ -48,6 +51,7 @@ def project(state):
         due=datetime.fromisoformat(order['production_due'].replace('Z','+00:00'))
         forecasts.append(dict(order_id=order['id'],completion=None if reason else finish.isoformat(),
             risk='unavailable' if reason else 'late' if finish>due else 'on_time',reason=reason))
+    result['material_reservations']=ledger(state)
     result['forecasts']=forecasts
     result['telemetry']=[dict(printer_id=p['id'],nozzle_c=210 if p['status']=='running' else 25,
         bed_c=60 if p['status']=='running' else 25,simulated=True) for p in state['printers']]

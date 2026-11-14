@@ -208,6 +208,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schedule/proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Proposal */
+        get: operations["proposal_api_schedule_proposal_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schedule/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Schedule */
+        post: operations["apply_schedule_api_schedule_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -265,6 +299,38 @@ export interface components {
         AdvancePayload: {
             /** Seconds */
             seconds: number;
+        };
+        /** ApplyScheduleCommand */
+        ApplyScheduleCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ApplySchedulePayload"];
+        };
+        /** ApplySchedulePayload */
+        ApplySchedulePayload: {
+            /** Proposal Id */
+            proposal_id: string;
+            /**
+             * Clock Speed
+             * @default 60
+             * @enum {integer}
+             */
+            clock_speed: 1 | 60 | 300 | 3600;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "automatic" | "manual";
         };
         /** Artifact */
         Artifact: {
@@ -359,6 +425,8 @@ export interface components {
              * @default 60
              */
             clock_speed: number;
+            /** Material Reservations */
+            material_reservations?: components["schemas"]["MaterialReservation"][];
             /** Forecasts */
             forecasts?: components["schemas"]["Forecast"][];
             /** Telemetry */
@@ -402,6 +470,17 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** MaterialReservation */
+        MaterialReservation: {
+            /** Printer Id */
+            printer_id: string;
+            /** Stock Grams */
+            stock_grams: number;
+            /** Reserved Grams */
+            reserved_grams: number;
+            /** Available Grams */
+            available_grams: number;
         };
         /** ModelAction */
         ModelAction: {
@@ -513,6 +592,8 @@ export interface components {
              * Format: date-time
              */
             ship_by: string;
+            /** Requires Schedule Review */
+            requires_schedule_review?: boolean;
             /**
              * Id
              * Format: uuid
@@ -567,10 +648,21 @@ export interface components {
         PlanOrderPayload: {
             order: components["schemas"]["OrderCreate"];
             /**
+             * Review Only
+             * @default false
+             */
+            review_only: boolean;
+            /**
              * Mode
              * @enum {string}
              */
             mode: "automatic" | "manual";
+            /**
+             * Clock Speed
+             * @default 60
+             * @enum {integer}
+             */
+            clock_speed: 1 | 60 | 300 | 3600;
         };
         /** Printer */
         Printer: {
@@ -641,6 +733,36 @@ export interface components {
              */
             scenario: "empty" | "seeded";
         };
+        /** ScheduleAssignment */
+        ScheduleAssignment: {
+            /** Order Id */
+            order_id: string;
+            /** Printer Id */
+            printer_id: string;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /**
+             * Finish
+             * Format: date-time
+             */
+            finish: string;
+            /** Filament Grams */
+            filament_grams: number;
+            /** Duration Seconds */
+            duration_seconds: number;
+        };
+        /** ScheduleBlocked */
+        ScheduleBlocked: {
+            /** Order Id */
+            order_id: string;
+            /** Quantity */
+            quantity: number;
+            /** Reason */
+            reason: string;
+        };
         /** ScheduleCommand */
         ScheduleCommand: {
             /**
@@ -665,6 +787,26 @@ export interface components {
              * @enum {string}
              */
             mode: "automatic" | "manual";
+        };
+        /** ScheduleProposal */
+        ScheduleProposal: {
+            /** Id */
+            id: string;
+            /** Session Id */
+            session_id: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "automatic" | "manual";
+            /** Assignments */
+            assignments: components["schemas"]["ScheduleAssignment"][];
+            /** Blocked */
+            blocked: components["schemas"]["ScheduleBlocked"][];
+            /** Assumptions */
+            assumptions: string;
         };
         /** StartCommand */
         StartCommand: {
@@ -1087,6 +1229,70 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PlanOrderCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    proposal_api_schedule_proposal_get: {
+        parameters: {
+            query?: {
+                mode?: "automatic" | "manual";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleProposal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_schedule_api_schedule_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyScheduleCommand"];
             };
         };
         responses: {
