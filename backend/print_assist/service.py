@@ -3,7 +3,9 @@ import json
 import threading
 from uuid import uuid4
 
-from .contracts import CommandEnvelope
+from .contracts import CommandEnvelope, ScheduleCommand
+from .scheduling import schedule, start_job
+from .simulation import advance
 from .scenarios import initial_state
 from .store import Store
 
@@ -17,6 +19,10 @@ class FactoryService:
             if "printer_schema_version" not in state:
                 state["printers"] = initial_state()["printers"]
                 state["printer_schema_version"] = 1
+            for job in state["jobs"]:
+                if job["status"] == "running":
+                    job["status"] = "paused"
+                    next(printer for printer in state["printers"] if printer["id"] == job["printer_id"])["status"] = "paused"
             state["session_id"] = str(uuid4())
             state["running"] = False
             state["controls"] = {"agents_enabled": False, "automatic_triggers": False}
@@ -26,6 +32,35 @@ class FactoryService:
     def snapshot(self) -> dict:
         with self.lock, self.store.transaction() as db:
             return self.store.load(db)
+
+    def schedule(self, command: ScheduleCommand) -> dict:
+        return self._transition(command, "schedule", lambda state: schedule(state, command.payload.mode))
+
+    def start(self, command) -> dict:
+        return self._transition(command, "start", lambda state: start_job(state, command.payload.job_id))
+
+    def advance(self, command) -> dict:
+        return self._transition(command, "advance", lambda state: advance(state, command.payload.seconds))
+
+    def _transition(self, command, name, transition) -> dict:
+        canonical = json.dumps({"command": name, "payload": command.payload.model_dump(mode="json")}, sort_keys=True)
+        key = str(command.idempotency_key)
+        with self.lock, self.store.transaction() as db:
+            state = self.store.load(db)
+            if str(command.session_id) != state["session_id"]:
+                raise ValueError("Stale session; refresh state before submitting")
+            previous = db.execute("SELECT payload, result FROM commands WHERE key=?", (key,)).fetchone()
+            if previous:
+                if previous[0] != canonical:
+                    raise ValueError("Idempotency key already used with a different payload")
+                return json.loads(previous[1])
+            if command.expected_revision != state["revision"]:
+                raise ValueError("Stale revision; refresh state before submitting")
+            state = transition(state)
+            state["revision"] += 1
+            self.store.save(db, state)
+            db.execute("INSERT INTO commands VALUES (?, ?, ?)", (key, canonical, json.dumps(state)))
+            return state
 
     def execute(self, command: dict | CommandEnvelope) -> dict:
         request = CommandEnvelope.model_validate(command)

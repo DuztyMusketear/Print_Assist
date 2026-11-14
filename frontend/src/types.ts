@@ -55,6 +55,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Schedule */
+        post: operations["schedule_api_schedule_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: operations["start_api_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/advance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Advance */
+        post: operations["advance_api_advance_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -73,6 +124,27 @@ export interface components {
              * Format: date-time
              */
             timestamp: string;
+        };
+        /** AdvanceCommand */
+        AdvanceCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["AdvancePayload"];
+        };
+        /** AdvancePayload */
+        AdvancePayload: {
+            /** Seconds */
+            seconds: number;
         };
         /** Artifact */
         Artifact: {
@@ -135,9 +207,7 @@ export interface components {
             /** Running */
             running: boolean;
             /** Printers */
-            printers: {
-                [key: string]: unknown;
-            }[];
+            printers: components["schemas"]["Printer"][];
             /** Orders */
             orders: components["schemas"]["Order"][];
             /** Jobs */
@@ -185,6 +255,8 @@ export interface components {
             status: string;
             /** Successful Quantity */
             successful_quantity: number;
+            /** Schedule Mode */
+            schedule_mode?: ("automatic" | "manual") | null;
         };
         /** OrderCreate */
         OrderCreate: {
@@ -207,6 +279,71 @@ export interface components {
              * Format: date-time
              */
             ship_by: string;
+        };
+        /** Printer */
+        Printer: {
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+            /** Capabilities */
+            capabilities: string[];
+            material: components["schemas"]["PrinterMaterial"];
+        };
+        /** PrinterMaterial */
+        PrinterMaterial: {
+            /** Type */
+            type: string;
+            /** Color */
+            color: string;
+            /** Grams */
+            grams: number;
+        };
+        /** ScheduleCommand */
+        ScheduleCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["SchedulePayload"];
+        };
+        /** SchedulePayload */
+        SchedulePayload: {
+            /**
+             * Mode
+             * @default automatic
+             * @enum {string}
+             */
+            mode: "automatic" | "manual";
+        };
+        /** StartCommand */
+        StartCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["StartPayload"];
+        };
+        /** StartPayload */
+        StartPayload: {
+            /** Job Id */
+            job_id: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -285,6 +422,105 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    schedule_api_schedule_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_api_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    advance_api_advance_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdvanceCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

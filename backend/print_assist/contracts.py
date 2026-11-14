@@ -1,6 +1,6 @@
 """Validated order and command contracts."""
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -34,6 +34,37 @@ class CommandEnvelope(BaseModel):
     payload: OrderCreate
 
 
+class SchedulePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["automatic", "manual"] = "automatic"
+
+
+class ScheduleCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    session_id: UUID
+    expected_revision: Annotated[int, Field(strict=True, ge=0)]
+    idempotency_key: UUID
+    payload: SchedulePayload
+
+
+class StartPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    job_id: Annotated[str, Field(min_length=1)]
+
+
+class AdvancePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    seconds: Annotated[int, Field(strict=True, ge=0)]
+
+
+class StartCommand(ScheduleCommand):
+    payload: StartPayload
+
+
+class AdvanceCommand(ScheduleCommand):
+    payload: AdvancePayload
+
+
 class Artifact(BaseModel):
     id: str
     name: str
@@ -50,11 +81,25 @@ class Order(OrderCreate):
     id: UUID
     status: str
     successful_quantity: int
+    schedule_mode: Literal["automatic", "manual"] | None = None
 
 
 class Controls(BaseModel):
     agents_enabled: bool
     automatic_triggers: bool
+
+
+class PrinterMaterial(BaseModel):
+    type: str
+    color: str
+    grams: float
+
+
+class Printer(BaseModel):
+    id: str
+    status: str
+    capabilities: list[str]
+    material: PrinterMaterial
 
 
 class ActivityEvent(BaseModel):
@@ -68,7 +113,7 @@ class FactorySnapshot(BaseModel):
     revision: int
     simulation_time: AwareDatetime
     running: bool
-    printers: list[dict]
+    printers: list[Printer]
     orders: list[Order]
     jobs: list[dict]
     events: list[ActivityEvent]

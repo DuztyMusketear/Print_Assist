@@ -8,6 +8,7 @@ test('offline order intake survives a browser reload without external traffic',a
   });
   await page.goto('/');
   await expect(page.getByText('Agents OFF · Offline prototype')).toBeVisible();
+  await page.getByRole('tab',{name:'Orders'}).click();
   const initial=await page.locator('section li').count();
   await page.getByLabel('Quantity').fill('3');
   await page.getByLabel('Production due (UTC)').fill('2026-11-15T12:00');

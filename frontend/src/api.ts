@@ -1,6 +1,17 @@
 import type { components } from './types';
 export type Snapshot = components['schemas']['FactorySnapshot'];
 export type OrderInput = components['schemas']['OrderCreate'];
+export class RejectedCommand extends Error {}
+export async function productionCommand(path:'/api/start'|'/api/advance',body:components['schemas']['StartCommand']|components['schemas']['AdvanceCommand']):Promise<Snapshot> {
+  const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if (!response.ok) throw new RejectedCommand('Production command failed. Refresh the queue and try again.');
+  return response.json();
+}
+export async function scheduleOrders(body:components['schemas']['ScheduleCommand']):Promise<Snapshot> {
+  const response=await fetch('/api/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if (!response.ok) throw new Error('Scheduling failed. Refresh the queue and try again.');
+  return response.json();
+}
 export async function readState(): Promise<Snapshot> {
   const response=await fetch('/api/state');
   if (!response.ok) throw new Error('Unable to load production state. Check the local server.');

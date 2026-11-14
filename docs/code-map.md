@@ -23,19 +23,22 @@ graph LR
 | File | Owned behavior / relationships | Verification |
 | --- | --- | --- |
 | [backend/print_assist/__init__.py](../backend/print_assist/__init__.py) | Package marker; no initialization side effects. | Backend suite/imports |
-| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, command and snapshot schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/unit/test_orders.py` |
+| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, command and snapshot schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration/test_orders_api.py` |
 | [scenarios.py](../backend/print_assist/scenarios.py) | Deterministic empty-orders seed with three idle virtual printers and one print-ready artifact reference. | Service/API tests |
 | [store.py](../backend/print_assist/store.py) | SQLite transactions, snapshot storage, command-result table and connection lifetime. | Store/service tests |
 | [service.py](../backend/print_assist/service.py) | One-owner authoritative intake, legacy printer-state initialization, session/revision checks, idempotency and atomic order/events. | `python -m pytest backend/tests/unit/test_service.py` |
-| [api.py](../backend/print_assist/api.py) | Offline app factory, health/state/order routes, validation/conflict responses. | `python -m pytest backend/tests/integration` |
+| [scheduling.py](../backend/print_assist/scheduling.py) | Deterministic automatic/manual assignment and manual start/resume transitions. | `python -m pytest backend/tests/unit/test_scheduling.py` |
+| [simulation.py](../backend/print_assist/simulation.py) | Deterministic print progression, completion and material use. | `python -m pytest backend/tests/unit/test_scheduling.py` |
+| [api.py](../backend/print_assist/api.py) | Offline app factory, state, order, schedule, start and advance routes and conflict responses. | `python -m pytest backend/tests/integration` |
 | [backend/tests/conftest.py](../backend/tests/conftest.py) | Shared order fixture and outbound socket guard (numeric loopback allowed). | Backend suite |
 | [test_orders.py](../backend/tests/unit/test_orders.py) | Invalid inputs and normalized/equal-boundary deadlines. | Backend unit suite |
+| [test_scheduling.py](../backend/tests/unit/test_scheduling.py) | Initial scheduling priority and distinct-printer behavior. | `python -m pytest backend/tests/unit/test_scheduling.py` |
 | [test_service.py](../backend/tests/unit/test_service.py) | Persistence, replay, unknown artifacts, concurrent conflicts, detached snapshots and restart invalidation. | Backend unit suite |
 | [test_store.py](../backend/tests/unit/test_store.py) | Transaction exit closes a real SQLite connection. | Backend unit suite |
 | [test_checks.py](../backend/tests/unit/test_checks.py) | Root runner executes subprocesses and propagates failure without continuing. | Backend unit suite |
 | [test_orders_api.py](../backend/tests/integration/test_orders_api.py) | Real app/SQLite HTTP behavior, response schema, offline operation with fake credentials. | Backend integration suite |
 | [frontend/src/main.tsx](../frontend/src/main.tsx) | DOM mounting and stylesheet import only. | Browser test/build |
-| [App.tsx](../frontend/src/App.tsx) | State loading, retry key ownership, stale-response suppression, save reconciliation against current session/revision, queue/form composition. | Frontend App tests |
+| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs and printer overview, state loading, retry key ownership, stale-response suppression and order composition. Schedule controls are in progress. | Frontend App tests |
 | [api.ts](../frontend/src/api.ts) | HTTP transport and actionable save/load errors. | Frontend transport tests |
 | [types.ts](../frontend/src/types.ts) | Generated OpenAPI types; do not hand-edit. | `python scripts/schema.py --check` |
 | [styles.css](../frontend/src/styles.css) | Responsive visual layout for intake/queue. No business logic. | Build/browser review |
