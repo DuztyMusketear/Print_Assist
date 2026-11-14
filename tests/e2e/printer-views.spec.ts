@@ -46,7 +46,7 @@ test('WebGL failure retains readable printer statuses and fallback',async({page}
 
 test('approved visual model flows through ordering, scheduling and real progress',async({page})=>{
   await page.goto('/');
-  await page.getByRole('tab',{name:'Modeling',exact:true}).click();
+  await openPreparation(page);
   await page.getByText('Model preparation (team only)',{exact:true}).click();
   for(const [label,value] of [['Model name','Visual tower order'],['Model file reference','tower.stl'],['Estimated print minutes','120'],['Estimated filament grams','25'],['Filament type','PLA'],['Filament color','blue']]) {
     await page.getByLabel(label,{exact:true}).fill(value);
@@ -67,7 +67,7 @@ test('approved visual model flows through ordering, scheduling and real progress
   await page.getByLabel('Ship by (UTC)',{exact:true}).fill('2026-11-21T12:00');
   await page.getByRole('button',{name:'Add order',exact:true}).click();
   await expect(page.getByText('Visual tower order',{exact:true}).last()).toBeVisible();
-  await page.getByRole('tab',{name:'Schedule',exact:true}).click();
+  await openScheduleTools(page);
   await page.getByRole('button',{name:'Schedule automatically',exact:true}).click();
   await expect(page.locator('section li').filter({hasText:'running'}).first()).toBeVisible();
   await page.getByRole('button',{name:'Advance 1 hour',exact:true}).click();
@@ -77,3 +77,7 @@ test('approved visual model flows through ordering, scheduling and real progress
   await expect(page.locator('.printer-card canvas')).toBeVisible();
   await expect(page.getByText('Loading part model...')).toBeHidden();
 });
+
+async function openPreparation(page:import('@playwright/test').Page){await page.getByRole('tab',{name:'Models',exact:true}).click();if(await page.locator('details.preparation-tools').getAttribute('open')===null)await page.getByText('Model preparation & support review',{exact:true}).click();}
+
+async function openScheduleTools(page:import('@playwright/test').Page){await page.getByRole('tab',{name:'Schedule',exact:true}).click();if(await page.locator('details.advanced-schedule').getAttribute('open')===null)await page.getByText('Manual scheduling tools',{exact:true}).click();}

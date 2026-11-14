@@ -34,12 +34,16 @@ def propose(state,mode):
  result['id']=sha256(json.dumps(dict(state=state,proposal=result),sort_keys=True).encode()).hexdigest()
  return result
 
-def apply_proposal(state,proposal_id,mode,clock_speed=60):
+def apply_proposal(state,proposal_id,mode,clock_speed=60,require_on_time=False):
  proposal=propose(state,mode)
  if proposal['id']!=proposal_id:
   raise ValueError('Schedule proposal is stale; preview again before applying')
  if not proposal['assignments']:
   raise ValueError('No feasible assignments to apply')
+ if require_on_time:
+  deadlines={order['id']:datetime.fromisoformat(order['production_due']) for order in state['orders']}
+  if proposal['blocked'] or any(datetime.fromisoformat(item['finish'])>deadlines[item['order_id']] for item in proposal['assignments']):
+   raise ValueError('Cannot meet every production deadline with this plan; adjust dates, quantity or available material')
  result=deepcopy(state)
  for item in proposal['assignments']:
   order=next(o for o in result['orders'] if o['id']==item['order_id']);order['schedule_mode']=mode

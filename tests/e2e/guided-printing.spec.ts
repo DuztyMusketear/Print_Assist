@@ -9,7 +9,7 @@ test('prepared profile guides model approval, manual inspection and automatic qu
  await page.getByRole('checkbox',{name:/I understand/}).check();
  await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
  await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
- await page.getByRole('tab',{name:'Modeling',exact:true}).click();
+ await openPreparation(page);
  const profile={title:'Guided tower',modelReference:'tower.stl',duration_seconds:7200,filament_grams:25.125,filament_type:'PLA',color:'blue',visual_asset_id:'example-tower'};
  await page.getByLabel('Prepared model profile',{exact:true}).setInputFiles({name:'tower.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(profile))});
  await expect(page.getByText(/Profile ready: Guided tower/)).toBeVisible();
@@ -22,9 +22,9 @@ test('prepared profile guides model approval, manual inspection and automatic qu
  await task.getByRole('button',{name:'Next: choose quantity',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Model to print',exact:true})).toHaveValue(/^model-/);
  await page.getByLabel('Number of copies',{exact:true}).fill('4');
- await page.getByRole('button',{name:'Plan manual printing',exact:true}).click();
+ await page.getByText('Advanced start options',{exact:true}).click();await page.getByRole('button',{name:'Plan manual printing',exact:true}).click();
  await expect(page.getByRole('tab',{name:'Schedule',exact:true})).toHaveAttribute('aria-selected','true');
- await page.getByRole('button',{name:'Next: monitor printers',exact:true}).click();
+ await page.getByText('Manual scheduling tools',{exact:true}).click();await page.getByRole('button',{name:'Next: monitor printers',exact:true}).click();
  await page.getByRole('button',{name:'Inspect Printer 2',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Printer 2 details',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Start print on Printer 2',exact:true}).click();
@@ -40,7 +40,7 @@ test('prepared profile guides model approval, manual inspection and automatic qu
  await expect(page.locator('.printer-inspector').getByText('running',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'2. Choose model and quantity',exact:true}).click();
  await page.getByLabel('Number of copies',{exact:true}).fill('2');
- await page.getByRole('button',{name:'Start automatic printing',exact:true}).click();
+ await page.getByText('Advanced start options',{exact:true}).click();await page.getByRole('button',{name:'Start automatic printing',exact:true}).click();
  await expect(page.getByRole('tab',{name:'Overview',exact:true})).toHaveAttribute('aria-selected','true');
  expect(external).toEqual([]);
  await page.getByRole('button',{name:'Pause clock',exact:true}).click();
@@ -51,3 +51,5 @@ test('prepared profile guides model approval, manual inspection and automatic qu
  await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
  await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
 });
+
+async function openPreparation(page:import('@playwright/test').Page){await page.getByRole('tab',{name:'Models',exact:true}).click();if(await page.locator('details.preparation-tools').getAttribute('open')===null)await page.getByText('Model preparation & support review',{exact:true}).click();}

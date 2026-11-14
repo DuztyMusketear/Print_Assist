@@ -10,6 +10,7 @@ class Store:
         with self.transaction() as db:
             db.execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS commands (key TEXT PRIMARY KEY, payload TEXT NOT NULL, result TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS meshes (digest TEXT PRIMARY KEY, data BLOB NOT NULL)")
             db.execute("PRAGMA user_version = 1")
 
     @contextmanager

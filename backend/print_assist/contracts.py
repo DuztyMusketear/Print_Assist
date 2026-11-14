@@ -60,11 +60,22 @@ class PlanOrderCommand(ScheduleCommand):
     payload: PlanOrderPayload
 
 
+class ReviseOrderPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    order_id: str
+    order: OrderCreate
+
+
+class ReviseOrderCommand(ScheduleCommand):
+    payload: ReviseOrderPayload
+
+
 class ApplySchedulePayload(BaseModel):
     model_config=ConfigDict(extra='forbid')
     proposal_id: Annotated[str,Field(min_length=1)]
     clock_speed: Literal[1,60,300,3600] = 60
     mode: Literal['automatic','manual']
+    require_on_time: bool = Field(default_factory=bool)
 
 class ApplyScheduleCommand(ScheduleCommand):
     payload: ApplySchedulePayload
@@ -178,6 +189,51 @@ class SupportTask(BaseModel):
     removal_notes: str | None = None
 
 
+class LibraryUpload(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    name: Annotated[str, Field(min_length=1, max_length=160)]
+    filename: Annotated[str, Field(min_length=5, max_length=200, pattern=r'^[^/\\]+\.[sS][tT][lL]$')]
+    stl_base64: Annotated[str, Field(max_length=13981016)]
+    duration_seconds: Annotated[int, Field(strict=True, gt=0)]
+    filament_grams: Annotated[float, Field(gt=0, allow_inf_nan=False)]
+    filament_type: Annotated[str, Field(min_length=1)]
+    color: Annotated[str, Field(min_length=1)]
+    support_assessment: SupportAssessment
+
+
+class LibraryUploadCommand(ScheduleCommand):
+    payload: LibraryUpload
+
+
+class ExampleFeedPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+
+class ExampleFeedCommand(ScheduleCommand):
+    payload: ExampleFeedPayload
+
+
+class ShopDecision(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    request_id: str
+    decision: Literal['accept','reject']
+    artifact_id: str | None = None
+
+
+class ShopDecisionCommand(ScheduleCommand):
+    payload: ShopDecision
+
+
+class ShopRequest(OrderCreate):
+    artifact_id: str | None = None
+    id: str
+    source: Literal['example']
+    sku: str
+    product_name: str
+    status: Literal['pending','accepted','rejected']
+    order_id: str | None = None
+
+
 class Artifact(BaseModel):
     id: str
     name: str
@@ -289,6 +345,7 @@ class FactorySnapshot(BaseModel):
     controls: Controls
     artifacts: list[Artifact]
     modeling_tasks: list[ModelTask] = Field(default_factory=list)
+    shop_requests: list[ShopRequest] = Field(default_factory=list)
     visual_assets: list[VisualAsset] = Field(default_factory=lambda: [VisualAsset(**asset) for asset in ASSETS])
 
 

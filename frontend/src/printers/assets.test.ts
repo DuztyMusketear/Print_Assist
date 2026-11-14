@@ -56,3 +56,10 @@ test('bundled NIST preview uses the same bounded printer-bed loader',async()=>{
  const part=await loadPart({...asset,path:'/demo-models/nist-test-artifact.stl'},new AbortController().signal);
  expect(part.fits).toBe(true);part.geometry.dispose();
 });
+
+test('uploaded content-addressed meshes use the bounded local loader without arbitrary API paths',async()=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(triangle));
+ const path='/api/models/'+'a'.repeat(64)+'.stl';
+ const part=await loadPart({...asset,path},new AbortController().signal);expect(part.fits).toBe(true);part.geometry.dispose();
+ await expect(loadPart({...asset,path:'/api/models/../../../secret.stl'},new AbortController().signal)).rejects.toThrow('Only local');
+});

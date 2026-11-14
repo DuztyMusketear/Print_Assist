@@ -44,7 +44,37 @@ class FactoryService:
 
     def apply_schedule(self,command):
         from .proposals import apply_proposal
-        return self._transition(command,'apply-schedule',lambda state:apply_proposal(state,command.payload.proposal_id,command.payload.mode,command.payload.clock_speed))
+        return self._transition(command,'apply-schedule',lambda state:apply_proposal(state,command.payload.proposal_id,command.payload.mode,command.payload.clock_speed,command.payload.require_on_time))
+
+    def upload_model(self,command):
+        from hashlib import sha256
+        from .library import decode_mesh, save_model
+        payload=command.payload.model_dump(mode='json')
+        data=decode_mesh(payload['stl_base64']);digest=sha256(data).hexdigest()
+        def persist(db):
+            db.execute('INSERT OR IGNORE INTO meshes VALUES (?, ?)',(digest,data))
+        identity={key:value for key,value in payload.items() if key!='stl_base64'}
+        identity['mesh_digest']=digest
+        return self._transition(command,'model-upload',lambda state:save_model(state,payload,digest),persist,identity)
+
+    def read_mesh(self,digest):
+        with self.lock,self.store.transaction() as db:
+            state=self.store.load(db)
+            if not any(asset['id']=='upload-'+digest for asset in state.get('visual_assets',[])):
+                return None
+            return db.execute('SELECT data FROM meshes WHERE digest=?',(digest,)).fetchone()[0]
+
+    def load_shop_examples(self,command):
+        from .shop import load_examples
+        return self._transition(command,'shop-examples',load_examples)
+
+    def decide_shop_request(self,command):
+        from .shop import decide
+        return self._transition(command,'shop-decision',lambda state:decide(state,command.payload.model_dump(mode='json')))
+
+    def revise_order(self,command):
+        from .order_review import revise
+        return self._transition(command,'order-revise',lambda state:revise(state,command.payload.model_dump(mode='json')))
 
     def schedule(self, command: ScheduleCommand) -> dict:
         return self._transition(command, "schedule", lambda state: schedule(state, command.payload.mode))
@@ -119,8 +149,8 @@ class FactoryService:
             return result
         return self._transition(command,'reset',replace)
 
-    def _transition(self, command, name, transition) -> dict:
-        canonical = json.dumps({"command": name, "payload": command.payload.model_dump(mode="json")}, sort_keys=True)
+    def _transition(self, command, name, transition, persist=None, identity=None) -> dict:
+        canonical = json.dumps({"command": name, "payload": identity if identity is not None else command.payload.model_dump(mode="json")}, sort_keys=True)
         if name=='reset':
             canonical=json.dumps({'command':name,'source_session':str(command.session_id),'payload':command.payload.model_dump(mode='json')},sort_keys=True)
         key = str(command.idempotency_key)
@@ -140,6 +170,8 @@ class FactoryService:
                 raise ValueError("Stale revision; refresh state before submitting")
             before=state
             state = transition(state)
+            if persist:
+                persist(db)
             if name=='reset':
                 db.execute('DELETE FROM commands')
             elif state!=before:

@@ -3,6 +3,19 @@ import userEvent from '@testing-library/user-event';
 import {test,expect,vi} from 'vitest';
 import {ScheduleProposal} from './ScheduleProposal';
 import {state} from '../test-fixtures';
+
+test('guided confirmation shows deadline problems and submits the server deadline guard',async()=>{
+ const proposal={id:'hash',session_id:state.session_id,revision:0,mode:'automatic',assumptions:'Estimate',assignments:[{order_id:'order-1',printer_id:'printer-1',start:'2026-11-15T00:00:00Z',finish:'2026-11-15T02:00:00Z',filament_grams:25,duration_seconds:7200}],blocked:[]};
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(proposal)));
+ const user=userEvent.setup(),apply=vi.fn().mockResolvedValue(undefined);
+ const view=render(<ScheduleProposal guided state={state} onApply={apply}/>);
+ await user.click(screen.getByRole('button',{name:'Preview schedule'}));await screen.findByRole('button',{name:'Confirm and start printing'});
+ await user.click(screen.getByRole('button',{name:'Confirm and start printing'}));
+ expect(apply).toHaveBeenCalledWith({proposal_id:'hash',mode:'automatic',clock_speed:60,require_on_time:true});
+ view.rerender(<ScheduleProposal guided state={{...state,orders:[{id:'order-1',artifact_id:'figure-pla-blue',quantity:1,priority:0,production_due:'2026-11-15T01:00:00Z',ship_by:'2026-11-16T00:00:00Z',status:'queued',successful_quantity:0}]}} onApply={apply}/>);
+ expect(screen.getByRole('button',{name:'Confirm and start printing'})).toBeDisabled();
+ expect(screen.getByText(/This plan cannot meet/)).toBeInTheDocument();
+});
 test('preview shows future slots and material before guarded apply; stale revisions disable it',async()=>{
  const proposal={id:'hash',session_id:state.session_id,revision:0,mode:'automatic',assumptions:'Model estimates',assignments:[{order_id:'order-1',printer_id:'printer-1',start:'2026-11-15T00:00:00Z',finish:'2026-11-15T02:00:00Z',filament_grams:25,duration_seconds:7200}],blocked:[]};
  vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(proposal)));
@@ -43,4 +56,11 @@ test('preview mode cannot be changed while its request is pending',async()=>{
  expect(screen.getByLabelText('Proposed start mode')).toBeDisabled();
  finish(new Response(JSON.stringify({id:'p',session_id:state.session_id,revision:0,mode:'automatic',assignments:[],blocked:[],assumptions:'Estimate'})));
  await screen.findByText('No new assignments available.');expect(screen.getByLabelText('Proposed start mode')).toBeEnabled();
+});
+
+test('guided manual confirmation preserves the explicit-start mode',async()=>{
+ const proposal={id:'manual',session_id:state.session_id,revision:0,mode:'manual',assumptions:'Estimate',assignments:[{order_id:'order-1',printer_id:'printer-1',start:'2026-11-15T00:00:00Z',finish:'2026-11-15T02:00:00Z',filament_grams:25,duration_seconds:7200}],blocked:[]};
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(proposal)));
+ const apply=vi.fn().mockResolvedValue(undefined),user=userEvent.setup();render(<ScheduleProposal guided state={state} onApply={apply}/>);
+ await user.selectOptions(screen.getByLabelText('Proposed start mode'),'manual');await user.click(screen.getByRole('button',{name:'Preview schedule'}));await screen.findByRole('button',{name:'Confirm manual schedule'});await user.click(screen.getByRole('button',{name:'Confirm manual schedule'}));expect(apply).toHaveBeenCalledWith({proposal_id:'manual',mode:'manual',clock_speed:60,require_on_time:true});
 });

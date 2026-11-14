@@ -48,6 +48,10 @@ graph LR
     PRINTER3D -->|implemented by| VIEW3D["Interactive printer plan"]
     BACKLOG -->|controls and reset follow-up| CONTROLS["Production controls plan"]
     CONTROLS -->|implements lifecycle requirements| SPEC
+    WORKFLOW["Guided model/order design"] -->|extends offline intake scope| SPEC
+    MAP -->|indexes design| WORKFLOW
+    GUIDEDPLAN["Guided model/order plan"] -->|implements| WORKFLOW
+    MAP -->|indexes plan| GUIDEDPLAN
 ```
 
 ## File index
@@ -85,6 +89,10 @@ graph LR
 | [Modeling/support integration plan](superpowers/plans/2026-11-14-modeling-support-integration.md) | Published support assessment, removal and NIST preview integration with existing profiles/printer workflows and legacy upgrade. | SPEC, code map, model handoff | Root coverage, upgrade integration tests and review. |
 
 ## How to extend the map
+
+New guided workflow references:
+- [Guided model/order design](superpowers/specs/2026-11-14-guided-model-order-design.md): saved models, bounded STL uploads, example shop feed, reviewed timelines and user navigation; verify against SPEC and workflow browser tests.
+- [Guided model/order plan](superpowers/plans/2026-11-14-guided-model-orders.md): test-first backend/UI tasks, guarded contracts, scope and execution evidence; verify using root coverage/schema/build/browser checks.
 
 When implementation begins, add each source/configuration/test file to the table.
 Describe what it owns and connect its actual imports, shared contracts, and tests

@@ -4,8 +4,7 @@ Sources: [specification](../SPEC.md), [MVP implementation plan](superpowers/plan
 [production overview plan](superpowers/plans/2026-11-14-production-overview.md),
 and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers.md).
 
-**Last audit: 2026-11-14, including local `feat/compact-overview-layout` changes based
-on `5d490dc`, with an operator-reported idle/start usability gap recorded.**
+**Last audit: 2026-11-14, including `feat/guided-model-order-workflow` based on main `3d2a2f1`.**
 Statuses describe the audited implementation; operator verification remains separate from automated test results.
 These are local story IDs,
 not remote issues. Status reflects inspected code and tests; passing coverage
@@ -49,11 +48,11 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 | PA-201 | Implemented | Maintain compatibility, assignment reasons/events and competing-command safety. |
 | PA-202 | Implemented | Single-owner fixed-step clock, configurable speed, run/pause and restart/reset pause. |
 | PA-203 | Implemented | Seeded/empty resets, new-session guards and safe lost-response replay. |
-| PA-301 | Implemented locally | Future slot preview, validated atomic apply and remaining-material reservation ledger. |
+| PA-301 | Implemented | Future slot preview, validated atomic apply and remaining-material reservation ledger. |
 | PA-302 | Implemented | Conservative capacity/material estimates, deadline risk and unavailable reasons. |
-| PA-303 | Partial | Monitoring/controls implemented; operator cannot clearly get active prints. Close PA-307 and verify the user journey. |
-| PA-304 | To Do | Incoming-order review/acceptance; guided manual/profile intake now exists. |
-| PA-305 | Partial | Prepared-model asset ingestion, estimate provenance and optional real layer/toolpath data. |
+| PA-303 | Implemented; operator verification pending | Live floor/controls, guided intake and visual print timeline; verify the revised journey with the user. |
+| PA-304 | Implemented on current branch | Local example shop inbox, model matching, acceptance/rejection, held orders and final schedule confirmation; no live connector. |
+| PA-305 | Partial | Bounded STL upload/library and reusable estimates implemented; versioned slicer provenance and actual layer/toolpath data remain. |
 | PA-306 | To Do | Explicit cancel/discard with scrap and consumed-material accounting. |
 | PA-307 | Implemented; operator verification pending | Idle/new-print guidance and visible start/pause/resume pass browser tests; verify with user. |
 | PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
@@ -65,19 +64,15 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 
 ## Next development order and traceability
 
-1. First address PA-307: reproduce the reported idle/start experience and make
-   the path from an idle printer to an active print clear. Then PA-301 proposals
-   and material reservations. Clock/forecast/monitoring code exists locally. Printer
-   controls, assignment explanations/history and PA-203 resets are implemented
-   by the [production controls plan](superpowers/plans/2026-11-14-production-controls.md).
-   Reference SPEC sections 6-7 and MVP plan Task 2.
-2. Complete PA-301 reviewable schedule proposals and reservation rules;
-   maintain the delivered forecasts and live monitoring. Reference SPEC section 6 and plan Task 3.
-3. Design PA-304 as the agreed combined intake workflow; it can proceed alongside
-   operational work once its contracts are agreed. Direct manual order entry
-   already exists; incoming acceptance/rejection is additional scope.
-4. Continue with fault/recovery (Task 4), guarded fake agents (Task 5), and metrics,
-   packaging and rehearsal (Task 6), preserving their dependencies and readiness gates.
+1. Operator-check the new saved-model/upload -> quantity/deadline -> timeline ->
+   confirmation journey (PA-303/304/307), including example-feed matching. Maintain
+   the delivered clock, forecasting, proposals and material commitments.
+2. Implement deterministic faults and reviewed recovery (PA-401/402/403), including
+   waste/replacement quantity accounting and a browser failure-to-completion demo.
+3. Complete the guarded fake orchestration framework (PA-501/502/503) against agreed
+   recovery/tool contracts; live inference remains a separate gated follow-on.
+4. Add simulated outcome metrics, repeatable packaging and rehearsal (PA-601/602/603).
+   Remaining PA-305 provenance/toolpath work and PA-306 cancel/discard stay explicit.
 
 For every implementation, read the relevant SPEC sections and approved design/plan
 before coding. Maintain a requirements-to-test checklist, record justified plan
@@ -229,7 +224,7 @@ Acceptance criteria:
 
 ### PA-303 — Operate the floor through a live production dashboard
 
-**Status:** Partial; implementation exists, operator acceptance reopened for PA-307 (2026-11-14).
+**Status:** Implemented; operator verification of the revised guided workflow remains pending (2026-11-14).
 
 Tabs, real printer/job/progress/material state, 3D views, explicit refresh,
 stale-response guards, activity history and printer controls exist. Browser tests
@@ -252,7 +247,7 @@ Acceptance criteria:
 
 ### PA-304 - Review incoming orders and enter production details manually
 
-**Status:** To Do. User-requested addition, agreed as one combined workflow.
+**Status:** Implemented on `feat/guided-model-order-workflow` for the user-selected local example feed and combined manual workflow.
 **P1 - Depends on:** Phase 1 intake and existing approved-artifact handoff. Does not depend on partner STL delivery.
 
 As an operator, I want incoming requests and manual entry in one Orders workflow
@@ -265,8 +260,10 @@ Acceptance criteria:
   deadlines; explain field purpose/units with the existing accessible help pattern.
 - Distinguish pending, accepted and rejected requests. Pending/rejected requests
   cannot silently enter scheduling. Acceptance creates one production order.
-- Validate required data and current artifact compatibility at acceptance; make
-  errors visible and preserve inputs. Repeated/uncertain retries cannot duplicate orders.
+- Validate the saved model mapping and required order data at acceptance. Check
+  current printer/material/deadline feasibility at final schedule confirmation;
+  accepted requests remain held beforehand. Preserve inputs on errors and never
+  duplicate orders on repeated/uncertain retries.
 - Preserve session/revision/idempotency checks and persist requests, decisions
   and order links atomically; test concurrent acceptance and restart/reload.
 - Remain offline and usable with agents off. Marketplace ingestion, arbitrary
@@ -527,8 +524,9 @@ local catalog/file registration, provenance and readiness guidance.
 
 - Current: import profile JSON with name/reference, duration, filament weight,
   material/color and optional registered preview; approved models inherit values.
-- Add safe local geometry registration/upload with existing STL limits, units,
-  orientation and preview checks, without hand-editing the catalog.
+- Implemented: saved-model browsing and local ASCII/binary STL upload, 10 MiB /
+  100,000-triangle limits, millimeter bed checks, support/profile review and
+  hash-addressed SQLite mesh persistence; no catalog hand-editing required.
 - Version estimate provenance (slicer/printer settings, material, profile revision,
   source model identity); flag estimates stale when relevant settings change.
 - Import optional actual layer/toolpath metadata and display layer counts only
@@ -643,3 +641,23 @@ The NIST demo uses compatible blue PLA and its registered mesh can render on bed
 Prepared-profile intake, guided quantities, scheduling proposals, material
 reservations and the compact dashboard remain intact. This does not implement
 AI geometry/support generation, slicing or the Phase 5 agent runtime.
+
+## Guided model/order workflow priority (2026-11-14)
+
+The user prioritized simple model -> quantity/deadline -> timeline -> confirmation
+flows and selected a local example shop feed for this MVP. Models is a searchable
+saved library with actual bounded STL upload and reusable preparation estimates.
+Advanced modeling/support review stays available in a disclosure. Tabs follow
+Models, Orders, Schedule, Overview, Printers; Overview remains the landing page.
+
+Manual and accepted example requests remain held without attempts/reservations
+until explicit confirmation. Pending/rejected requests never print. Product/model
+mapping, reload/import deduplication, acceptance receipts and history persist.
+The guided plan must be complete and meet production deadlines; uncommitted
+quantity/date corrections require a new preview. Existing manual start options
+remain advanced. Timeline thumbnails show registered geometry, including uploads.
+
+This closes local PA-304 and the geometry-upload/library portion of PA-305. It
+does not implement a real shop connector, infer slicer estimates, or close the
+Phase 4 recovery, Phase 5 guarded runtime or Phase 6 metrics/packaging requirements.
+Operator signoff and versioned estimate provenance remain separate follow-ups.

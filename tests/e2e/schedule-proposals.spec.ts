@@ -6,7 +6,7 @@ test('idle start guidance makes printing visible and reviewed schedules reserve 
  await page.getByRole('button',{name:'Reset scenario',exact:true}).click();await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
  await expect(page.getByText(/No print jobs are assigned/)).toBeVisible();
  await page.getByRole('button',{name:'Start a new print',exact:true}).click();
- await page.getByLabel('Number of copies',{exact:true}).fill('2');await page.getByRole('button',{name:'Start automatic printing',exact:true}).click();
+ await page.getByLabel('Number of copies',{exact:true}).fill('2');await page.getByText('Advanced start options',{exact:true}).click();await page.getByRole('button',{name:'Start automatic printing',exact:true}).click();
  await expect(page.getByRole('tab',{name:'Overview',exact:true})).toHaveAttribute('aria-selected','true');
  await expect(page.getByText(/The simulation is running/)).toBeVisible();
  const canvas=page.locator('.printer-card canvas').first();const before=await canvas.screenshot();await page.waitForTimeout(180);const after=await canvas.screenshot();expect(before.equals(after)).toBe(false);
@@ -17,7 +17,7 @@ test('idle start guidance makes printing visible and reviewed schedules reserve 
  await page.getByRole('tab',{name:'Schedule',exact:true}).click();await page.getByRole('button',{name:'Preview schedule',exact:true}).click();
  await expect(page.locator('.schedule-proposal li').filter({hasText:'25 g'})).toHaveCount(5);
  let state=await (await page.request.get('/api/state')).json();expect(state.jobs).toHaveLength(0);
- await page.getByRole('button',{name:'Apply reviewed schedule',exact:true}).click();await expect(page.getByRole('button',{name:'Pause clock',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Confirm and start printing',exact:true}).click();await expect(page.getByRole('button',{name:'Pause clock',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Pause clock',exact:true}).click();await expect(page.getByRole('button',{name:'Run clock',exact:true})).toBeVisible();
  state=await (await page.request.get('/api/state')).json();expect(state.jobs).toHaveLength(5);
  expect(state.material_reservations.reduce((sum:number,row:{stock_grams:number;reserved_grams:number})=>sum+row.stock_grams-row.reserved_grams,0)).toBeCloseTo(2875);
@@ -33,6 +33,6 @@ test('review-first model intake stays unassigned until a manual proposal is acce
  await expect(page.getByRole('tab',{name:'Schedule',exact:true})).toHaveAttribute('aria-selected','true');
  expect((await (await page.request.get('/api/state')).json()).jobs).toHaveLength(0);
  await page.getByRole('combobox',{name:'Proposed start mode',exact:true}).selectOption('manual');await page.getByRole('button',{name:'Preview schedule',exact:true}).click();await expect(page.locator('.schedule-proposal li').filter({hasText:'25 g'})).toHaveCount(4);
- await page.getByRole('button',{name:'Apply reviewed schedule',exact:true}).click();await expect.poll(async()=>(await (await page.request.get('/api/state')).json()).jobs.length).toBe(4);
+ await page.getByRole('button',{name:'Confirm manual schedule',exact:true}).click();await expect.poll(async()=>(await (await page.request.get('/api/state')).json()).jobs.length).toBe(4);
  const state=await (await page.request.get('/api/state')).json();expect(state.running).toBe(false);expect(state.jobs.filter((job:{status:string})=>job.status==='pending')).toHaveLength(3);expect(state.jobs.filter((job:{status:string})=>job.status==='planned')).toHaveLength(1);
 });

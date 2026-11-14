@@ -356,3 +356,35 @@ The guided control test pauses the simulation clock before pause/resume commands
 to avoid expected stale-revision conflicts; live tick/progress checks remain in
 the separate clock and schedule workflows. Existing Vite bundle-size advisory
 remains. No live inference, external model fetching or hardware control ran.
+
+## Guided model/order workflow verification - 2026-11-14
+
+The main navigation is Models, Orders, Schedule, Overview, Printers; startup opens
+Overview. Models offers a searchable approved library, actual bounded STL upload,
+optional estimate-profile import and explicit profile/support review. Prepared
+time, weight, material and color are reused when choosing copies and dates. The
+original modeling/support board remains in preparation tools. Uploaded models
+are millimeters/Z-up, capped at 10 MiB and 100,000 triangles, checked for complete
+ASCII facets, finite Float32 geometry, nondegenerate triangles and virtual bed fit.
+Validated bytes live in SQLite meshes; snapshots/receipts contain metadata/digests.
+Reset hides uploaded preview routes; startup preserves saved models.
+
+Orders provides guided review-first entry and an explicit local example shop feed.
+Requests are pending/accepted/rejected, product matches persist and update other
+pending requests for the same product, and acceptance creates only a held order.
+It is not a live shop connection. Manual starts remain in advanced controls.
+Schedule shows current/proposed printer lanes with model thumbnails and deadline
+warnings. Delayed work is reforecast from remaining duration; held/manual timings
+are provisional. Correct uncommitted copies/dates, refresh the preview, then
+confirm a complete on-time plan to start automatic printing and return to Overview.
+
+Root `.venv\Scripts\python.exe scripts/check.py coverage` passed 113 backend,
+191 frontend and 14 browser tests with 100% application statement/branch coverage,
+schema drift, TypeScript and production build checks. Independent review findings
+have regressions for malformed/Float32-overflow/collapsed geometry, paused timeline
+delays, persisted uploaded-preview reuse and actionable upload errors. Competing
+acceptances, replay/reset/restart and late navigation replies are covered. Actual
+desktop Models/Orders/Schedule screenshots were inspected; Chromium reported no
+page errors or 390px horizontal overflow. Existing bundle-size advisory remains.
+No live providers, shop APIs or physical printers ran. User acceptance remains
+separate from automated and visual checks.

@@ -138,6 +138,19 @@ the seeded demo jobs.
   approval stores both on one orderable artifact. A no-support assessment goes
   directly to Review. The dashboard does not generate geometry or supports,
   slice files, or invoke a model.
+- A saved-model library supports bounded local STL upload with operator/preparer
+  print time, filament weight/type/color and explicit support/profile approval.
+  Geometry preview is independent of slicing; the file alone supplies no print
+  estimates. Existing approved artifacts remain reusable without reentering settings.
+- The primary journey is Models -> Orders -> Schedule -> Overview, with Overview
+  as the landing page and advanced preparation/manual controls available separately.
+  Quantity and production/ship deadlines lead to a visual printer timeline and
+  explicit confirmation before automatic printing. The guided path rejects late
+  or incomplete proposals and permits corrections to uncommitted held orders.
+- A clearly labeled local example shop feed demonstrates product/model matching,
+  quantities, deadlines and acceptance/rejection. Acceptance creates held orders,
+  never jobs; final schedule confirmation starts printing. This is not a connected
+  marketplace or automatic order synchronization.
 - Validated tools for reading state and proposing or applying supported
   operations.
 - Simulated fault injection, visible fault states, and recovery workflow.

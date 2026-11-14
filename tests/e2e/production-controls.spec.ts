@@ -13,7 +13,7 @@ test('seeded production can pause, go offline, resume and complete before reset'
   await page.getByRole('checkbox',{name:/I understand/}).check();
   await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
   await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
-  await page.getByRole('tab',{name:'Schedule',exact:true}).click();
+  await openScheduleTools(page);
   await page.getByRole('button',{name:'Schedule automatically',exact:true}).click();
   await expect(page.locator('section li').filter({hasText:'running'}).first()).toBeVisible();
   await page.getByRole('tab',{name:'Printers',exact:true}).click();
@@ -22,7 +22,7 @@ test('seeded production can pause, go offline, resume and complete before reset'
   await page.getByRole('button',{name:'Take Printer 1 offline',exact:true}).click();
   await expect(page.getByRole('button',{name:'Bring Printer 1 online',exact:true})).toBeVisible();
   const before=await (await page.request.get('http://127.0.0.1:8000/api/state')).json();
-  await page.getByRole('tab',{name:'Schedule',exact:true}).click();
+  await openScheduleTools(page);
   await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/advance')),page.getByRole('button',{name:'Advance 1 hour',exact:true}).click()]);
   const stopped=await (await page.request.get('http://127.0.0.1:8000/api/state')).json();
   expect(stopped.jobs[0].elapsed_seconds).toBe(before.jobs[0].elapsed_seconds);
@@ -31,7 +31,7 @@ test('seeded production can pause, go offline, resume and complete before reset'
   await page.getByRole('button',{name:'Bring Printer 1 online',exact:true}).click();
   await page.getByRole('button',{name:'Resume Printer 1',exact:true}).click();
   await expect(page.locator('.printer-status')).toHaveText('running');
-  await page.getByRole('tab',{name:'Schedule',exact:true}).click();
+  await openScheduleTools(page);
   for(let hour=0;hour<3;hour++) {
     await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/advance')),page.getByRole('button',{name:'Advance 1 hour',exact:true}).click()]);
   }
@@ -57,7 +57,7 @@ test('automatic clock advances the live floor and updates forecasts without refr
   await page.getByRole('checkbox',{name:/I understand/}).check();
   await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
   await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
-  await page.getByRole('tab',{name:'Schedule',exact:true}).click();
+  await openScheduleTools(page);
   await page.getByRole('button',{name:'Schedule automatically',exact:true}).click();
   await expect(page.locator('section li').filter({hasText:'running'}).first()).toBeVisible();
   await expect(page.getByText(/Estimated print completion:/).first()).toBeVisible();
@@ -68,3 +68,5 @@ test('automatic clock advances the live floor and updates forecasts without refr
   await page.getByRole('button',{name:'Pause clock',exact:true}).click();
   await expect(page.getByRole('button',{name:'Run clock',exact:true})).toBeVisible();
 });
+
+async function openScheduleTools(page:import('@playwright/test').Page){await page.getByRole('tab',{name:'Schedule',exact:true}).click();if(await page.locator('details.advanced-schedule').getAttribute('open')===null)await page.getByText('Manual scheduling tools',{exact:true}).click();}

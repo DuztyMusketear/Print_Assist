@@ -1,5 +1,9 @@
 import {PrintingGuidance} from './components/PrintingGuidance';
 import {ScheduleProposal} from './components/ScheduleProposal';
+import {ModelLibrary} from './components/ModelLibrary';
+import {ShopInbox} from './components/ShopInbox';
+import {PrintTimeline} from './components/PrintTimeline';
+import {OrderDrafts} from './components/OrderDrafts';
 import {QuickPrint,type PrintPlan} from './components/QuickPrint';
 import {printerLabel,partLabel} from './display';
 import {useMonitoring} from './monitoring';
@@ -20,7 +24,7 @@ export default function App() {
   const [selectedPrinter,setSelectedPrinter]=useState('');
   const [selectedModel,setSelectedModel]=useState<string>();
   const [error,setError]=useState('');
-  const [tab,setTab]=useState<'Overview'|'Orders'|'Printers'|'Schedule'|'Modeling'>('Overview');
+  const [tab,setTab]=useState<'Overview'|'Orders'|'Printers'|'Schedule'|'Models'>('Overview');
   const sequence=useRef(0);
   const pending=useRef<{signature:string;key:string}|undefined>(undefined);
   const pendingCommand=useRef<{signature:string;body:Parameters<typeof productionCommand>[1]}|undefined>(undefined);
@@ -113,21 +117,26 @@ export default function App() {
     await command('/api/orders/plan',plan,false,true);
     if(currentSession.current===sourceSession) {setReviewSpeed(plan.clock_speed);setTab(plan.mode==='automatic'&&!plan.review_only?'Overview':'Schedule');}
   }
+  async function applyReviewedSchedule(payload:components['schemas']['ApplySchedulePayload']) {
+    const sourceSession=state!.session_id;
+    await command('/api/schedule/apply',payload,false,true);
+    if(currentSession.current===sourceSession) setTab('Overview');
+  }
   const clock=state && (<section aria-label="Simulation clock"><h2>Simulation clock</h2><p>{state.simulation_time} / {state.running?'Running':'Paused'} / Live refresh every second</p>
         <label>Clock speed <select aria-label="Clock speed" value={state.clock_speed ?? 60} onChange={event=>void command('/api/clock',{running:state.running,speed:Number(event.target.value) as 1|60|300|3600})}>{[1,60,300,3600].map(speed=><option key={speed} value={speed}>{speed}x</option>)}</select></label>
         <button onClick={()=>void command('/api/clock',{running:!state.running,speed:(state.clock_speed ?? 60) as 1|60|300|3600})}>{state.running?'Pause clock':'Run clock'}</button>
       </section>);
-  const workflowGuide=(<div className="workflow-guide" aria-label="Manual printing guide"><span>Manual workflow:</span>{(['Modeling','Orders','Schedule','Overview'] as const).map((step,index)=><button className="secondary" key={step} onClick={()=>setTab(step)}>{index+1}. {step==='Modeling'?'Prepare model':step==='Orders'?'Choose model and quantity':step==='Schedule'?'Start scheduled jobs':'Monitor printers'}</button>)}</div>);
+  const workflowGuide=(<div className="workflow-guide" aria-label="Manual printing guide"><span>Manual workflow:</span>{(['Models','Orders','Schedule','Overview'] as const).map((step,index)=><button className="secondary" key={step} onClick={()=>setTab(step)}>{index+1}. {step==='Models'?'Browse models':step==='Orders'?'Choose model and quantity':step==='Schedule'?'Start scheduled jobs':'Monitor printers'}</button>)}</div>);
   return <main className={tab==='Overview'?'overview':''}>
     <header><div className="header-brand"><p className="eyebrow">YOUR PRODUCTION WORKSPACE</p><h1>Print Assist</h1><p>Keep customer orders moving.</p></div>
       <div className="header-controls"><span className="badge">Agents OFF · Offline prototype</span>{clock}</div></header>
     <p className="notice">Simulated manufacturing · Print-ready files · No physical printer control</p>
     {error && <p role="alert">{error}</p>}
     {pendingCommand.current && <button type="button" onClick={()=>{const [path,payload]=JSON.parse(pendingCommand.current!.signature);void command(path,payload,true);}}>Retry production command</button>}
-    <div className="dashboard-toolbar"><nav role="tablist" aria-label="Dashboard sections">{(['Overview','Orders','Printers','Schedule','Modeling'] as const).map(name=><button key={name} role="tab" aria-selected={tab===name} onClick={()=>setTab(name)}>{name}</button>)}</nav>
+    <div className="dashboard-toolbar"><nav role="tablist" aria-label="Dashboard sections">{(['Models','Orders','Schedule','Overview','Printers'] as const).map(name=><button key={name} role="tab" aria-selected={tab===name} onClick={()=>setTab(name)}>{name}</button>)}</nav>
     <button className="secondary" onClick={()=>void load()}>Refresh queue</button></div>
     {tab!=='Overview' && workflowGuide}
-    {state && <div hidden={tab!=='Modeling'}><ModelingBoard key={state.session_id} visualAssets={state.visual_assets ?? []} items={state.modeling_tasks ?? []} onCreate={payload=>modelChange('/api/modeling/tasks',payload)} onProduction={modelId=>{setSelectedModel(modelId);setTab('Orders');}} onMove={(id,action,assessment)=>modelChange('/api/modeling/actions',{task_id:id,action,...(assessment?{support_assessment:assessment}:{})})} onRemove={id=>modelChange('/api/modeling/actions',{task_id:id,action:'remove'})} isArtifactInUse={id=>state.orders.some(order=>order.artifact_id===`model-${id}`)} onRetry={async()=>{if(pendingModel.current){const [path,payload]=JSON.parse(pendingModel.current.signature);await modelChange(path,payload);}else await load();}}/></div>}
+    {state && <div hidden={tab!=='Models'}><ModelLibrary key={state.session_id} state={state} onChoose={id=>{setSelectedModel(id);setTab('Orders');}} onUpload={payload=>command('/api/library/models',payload,false,true)}/><details className="preparation-tools"><summary>Model preparation &amp; support review</summary><ModelingBoard key={state.session_id} visualAssets={state.visual_assets ?? []} items={state.modeling_tasks ?? []} onCreate={payload=>modelChange('/api/modeling/tasks',payload)} onProduction={modelId=>{setSelectedModel(modelId);setTab('Orders');}} onMove={(id,action,assessment)=>modelChange('/api/modeling/actions',{task_id:id,action,...(assessment?{support_assessment:assessment}:{})})} onRemove={id=>modelChange('/api/modeling/actions',{task_id:id,action:'remove'})} isArtifactInUse={id=>state.orders.some(order=>order.artifact_id===`model-${id}`)} onRetry={async()=>{if(pendingModel.current){const [path,payload]=JSON.parse(pendingModel.current.signature);await modelChange(path,payload);}else await load();}}/></details></div>}
     {state ? <>
 
       {tab==='Overview' && <PrintingGuidance state={state} onNewPrint={()=>setTab('Orders')} onSchedule={()=>setTab('Schedule')}/>}
@@ -139,17 +148,18 @@ export default function App() {
       </div>}
       {tab==='Overview' && <div className="overview-workspace"><div className="overview-main">
         <PrinterFloor onNewPrint={()=>setTab('Orders')} selectedId={selectedPrinter} onSelect={setSelectedPrinter} state={state} detailed={false} onStart={job_id=>command('/api/start',{job_id})} onControl={(printer_id,action)=>command('/api/printers/control',{printer_id,action})}/>
-        <div className="overview-bottom"><OrderQueue compact state={state}/><ActivityFeed events={state.events}/></div>
+        <PrintTimeline state={state}/><div className="overview-bottom"><OrderQueue compact state={state}/><ActivityFeed events={state.events}/></div>
       </div><aside className="overview-sidebar" aria-label="Production controls">
         <ScenarioReset onReset={scenario=>command('/api/scenarios/reset',{scenario})}/>
         <section className="workflow-panel"><h2>Manual workflow</h2>{workflowGuide}</section>
         <section className="orchestration-placeholder"><h2>Orchestration</h2><p>Chat, fault recovery and agent activity controls are planned. Manual production works with agents off.</p></section>
       </aside></div>}
       {tab==='Printers' && <><PrinterFloor onNewPrint={()=>setTab('Orders')} selectedId={selectedPrinter} onSelect={setSelectedPrinter} state={state} detailed onStart={job_id=>command('/api/start',{job_id})} onControl={(printer_id,action)=>command('/api/printers/control',{printer_id,action})}/><ScenarioReset onReset={scenario=>command('/api/scenarios/reset',{scenario})}/></>}
-      {tab==='Schedule' && <ScheduleProposal initialSpeed={reviewSpeed} key={state.session_id} state={state} onApply={payload=>command('/api/schedule/apply',payload,false,true)}/>}
-      {tab==='Schedule' && <ActivityFeed events={state.events}/>}
-      {tab==='Schedule' && <section><h2>Schedule</h2><p>Start each pending print below. Further manual copies are prepared as printers become free and wait for your start. Then open Overview to inspect the printer and run the clock.</p><button className="secondary" onClick={()=>setTab('Overview')}>Next: monitor printers</button><button onClick={()=>void schedule('automatic')}>Schedule automatically</button> <button onClick={()=>void schedule('manual')}>Schedule for manual start</button> <button onClick={()=>void command('/api/advance',{seconds:3600})}>Advance 1 hour</button><ul>{state.jobs.map((job,index)=><li key={String(job.id ?? index)}>{partLabel(String(job.id))} · {String(job.status)} · {printerLabel(String(job.printer_id))} {(job.status==='pending'||job.status==='paused') && <button onClick={()=>void command('/api/start',{job_id:String(job.id)})}>{job.status==='paused'?'Resume':'Start'} {partLabel(String(job.id))}</button>}</li>)}</ul><OrderQueue state={state}/></section>}
-      {tab==='Orders' && <><QuickPrint key={state.session_id+selectedModel} initialModel={selectedModel} state={state} onQueue={queuePrint} onModels={()=>setTab('Modeling')}/><details className="advanced-order"><summary>Custom order details</summary><div className="workspace"><OrderForm artifacts={state.artifacts} onSubmit={submit}/><OrderQueue state={state}/></div></details></>}
+      {tab==='Schedule' && <OrderDrafts state={state} onRevise={payload=>command('/api/orders/revise',payload,false,true)}/>}
+      {tab==='Schedule' && <ScheduleProposal guided onPause={()=>void command('/api/clock',{running:false,speed:(state.clock_speed ?? 60) as 1|60|300|3600})} initialSpeed={reviewSpeed} key={state.session_id} state={state} onApply={applyReviewedSchedule}/>}
+
+      {tab==='Schedule' && <details className="advanced-schedule"><summary>Manual scheduling tools</summary><ActivityFeed events={state.events}/><section><h2>Schedule</h2><p>Start each pending print below. Further manual copies are prepared as printers become free and wait for your start. Then open Overview to inspect the printer and run the clock.</p><button className="secondary" onClick={()=>setTab('Overview')}>Next: monitor printers</button><button onClick={()=>void schedule('automatic')}>Schedule automatically</button> <button onClick={()=>void schedule('manual')}>Schedule for manual start</button> <button onClick={()=>void command('/api/advance',{seconds:3600})}>Advance 1 hour</button><ul>{state.jobs.map((job,index)=><li key={String(job.id ?? index)}>{partLabel(String(job.id))} · {String(job.status)} · {printerLabel(String(job.printer_id))} {(job.status==='pending'||job.status==='paused') && <button onClick={()=>void command('/api/start',{job_id:String(job.id)})}>{job.status==='paused'?'Resume':'Start'} {partLabel(String(job.id))}</button>}</li>)}</ul><OrderQueue state={state}/></section></details>}
+      {tab==='Orders' && <div className="order-intake-grid"><QuickPrint guided key={state.session_id+selectedModel} initialModel={selectedModel} state={state} onQueue={queuePrint} onModels={()=>setTab('Models')}/><ShopInbox state={state} onLoad={()=>command('/api/shop/example',{},false,true)} onDecision={async payload=>{const sourceSession=state.session_id;await command('/api/shop/decisions',payload,false,true);if(payload.decision==='accept'&&currentSession.current===sourceSession)setTab('Schedule');}} onSchedule={()=>setTab('Schedule')}/><details className="advanced-order"><summary>Custom order details</summary><div className="workspace"><OrderForm artifacts={state.artifacts} onSubmit={submit}/><OrderQueue state={state}/></div></details></div>}
     </> : <p>Waiting for production state…</p>}
   </main>;
 }

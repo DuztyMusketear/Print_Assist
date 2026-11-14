@@ -14,6 +14,10 @@ def initialize_support_tasks(state):
 
 
 def create_task(state, payload):
+    from .visual_assets import ASSETS
+    asset_id=payload.get('visual_asset_id')
+    if asset_id is not None and not any(asset['id']==asset_id for asset in state.get('visual_assets',ASSETS)):
+        raise ValueError('Unknown visual asset')
     result = deepcopy(state)
     result.setdefault('modeling_tasks', []).append(dict(payload, id=str(uuid4()), stage='modeling', support_task=None))
     return result

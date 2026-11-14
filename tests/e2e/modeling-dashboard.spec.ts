@@ -8,7 +8,7 @@ test('uses the bundled NIST STL as a reviewable demo model',async({page})=>{
     return route.continue();
   });
   await page.goto('/');
-  await page.getByRole('tab',{name:'Modeling'}).click();
+  await openPreparation(page);
   await expect(page.getByRole('link',{name:'Open Snack Sticks model page'}))
     .toHaveAttribute('href','https://pinshape.com/items/106174-3d-printed-snack-sticks');
   const download=await page.request.get('/demo-models/nist-test-artifact.stl');
@@ -65,7 +65,7 @@ test('uses the bundled NIST STL as a reviewable demo model',async({page})=>{
   await expect(page.getByRole('region',{name:'Approved stage'})).toContainText('Model and support data stored together');
   await page.getByRole('tab',{name:'Orders'}).click();
   await expect(page.getByLabel('Print-ready product',{exact:true})).toContainText('NIST AM Test Artifact');
-  await page.getByRole('tab',{name:'Modeling'}).click();
+  await openPreparation(page);
   await page.getByRole('button',{name:'Remove NIST AM Test Artifact'}).click();
   await expect(page.getByRole('dialog',{name:'Confirm task removal'})).toBeVisible();
   await page.getByRole('button',{name:'Confirm removal'}).click();
@@ -81,7 +81,7 @@ test('tracks a model through supports and review without external traffic',async
     return route.continue();
   });
   await page.goto('/');
-  await page.getByRole('tab',{name:'Modeling'}).click();
+  await openPreparation(page);
   await page.getByText('Model preparation (team only)',{exact:true}).click();
   await expect(page.getByRole('heading',{name:'Modeling dashboard'})).toBeVisible();
   const modelHelp=page.locator('#model-name-help');
@@ -115,10 +115,12 @@ test('tracks a model through supports and review without external traffic',async
   await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Review requested changes');
   await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Snack Sticks');
   await page.getByRole('tab',{name:'Orders'}).click();
-  await page.getByRole('tab',{name:'Modeling'}).click();
+  await openPreparation(page);
   await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Snack Sticks');
   await page.reload();
-  await page.getByRole('tab',{name:'Modeling'}).click();
+  await openPreparation(page);
   await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Snack Sticks');
   expect(external).toEqual([]);
 });
+
+async function openPreparation(page:import('@playwright/test').Page){await page.getByRole('tab',{name:'Models',exact:true}).click();if(await page.locator('details.preparation-tools').getAttribute('open')===null)await page.getByText('Model preparation & support review',{exact:true}).click();}

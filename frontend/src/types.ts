@@ -4,6 +4,91 @@
  */
 
 export interface paths {
+    "/api/library/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Model */
+        post: operations["upload_model_api_library_models_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/{digest}.stl": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mesh */
+        get: operations["mesh_api_models__digest__stl_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shop/example": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Shop Examples */
+        post: operations["shop_examples_api_shop_example_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shop/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Shop Decision */
+        post: operations["shop_decision_api_shop_decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/revise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revise Order */
+        post: operations["revise_order_api_orders_revise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -331,6 +416,8 @@ export interface components {
              * @enum {string}
              */
             mode: "automatic" | "manual";
+            /** Require On Time */
+            require_on_time?: boolean;
         };
         /** Artifact */
         Artifact: {
@@ -405,6 +492,24 @@ export interface components {
             /** Automatic Triggers */
             automatic_triggers: boolean;
         };
+        /** ExampleFeedCommand */
+        ExampleFeedCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ExampleFeedPayload"];
+        };
+        /** ExampleFeedPayload */
+        ExampleFeedPayload: Record<string, never>;
         /** FactorySnapshot */
         FactorySnapshot: {
             /**
@@ -447,6 +552,8 @@ export interface components {
             artifacts: components["schemas"]["Artifact"][];
             /** Modeling Tasks */
             modeling_tasks?: components["schemas"]["ModelTask"][];
+            /** Shop Requests */
+            shop_requests?: components["schemas"]["ShopRequest"][];
             /** Visual Assets */
             visual_assets?: components["schemas"]["VisualAsset"][];
         };
@@ -471,6 +578,40 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LibraryUpload */
+        LibraryUpload: {
+            /** Name */
+            name: string;
+            /** Filename */
+            filename: string;
+            /** Stl Base64 */
+            stl_base64: string;
+            /** Duration Seconds */
+            duration_seconds: number;
+            /** Filament Grams */
+            filament_grams: number;
+            /** Filament Type */
+            filament_type: string;
+            /** Color */
+            color: string;
+            support_assessment: components["schemas"]["SupportAssessment"];
+        };
+        /** LibraryUploadCommand */
+        LibraryUploadCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["LibraryUpload"];
         };
         /** MaterialReservation */
         MaterialReservation: {
@@ -736,6 +877,28 @@ export interface components {
              */
             scenario: "empty" | "seeded";
         };
+        /** ReviseOrderCommand */
+        ReviseOrderCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ReviseOrderPayload"];
+        };
+        /** ReviseOrderPayload */
+        ReviseOrderPayload: {
+            /** Order Id */
+            order_id: string;
+            order: components["schemas"]["OrderCreate"];
+        };
         /** ScheduleAssignment */
         ScheduleAssignment: {
             /** Order Id */
@@ -810,6 +973,74 @@ export interface components {
             blocked: components["schemas"]["ScheduleBlocked"][];
             /** Assumptions */
             assumptions: string;
+        };
+        /** ShopDecision */
+        ShopDecision: {
+            /** Request Id */
+            request_id: string;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "accept" | "reject";
+            /** Artifact Id */
+            artifact_id?: string | null;
+        };
+        /** ShopDecisionCommand */
+        ShopDecisionCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ShopDecision"];
+        };
+        /** ShopRequest */
+        ShopRequest: {
+            /** Artifact Id */
+            artifact_id?: string | null;
+            /** Quantity */
+            quantity: number;
+            /**
+             * Priority
+             * @default 0
+             */
+            priority: number;
+            /**
+             * Production Due
+             * Format: date-time
+             */
+            production_due: string;
+            /**
+             * Ship By
+             * Format: date-time
+             */
+            ship_by: string;
+            /** Id */
+            id: string;
+            /**
+             * Source
+             * @constant
+             */
+            source: "example";
+            /** Sku */
+            sku: string;
+            /** Product Name */
+            product_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "rejected";
+            /** Order Id */
+            order_id?: string | null;
         };
         /** StartCommand */
         StartCommand: {
@@ -914,6 +1145,169 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    upload_model_api_library_models_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LibraryUploadCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mesh_api_models__digest__stl_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                digest: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    shop_examples_api_shop_example_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExampleFeedCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    shop_decision_api_shop_decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShopDecisionCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revise_order_api_orders_revise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviseOrderCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;

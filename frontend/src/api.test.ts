@@ -1,5 +1,5 @@
 import { test, expect, vi } from 'vitest';
-import { readState, addOrder } from './api';
+import { readState, addOrder, productionCommand } from './api';
 import { state } from './test-fixtures';
 
 test('reads real snapshot data returned by the transport', async()=>{
@@ -20,4 +20,14 @@ test('posts a typed command and returns the saved state',async()=>{
 test.each([[409,'Refresh'],[422,'Check the product']])('explains HTTP %i without exposing server details',async(status,message)=>{
   vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('',{status}));
   await expect(addOrder(body)).rejects.toThrow(message);
+});
+
+test.each([
+ [JSON.stringify({detail:'Model exceeds the virtual build volume'}),'Model exceeds the virtual build volume'],
+ [JSON.stringify({detail:[{input:'private mesh data',msg:'invalid'}]}),'Check the STL file and print settings'],
+ ['not json','Check the STL file and print settings'],
+])('upload rejection explains how to correct the model without displaying payloads',async(response,message)=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(response,{status:422}));
+ const command={session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,payload:{name:'Part',filename:'part.stl',stl_base64:'mesh',duration_seconds:60,filament_grams:1,filament_type:'PLA',color:'blue',support_assessment:{supports_required:false}}};
+ await expect(productionCommand('/api/library/models',command)).rejects.toThrow(message);
 });

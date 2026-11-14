@@ -14,6 +14,8 @@ from .contracts import AdvanceCommand, CommandEnvelope, FactorySnapshot, Schedul
 from .service import FactoryService
 from .contracts import ModelTaskCommand, ModelActionCommand
 from .contracts import PrinterControlCommand, ResetCommand
+from .contracts import LibraryUploadCommand, ExampleFeedCommand, ShopDecisionCommand, ReviseOrderCommand
+from fastapi.responses import Response
 
 
 def create_app(path=None):
@@ -35,6 +37,42 @@ def create_app(path=None):
                 pass
     app = FastAPI(lifespan=lifespan,title="Print Assist", version="0.1.0")
 
+    @app.post('/api/library/models',response_model=FactorySnapshot)
+    def upload_model(command:LibraryUploadCommand):
+        try:
+            return project(service.upload_model(command))
+        except ValueError as error:
+            status=409 if str(error).startswith(('Stale','Idempotency')) else 422
+            raise HTTPException(status_code=status,detail=str(error)) from error
+
+    @app.get('/api/models/{digest}.stl')
+    def mesh(digest:str):
+        data=service.read_mesh(digest)
+        if data is None:
+            raise HTTPException(status_code=404,detail='Model preview not found')
+        return Response(data,media_type='model/stl',headers={'X-Content-Type-Options':'nosniff'})
+
+    @app.post('/api/shop/example',response_model=FactorySnapshot)
+    def shop_examples(command:ExampleFeedCommand):
+        try:
+            return project(service.load_shop_examples(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/shop/decisions',response_model=FactorySnapshot)
+    def shop_decision(command:ShopDecisionCommand):
+        try:
+            return project(service.decide_shop_request(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/orders/revise',response_model=FactorySnapshot)
+    def revise_order(command:ReviseOrderCommand):
+        try:
+            return project(service.revise_order(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
     @app.get("/api/health")
     def health():
         return {"status": "ok", "mode": "offline"}
@@ -44,7 +82,7 @@ def create_app(path=None):
         try:
             return project(service.create_model_task(command))
         except ValueError as error:
-            raise HTTPException(status_code=409, detail=str(error)) from error
+            raise HTTPException(status_code=422 if str(error)=='Unknown visual asset' else 409, detail=str(error)) from error
 
     @app.post('/api/modeling/actions', response_model=FactorySnapshot)
     def move_model_task(command: ModelActionCommand):

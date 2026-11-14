@@ -7,7 +7,7 @@ virtual environment. `python scripts/check.py full` verifies the entire slice;
 ```mermaid
 graph LR
   UI["App / OrderForm / OrderQueue"] -->|HTTP via api.ts| API["api.py"]
-  UI -->|contains modeling tab| BOARD["ModelingBoard"]
+  UI -->|contains advanced model preparation| BOARD["ModelingBoard"]
   BOARD -->|remove callback dispatched by App| API
   BOARD -->|validates transitions| WORKFLOW["workflow.ts"]
   API -->|validated command| SERVICE["service.py"]
@@ -160,7 +160,7 @@ graph LR
 
 | File | Owned behavior / relationships | Verification |
 | --- | --- | --- |
-| [visual_assets.py](../backend/print_assist/visual_assets.py) | Local STL catalog and visual-ID allowlist used by task validation and snapshot metadata. | `python -m pytest backend/tests/integration/test_modeling.py` |
+| [visual_assets.py](../backend/print_assist/visual_assets.py) | Builtin STL catalog, uploaded-hash reference syntax and snapshot metadata; modeling.py enforces persisted asset registration. | `python -m pytest backend/tests/integration/test_modeling.py` |
 | [model.ts](../frontend/src/printers/model.ts) | Resolves each printer's active/latest completed job, artifact and bounded progress. | `npm test --workspace frontend -- src/printers/model.test.ts` |
 | [model.test.ts](../frontend/src/printers/model.test.ts) | Empty, unknown, active, completed and invalid progress view states. | Frontend suite |
 | [assets.ts](../frontend/src/printers/assets.ts) | Bounded same-origin STL loading, geometry validation, explicit rotation, centering and volume warnings without rescaling. | `npm test --workspace frontend -- src/printers/assets.test.ts` |
@@ -410,4 +410,65 @@ graph LR
   Catalog[visual_assets.py] -->|registers bundled NIST path| Loader[assets.ts]
   Loader -->|bounded geometry for beds| Scene[PrinterScene.tsx]
   UpgradeTest[test_modeling_upgrade.py] -->|verifies restart and NIST printing| Service
+```
+
+## Guided saved models, example shop intake and print timeline
+
+App.tsx orders tabs Models/Orders/Schedule/Overview/Printers while landing on
+Overview. It mounts the library and preparation tools with session keys, wires
+new typed commands through the existing production receipt/reset guards, and
+returns to Overview only after same-session schedule confirmation. api.ts includes
+library/feed/revision commands. QuickPrint.tsx exposes dates and review-first intake
+in guided mode; direct/manual starts remain advanced. ScheduleProposal.tsx renders
+the timeline, deadline/blocked explanations and server-enforced confirmation.
+contracts.py/types.ts own upload, example request/decision, held-order revision and
+optional require_on_time contracts. service.py owns transactional composition and
+mesh lookup; store.py adds hash-addressed mesh BLOB storage. Mesh bytes stay outside
+state snapshots and command receipts; receipts use digest identity. api.py serves
+only registered local meshes. proposals.py validates full/on-time guided plans
+before any reservations/jobs. assets.ts allows only exact hash-addressed upload
+paths through its existing bounded loader. styles.css owns gallery, intake cards,
+responsive timeline lanes, inline model thumbnails and advanced disclosures.
+Updated App/QuickPrint/ScheduleProposal/asset tests and existing browser workflows
+exercise the new labels/navigation while preserving manual/preparation regressions.
+modeling.py additionally checks preview references against persisted registration;
+visual_assets.py validates builtin/hash reference syntax, never authorizes an
+arbitrary upload hash by itself. library.py checks Float32 precision before
+nondegeneracy/bed fit. api.ts preserves safe corrective upload messages; timeline
+estimates recompute remaining work after holds and queue it per printer.
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [library.py](../backend/print_assist/library.py) | Bounded ASCII/binary STL parsing, finite/nondegenerate/bed-size validation; explicit linked task/support approval and reusable artifact registration. | Backend integration suite |
+| [shop.py](../backend/print_assist/shop.py) | Deterministic local example feed, deduplicated loading, explicit acceptance/rejection and SKU/model mapping; accepted orders remain held. | Backend integration suite |
+| [order_review.py](../backend/print_assist/order_review.py) | Corrections to held orders with no successful/committed production; model validation and activity records. | Backend integration suite |
+| [test_library_shop.py](../backend/tests/integration/test_library_shop.py) | Upload bytes/profile validation, persistence/reset/replay, example-feed decisions and duplicate guards, held corrections and full/on-time confirmation. | Root backend coverage |
+| [ModelLibrary.tsx](../frontend/src/components/ModelLibrary.tsx) | Searchable approved model cards, profile-assisted local STL upload, support review, one-time estimates and quantity handoff. | ModelLibrary tests/browser |
+| [ModelLibrary.test.tsx](../frontend/src/components/ModelLibrary.test.tsx) | Browse/filter/handoff, required preparation, import/read/upload failures, optional support metadata and safe success/navigation. | Frontend coverage |
+| [ModelPreview.tsx](../frontend/src/components/ModelPreview.tsx) | Bounded geometry loader to static isometric canvas thumbnails, stable asset identity, abort/disposal and readable fallback. | ModelPreview tests/browser |
+| [ModelPreview.test.tsx](../frontend/src/components/ModelPreview.test.tsx) | Real geometry drawing/disposal, retained polling metadata, absent/failed/canvas fallback and late navigation results. | Frontend coverage |
+| [ShopInbox.tsx](../frontend/src/components/ShopInbox.tsx) | Explicit example import, pending model matches, accept/reject actions, preserved request history and review navigation. | ShopInbox tests/browser |
+| [ShopInbox.test.tsx](../frontend/src/components/ShopInbox.test.tsx) | Unmatched/mapped choices, request statuses, callbacks, empty feed and load/decision failures. | Frontend coverage |
+| [OrderDrafts.tsx](../frontend/src/components/OrderDrafts.tsx) | Visible held-order review, guarded quantity/date corrections and editable-error preservation. | OrderDrafts/App tests |
+| [OrderDrafts.test.tsx](../frontend/src/components/OrderDrafts.test.tsx) | Corrected payload/deadlines, error preservation and protected active/completed production. | Frontend coverage |
+| [PrintTimeline.tsx](../frontend/src/components/PrintTimeline.tsx) | Existing/proposed printer lanes with actual geometry thumbnails, times, statuses, deadline flags and detail disclosure. Missing timing cannot crash the dashboard. | Timeline/App/browser tests |
+| [PrintTimeline.test.tsx](../frontend/src/components/PrintTimeline.test.tsx) | Model/lane/deadline association, active/held/unknown timing, profile fallback and empty state. | Frontend coverage |
+| [model-order-workflow.spec.ts](../tests/e2e/model-order-workflow.spec.ts) | Upload/reload/browse, held quantity/deadline correction, timeline confirmation/progress/mobile layout and example-feed mapping/history without external traffic. | Root full/coverage |
+
+```mermaid
+graph LR
+  Library[ModelLibrary] -->|typed upload command| API[api.py]
+  API -->|atomic command guards| Service[service.py]
+  Service -->|validated STL and reviewed profile| Intake[library.py]
+  Service -->|transactional mesh bytes| Store[store.py]
+  Library -->|saved model selection| Order[QuickPrint]
+  Inbox[ShopInbox] -->|explicit request decisions| Shop[shop.py]
+  Shop -->|held production orders| Review[ScheduleProposal]
+  Order -->|held quantity and dates| Review
+  Drafts[OrderDrafts] -->|uncommitted corrections| Revise[order_review.py]
+  Review -->|proposed printer lanes| Timeline[PrintTimeline]
+  Timeline -->|bounded part thumbnails| Preview[ModelPreview]
+  Preview -->|registered local mesh loading| Loader[assets.ts]
+  Review -->|complete on-time apply| Proposals[proposals.py]
+  Proposals -->|automatic dispatch| Scheduling[scheduling.py]
 ```

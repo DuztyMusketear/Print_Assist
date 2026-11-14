@@ -4,6 +4,17 @@ import {test,expect,vi} from 'vitest';
 import {QuickPrint} from './QuickPrint';
 import {state} from '../test-fixtures';
 
+test('guided intake shows deadlines and reviews a held order before any printing',async()=>{
+ const user=userEvent.setup(),queue=vi.fn().mockResolvedValue(undefined);
+ render(<QuickPrint guided state={{...state,visual_assets:[{id:'other',name:'Other preview',path:'/models/other.stl',units:'mm',rotation_degrees:[0,0,0]}]}} onQueue={queue} onModels={vi.fn()}/>);
+ expect(screen.getByLabelText('Finish printing by (UTC)')).toBeVisible();
+ expect(screen.getByRole('button',{name:'Start automatic printing'})).not.toBeVisible();
+ await user.click(screen.getByRole('button',{name:'Review schedule first'}));
+ expect(queue).toHaveBeenCalledWith(expect.objectContaining({mode:'automatic',review_only:true}));
+ await user.click(screen.getByText('Advanced start options'));
+ expect(screen.getByRole('button',{name:'Plan manual printing'})).toBeVisible();
+});
+
 test('prepared model supplies estimates and automatic/manual orders need only quantity',async()=>{
  const user=userEvent.setup();const onQueue=vi.fn().mockResolvedValue(undefined);
  render(<QuickPrint state={state} onQueue={onQueue} onModels={vi.fn()}/>);
