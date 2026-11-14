@@ -35,6 +35,8 @@ graph LR
     README -->|links setup| DEV
     BACKLOG["docs/backlog.md"] -->|breaks down remaining work in| PLAN
     MAP -->|indexes stories| BACKLOG
+    DESIGN["Production overview design"] -->|extends| PLAN
+    MAP -->|indexes design| DESIGN
 ```
 
 ## File index
@@ -52,6 +54,7 @@ graph LR
 | [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for Phase 1. | Plan, setup, implementation files | Validate file links and update alongside code. |
 | [Development setup](development.md) | Native setup/run/check commands, restart semantics, coverage boundaries and actual platform status. | README, code map | Full check command and local-link review. |
 | [Remaining phase backlog](backlog.md) | Fifteen Jira-style stories for Phases 2-6 plus a deferred live-adapter story; priorities, dependencies and acceptance criteria. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
+| [Production overview design](superpowers/specs/2026-11-14-production-overview-design.md) | Proposed virtual printers, automatic/manual scheduling, dashboard tabs and AI ownership boundary. Awaiting approval. | Implementation plan, backlog, specification | Review design against agreed scope and shared contracts. |
 
 ## How to extend the map
 
