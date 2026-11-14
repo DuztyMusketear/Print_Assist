@@ -78,3 +78,30 @@ def test_snapshot_cannot_mutate_authoritative_state(tmp_path):
     state = service.snapshot()
     state["orders"].append({"fake": True})
     assert service.snapshot()["orders"] == []
+
+
+def test_fresh_factory_has_three_distinct_idle_printers(tmp_path):
+    printers = FactoryService(tmp_path / "factory.sqlite3").snapshot()["printers"]
+    assert len(printers) == 3
+    assert len({printer["id"] for printer in printers}) == 3
+    assert all(printer["status"] == "idle" for printer in printers)
+    assert all(printer["capabilities"] and printer["material"]["grams"] > 0 for printer in printers)
+
+
+def test_legacy_state_migrates_once_and_preserves_orders_and_printer_state(tmp_path, order):
+    path = tmp_path / "factory.sqlite3"
+    service = FactoryService(path)
+    service.execute(command(service, order))
+    with service.store.transaction() as db:
+        legacy = service.store.load(db)
+        legacy.pop("printer_schema_version", None)
+        legacy["printers"] = []
+        service.store.save(db, legacy)
+    migrated = FactoryService(path)
+    state = migrated.snapshot()
+    assert len(state["orders"]) == 1
+    assert len(state["printers"]) == 3
+    with migrated.store.transaction() as db:
+        state["printers"][0]["material"]["grams"] = 42
+        migrated.store.save(db, state)
+    assert FactoryService(path).snapshot()["printers"][0]["material"]["grams"] == 42

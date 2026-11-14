@@ -24,9 +24,9 @@ graph LR
 | --- | --- | --- |
 | [backend/print_assist/__init__.py](../backend/print_assist/__init__.py) | Package marker; no initialization side effects. | Backend suite/imports |
 | [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, command and snapshot schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/unit/test_orders.py` |
-| [scenarios.py](../backend/print_assist/scenarios.py) | Deterministic empty-orders seed with one print-ready artifact reference. Printers arrive in Phase 2. | Service/API tests |
+| [scenarios.py](../backend/print_assist/scenarios.py) | Deterministic empty-orders seed with three idle virtual printers and one print-ready artifact reference. | Service/API tests |
 | [store.py](../backend/print_assist/store.py) | SQLite transactions, snapshot storage, command-result table and connection lifetime. | Store/service tests |
-| [service.py](../backend/print_assist/service.py) | One-owner authoritative intake, session/revision checks, idempotency and atomic order/events. | `python -m pytest backend/tests/unit/test_service.py` |
+| [service.py](../backend/print_assist/service.py) | One-owner authoritative intake, legacy printer-state initialization, session/revision checks, idempotency and atomic order/events. | `python -m pytest backend/tests/unit/test_service.py` |
 | [api.py](../backend/print_assist/api.py) | Offline app factory, health/state/order routes, validation/conflict responses. | `python -m pytest backend/tests/integration` |
 | [backend/tests/conftest.py](../backend/tests/conftest.py) | Shared order fixture and outbound socket guard (numeric loopback allowed). | Backend suite |
 | [test_orders.py](../backend/tests/unit/test_orders.py) | Invalid inputs and normalized/equal-boundary deadlines. | Backend unit suite |

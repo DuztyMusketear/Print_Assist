@@ -14,6 +14,9 @@ class FactoryService:
         self.lock = threading.RLock()
         with self.store.transaction() as db:
             state = self.store.load(db) or initial_state()
+            if "printer_schema_version" not in state:
+                state["printers"] = initial_state()["printers"]
+                state["printer_schema_version"] = 1
             state["session_id"] = str(uuid4())
             state["running"] = False
             state["controls"] = {"agents_enabled": False, "automatic_triggers": False}
