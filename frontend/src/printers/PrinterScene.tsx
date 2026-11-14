@@ -1,9 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
 import {loadPart,type Part,type VisualAsset} from './assets';
 import {mountScene,type CameraCommand} from './scene';
-export type PrinterSceneProps={asset?:VisualAsset;progress:number;color:string;hasJob:boolean;label:string;printing?:boolean};
+export type PrinterSceneProps={asset?:VisualAsset;progress:number;color:string;hasJob:boolean;label:string;printing?:boolean;compact?:boolean};
 const cameras:[CameraCommand,string][]=[['left','Rotate left'],['right','Rotate right'],['zoom-in','Zoom in'],['zoom-out','Zoom out'],['pan-left','Pan left'],['pan-right','Pan right'],['reset','Reset camera']];
-export function PrinterScene({asset,progress,color,hasJob,label,printing=false}:PrinterSceneProps) {
+export function PrinterScene({asset,progress,color,hasJob,label,printing=false,compact=false}:PrinterSceneProps) {
   const host=useRef<HTMLDivElement>(null);
   const handle=useRef<ReturnType<typeof mountScene>|null>(null);
   const latest=useRef({progress,color,printing});latest.current={progress,color,printing};
@@ -37,6 +37,6 @@ export function PrinterScene({asset,progress,color,hasJob,label,printing=false}:
     {loading && <p role="status">Loading part model...</p>}
     {!asset && <p className="scene-caption">{hasJob?'Placeholder geometry - no visual asset assigned':'Empty build plate'}</p>}
     {!fits && <p className="fit-warning">Part exceeds the simulated build volume. Original scale preserved.</p>}
-    <div className="camera-controls" aria-label={`Camera controls for ${label}`}>{cameras.map(([action,name])=><button type="button" className="secondary" key={action} disabled={Boolean(error)||loading} onClick={()=>handle.current?.command(action)}>{name}</button>)}</div>
+    <details className="camera-disclosure" open={!compact}><summary>Camera controls</summary><div className="camera-controls" aria-label={`Camera controls for ${label}`}>{cameras.map(([action,name])=><button type="button" className="secondary" key={action} disabled={Boolean(error)||loading} onClick={()=>handle.current?.command(action)}>{name}</button>)}</div></details>
   </div>;
 }

@@ -695,3 +695,48 @@ test('a late quick-print result cannot navigate away from a reset session',async
  await act(async()=>finish(new Response(JSON.stringify({...state,running:true,revision:1}))));
  expect(screen.getByRole('tab',{name:'Printers'})).toHaveAttribute('aria-selected','true');
 });
+
+
+test('overview places floor above queue/activity and scenarios in the sidebar',async()=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)));
+ render(<App/>);await screen.findByText(/No orders yet/);
+ expect(screen.getByRole('complementary',{name:'Production controls'})).toContainElement(screen.getByRole('heading',{name:'Reset simulation scenario'}));
+ expect(screen.getByRole('heading',{name:'Production activity'}).closest('.overview-bottom')).not.toBeNull();
+ expect(screen.getByRole('region',{name:'Simulation clock'}).closest('header')).not.toBeNull();
+});
+
+
+test('selected printer follows the user between compact overview and detailed view',async()=>{
+ const printers=[1,2,3].map(number=>({id:`printer-${number}`,status:'idle',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}}));
+ vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,printers})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('button',{name:'Inspect Printer 2'}));
+ await user.click(screen.getByRole('tab',{name:'Printers'}));
+ expect(screen.getByRole('heading',{name:'Printer 2 details'})).toBeInTheDocument();
+ await user.click(screen.getByRole('tab',{name:'Overview'}));
+ expect(screen.getByRole('button',{name:'Inspect Printer 2'})).toHaveAttribute('aria-pressed','true');
+});
+
+
+test('overview scenario controls reset from the sidebar and inspector pauses the selected printer',async()=>{
+ const printer={id:'printer-1',status:'running',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}};
+ const initial={...state,printers:[printer]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(initial)))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...initial,revision:1,printers:[{...printer,status:'paused'}]})))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...initial,session_id:'00000000-0000-4000-8000-000000000099'})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('button',{name:'Pause Printer 1'}));await screen.findByRole('button',{name:'Resume Printer 1'});
+ await user.click(screen.getByRole('checkbox',{name:/I understand/}));await user.click(screen.getByRole('button',{name:'Reset scenario'}));
+ await waitFor(()=>expect(screen.getByRole('checkbox',{name:/I understand/})).not.toBeChecked());
+ expect(transport.mock.calls[2][0]).toBe('/api/scenarios/reset');
+});
+
+test('detailed inspector retains manual start in the compact layout',async()=>{
+ const printer={id:'printer-1',status:'reserved',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}};
+ const initial={...state,printers:[printer],jobs:[{id:'job-1',printer_id:'printer-1',status:'pending'}]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(initial))).mockResolvedValueOnce(new Response(JSON.stringify({...initial,revision:1})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('tab',{name:'Printers'}));await user.click(screen.getByRole('button',{name:'Start print on Printer 1'}));
+ await waitFor(()=>expect(transport).toHaveBeenCalledTimes(2));
+ expect(transport.mock.calls[1][0]).toBe('/api/start');
+});

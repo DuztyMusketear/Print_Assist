@@ -277,3 +277,39 @@ pause success, changed session and reset while the conflict refresh is pending.
 
 QuickPrint's navigation is also scoped to its source session, so a delayed result
 cannot switch tabs after reset; App.test.tsx verifies that regression.
+
+## Compact overview structure
+
+App.tsx now owns the compact header/clock and toolbar, primary floor above a
+queue/activity split, and right sidebar with acknowledged scenario reset,
+workflow guidance and an explicit future-orchestration note. It shares selected
+printer state across Overview/Printers. PrinterFloor.tsx accepts optional controlled
+selection while retaining standalone defaults; its inspector is the single
+selected-printer telemetry strip. Repeated card metrics are removed. PrinterScene.tsx
+keeps camera controls in a disclosure (collapsed in compact mode); scene identity
+and live rendering are unchanged. OrderQueue.tsx adds compact table presentation
+with existing order totals, assigned part/printer references, deadlines and forecasts.
+styles.css sets 76px header, 1720px maximum width, 345/310px sidebar, bounded lower
+panels and mobile stacking. No backend contracts or simulation behavior changes.
+
+| File | Responsibility / related behavior | Verification |
+| --- | --- | --- |
+| [OrderQueue.test.tsx](../frontend/src/components/OrderQueue.test.tsx) | Existing detailed intake display plus compact model/part/printer table. | Frontend suite |
+| [App.test.tsx](../frontend/src/App.test.tsx) | Header/sidebar/bottom structure, cross-tab selected printer, sidebar reset, overview and detailed manual controls. | Frontend suite |
+| [PrinterScene.test.tsx](../frontend/src/printers/PrinterScene.test.tsx) | Camera disclosure preserves expansion across progress updates, in addition to scene lifecycle checks. | Frontend suite |
+| [overview-layout.spec.ts](../tests/e2e/overview-layout.spec.ts) | Real desktop panel alignment/header height, single telemetry strip, selection retention, camera disclosure, tablet stacking and mobile overflow checks. | Root full/coverage checks |
+
+```mermaid
+graph LR
+  App -->|shared station selection| PrinterFloor
+  PrinterFloor -->|compact camera presentation| PrinterScene
+  App -->|compact lower panel| OrderQueue
+  App -->|lower activity panel| ActivityFeed
+  App -->|sidebar acknowledged reset| ScenarioReset
+  LayoutBrowser[overview-layout.spec.ts] -->|verifies density and responsive arrangement| App
+```
+
+The guided-printing browser scenario pauses the clock before creating another
+order, then lets automatic planning restart it; test mutations remain deterministic
+under the existing revision guard. Compact rows disclose timing details rather
+than expanding every row, and unassigned work has an explicit station label.

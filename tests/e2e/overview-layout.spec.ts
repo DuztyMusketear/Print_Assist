@@ -1,0 +1,37 @@
+import {test,expect} from '@playwright/test';
+
+test('compact overview keeps desktop panels aligned and stacks without mobile overflow',async({page})=>{
+ await page.setViewportSize({width:1440,height:1000});await page.goto('/');
+ await expect(page.locator('canvas')).toHaveCount(3);
+ const floor=await page.locator('.overview-main>.printer-floor').boundingBox();
+ const sidebar=await page.getByRole('complementary',{name:'Production controls'}).boundingBox();
+ const bottom=await page.locator('.overview-bottom').boundingBox();
+ const queue=await page.locator('.compact-queue').boundingBox();
+ const activity=await page.locator('.overview-bottom>.activity-feed').boundingBox();
+ expect(sidebar!.x).toBeGreaterThanOrEqual(floor!.x+floor!.width);
+ expect(bottom!.y).toBeGreaterThanOrEqual(floor!.y+floor!.height);
+ expect(queue!.y).toBe(activity!.y);
+ expect((await page.locator('header').boundingBox())!.height).toBe(76);
+ await expect(page.locator('header').getByRole('region',{name:'Simulation clock'})).toBeVisible();
+ await expect(page.locator('.printer-inspector')).toHaveCount(1);
+ await expect(page.locator('.printer-telemetry')).toHaveCount(0);
+ await page.getByRole('button',{name:'Inspect Printer 2',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Printer 2 details',exact:true})).toBeVisible();
+ const firstScene=page.locator('.printer-scene').first();
+ await expect(firstScene.getByRole('button',{name:'Rotate left',exact:true})).toBeHidden();
+ await firstScene.getByText('Camera controls',{exact:true}).click();
+ await expect(firstScene.getByRole('button',{name:'Rotate left',exact:true})).toBeVisible();
+ await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.getByRole('button',{name:'Refresh queue',exact:true}).click()]);
+ await expect(firstScene.getByRole('button',{name:'Rotate left',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Inspect Printer 2',exact:true}).click();
+ await page.getByRole('tab',{name:'Printers',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Printer 2 details',exact:true})).toBeVisible();
+ await page.getByRole('tab',{name:'Overview',exact:true}).click();
+ await page.setViewportSize({width:1024,height:900});
+ expect((await page.locator('.compact-queue').boundingBox())!.y).toBeLessThan((await page.locator('.overview-bottom>.activity-feed').boundingBox())!.y);
+ await page.setViewportSize({width:390,height:844});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const mobileSidebar=await page.getByRole('complementary',{name:'Production controls'}).boundingBox();
+ const mobileMain=await page.locator('.overview-main').boundingBox();
+ expect(mobileSidebar!.y).toBeGreaterThanOrEqual(mobileMain!.y+mobileMain!.height);
+});

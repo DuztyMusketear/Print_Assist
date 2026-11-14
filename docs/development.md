@@ -231,3 +231,13 @@ profile, approves it, inherits selected-model estimates, creates manual quantity
 starts/pauses/resumes from Overview and uses automatic printing. Tests use no live
 models or hardware. Existing bundle-size advisory remains. Review findings have
 regression coverage, including manual next batches and late reset/navigation.
+
+Compact overview verification (2026-11-14):
+`.venv\Scripts\python.exe scripts/check.py coverage` passed 71 backend,
+125 frontend and 9 browser tests at 100% statement/branch coverage; schema drift
+and production build passed. Browser checks verify 76px desktop header, floor and
+sidebar placement, lower-panel alignment, single selected telemetry strip,
+cross-tab station selection, camera disclosure persistence, tablet stacking and
+390px mobile overflow. Desktop/mobile screenshots were inspected locally.
+Interactive 3D and manual/automatic workflows remain covered. Existing Vite
+bundle advisory remains; no agent or physical printer execution occurred.

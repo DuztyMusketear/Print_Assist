@@ -68,3 +68,15 @@ test('poll snapshots and progress preserve the renderer and loaded model',async(
   expect(loadPart).toHaveBeenCalledOnce();
   expect(handle.dispose).not.toHaveBeenCalled();
 });
+
+
+test('compact camera disclosure stays open across progress refreshes',async()=>{
+ const handle={command:vi.fn(),update:vi.fn(),dispose:vi.fn()};vi.mocked(mountScene).mockReturnValue(handle);
+ const user=userEvent.setup();const view=render(<PrinterScene {...props} compact/>);
+ expect(screen.getByRole('button',{name:'Rotate left'})).not.toBeVisible();
+ await user.click(screen.getByText('Camera controls'));
+ await user.click(screen.getByRole('button',{name:'Rotate left'}));
+ expect(handle.command).toHaveBeenCalledWith('left');
+ view.rerender(<PrinterScene {...props} progress={0.5} compact/>);
+ expect(screen.getByRole('button',{name:'Rotate left'})).toBeVisible();
+});

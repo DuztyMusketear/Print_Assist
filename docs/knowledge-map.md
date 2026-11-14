@@ -78,6 +78,8 @@ graph LR
 
 | [Guided printing plan](superpowers/plans/2026-11-14-guided-printing.md) | Overview inspection, visible simulated printing, prepared-profile intake and guided manual/automatic printing. | SPEC, backlog, handoff, code map | Root coverage and guided browser workflow. |
 
+| [Compact overview plan](superpowers/plans/2026-11-14-compact-overview.md) | Reference-driven header, floor/telemetry, lower table/log and scenario sidebar layout, preserving interactive 3D. | Code map, guided printing plan, SPEC | Root coverage and responsive browser checks. |
+
 ## How to extend the map
 
 When implementation begins, add each source/configuration/test file to the table.

@@ -4,8 +4,8 @@ Sources: [specification](../SPEC.md), [MVP implementation plan](superpowers/plan
 [production overview plan](superpowers/plans/2026-11-14-production-overview.md),
 and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers.md).
 
-**Last audit: 2026-11-14, including local `feat/guided-printing-workflow` changes based
-on `5d452c6`.** Clock/forecast/monitoring additions below await integration into `main`.
+**Last audit: 2026-11-14, including local `feat/compact-overview-layout` changes based
+on `23f97e8`.** Clock/forecast/monitoring additions below await integration into `main`.
 These are local story IDs,
 not remote issues. Status reflects inspected code and tests; passing coverage
 for current code does not mean unimplemented acceptance criteria are complete.
@@ -543,3 +543,13 @@ local catalog/file registration, provenance and readiness guidance.
   double-count success or reuse consumed filament. Test retries/reset/concurrency.
 
 These follow-ups are local requirements, not remote issues or external tasks.
+
+## Compact overview handoff alignment
+
+Local `feat/compact-overview-layout` implements the approved layout/density:
+compact header/clock, floor with one selected telemetry strip, compact production
+table beside activity beneath the floor, and a scenario/workflow sidebar. Printer
+selection persists into the detailed tab; Overview camera controls are collapsible.
+3D/STL previews remain deliberate deviations from the reference SVG. Sidebar chat,
+fault/recovery controls and agent-network indicators remain PA-401/402/501 work;
+current sidebar text explicitly marks orchestration as planned.

@@ -34,6 +34,8 @@ test('prepared profile guides model approval, manual inspection and automatic qu
  await expect(page.locator('.printer-inspector').getByText('paused',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Resume Printer 2',exact:true}).click();
  await expect(page.locator('.printer-inspector').getByText('running',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Pause clock',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Run clock',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'2. Choose model and quantity',exact:true}).click();
  await page.getByLabel('Number of copies',{exact:true}).fill('2');
  await page.getByRole('button',{name:'Start automatic printing',exact:true}).click();
