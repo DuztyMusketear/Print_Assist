@@ -21,6 +21,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/modeling/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Model Task */
+        post: operations["create_model_task_api_modeling_tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/modeling/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move Model Task */
+        post: operations["move_model_task_api_modeling_actions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/state": {
         parameters: {
             query?: never;
@@ -219,11 +253,98 @@ export interface components {
             controls: components["schemas"]["Controls"];
             /** Artifacts */
             artifacts: components["schemas"]["Artifact"][];
+            /** Modeling Tasks */
+            modeling_tasks?: components["schemas"]["ModelTask"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** ModelAction */
+        ModelAction: {
+            /** Task Id */
+            task_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "prepare-supports" | "submit-review" | "approve" | "request-changes";
+        };
+        /** ModelActionCommand */
+        ModelActionCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ModelAction"];
+        };
+        /** ModelTask */
+        ModelTask: {
+            /** Title */
+            title: string;
+            /** Modelreference */
+            modelReference: string;
+            /** Duration Seconds */
+            duration_seconds: number;
+            /** Filament Grams */
+            filament_grams: number;
+            /** Filament Type */
+            filament_type: string;
+            /** Color */
+            color: string;
+            /** Required Capabilities */
+            required_capabilities: string[];
+            /** Id */
+            id: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "modeling" | "supports" | "review" | "approved";
+            /** Reviewoutcome */
+            reviewOutcome?: "changes-requested" | null;
+        };
+        /** ModelTaskCommand */
+        ModelTaskCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ModelTaskCreate"];
+        };
+        /** ModelTaskCreate */
+        ModelTaskCreate: {
+            /** Title */
+            title: string;
+            /** Modelreference */
+            modelReference: string;
+            /** Duration Seconds */
+            duration_seconds: number;
+            /** Filament Grams */
+            filament_grams: number;
+            /** Filament Type */
+            filament_type: string;
+            /** Color */
+            color: string;
+            /** Required Capabilities */
+            required_capabilities: string[];
         };
         /** Order */
         Order: {
@@ -383,6 +504,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    create_model_task_api_modeling_tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelTaskCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_model_task_api_modeling_actions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelActionCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

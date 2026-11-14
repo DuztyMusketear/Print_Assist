@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 
 from .contracts import AdvanceCommand, CommandEnvelope, FactorySnapshot, ScheduleCommand, StartCommand
 from .service import FactoryService
+from .contracts import ModelTaskCommand, ModelActionCommand
 
 
 def create_app(path=None):
@@ -15,6 +16,20 @@ def create_app(path=None):
     @app.get("/api/health")
     def health():
         return {"status": "ok", "mode": "offline"}
+
+    @app.post('/api/modeling/tasks', response_model=FactorySnapshot)
+    def create_model_task(command: ModelTaskCommand):
+        try:
+            return service.create_model_task(command)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post('/api/modeling/actions', response_model=FactorySnapshot)
+    def move_model_task(command: ModelActionCommand):
+        try:
+            return service.move_model_task(command)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
     @app.get("/api/state", response_model=FactorySnapshot)
     def state():

@@ -8,6 +8,7 @@ from .scheduling import schedule, start_job
 from .simulation import advance
 from .scenarios import initial_state
 from .store import Store
+from .modeling import create_task, move_task
 
 
 class FactoryService:
@@ -35,6 +36,12 @@ class FactoryService:
 
     def schedule(self, command: ScheduleCommand) -> dict:
         return self._transition(command, "schedule", lambda state: schedule(state, command.payload.mode))
+
+    def create_model_task(self, command):
+        return self._transition(command, 'model-create', lambda state: create_task(state, command.payload.model_dump(mode='json')))
+
+    def move_model_task(self, command):
+        return self._transition(command, 'model-move', lambda state: move_task(state, command.payload.model_dump(mode='json')))
 
     def start(self, command) -> dict:
         return self._transition(command, "start", lambda state: start_job(state, command.payload.job_id))

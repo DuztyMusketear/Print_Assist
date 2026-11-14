@@ -77,6 +77,37 @@ class Artifact(BaseModel):
     required_capabilities: list[str]
 
 
+class ModelTaskCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    title: Annotated[str, Field(min_length=1)]
+    modelReference: Annotated[str, Field(min_length=1)]
+    duration_seconds: Annotated[int, Field(strict=True, gt=0)]
+    filament_grams: Annotated[float, Field(gt=0, allow_inf_nan=False)]
+    filament_type: Annotated[str, Field(min_length=1)]
+    color: Annotated[str, Field(min_length=1)]
+    required_capabilities: Annotated[list[Annotated[str, Field(min_length=1)]], Field(min_length=1)]
+
+
+class ModelTask(ModelTaskCreate):
+    id: str
+    stage: Literal['modeling', 'supports', 'review', 'approved']
+    reviewOutcome: Literal['changes-requested'] | None = None
+
+
+class ModelTaskCommand(ScheduleCommand):
+    payload: ModelTaskCreate
+
+
+class ModelAction(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    task_id: str
+    action: Literal['prepare-supports', 'submit-review', 'approve', 'request-changes']
+
+
+class ModelActionCommand(ScheduleCommand):
+    payload: ModelAction
+
+
 class Order(OrderCreate):
     id: UUID
     status: str
@@ -119,6 +150,7 @@ class FactorySnapshot(BaseModel):
     events: list[ActivityEvent]
     controls: Controls
     artifacts: list[Artifact]
+    modeling_tasks: list[ModelTask] = Field(default_factory=list)
 
 
 def validate_order(data: dict) -> OrderCreate:

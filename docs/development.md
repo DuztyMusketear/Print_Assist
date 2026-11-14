@@ -1,9 +1,12 @@
-# Phase 1 development
+# Development
 
 Implemented: offline order entry, persisted SQLite queue, validated UTC deadlines,
-safe retries, and disabled agent state. Printer simulation/scheduling/recovery
-are later milestones. The seeded artifact is a reference and estimates, not a
-file that can be sent to a physical printer.
+safe retries, disabled agent state, and a local modeling/supports/review workflow
+dashboard. Dashboard tasks persist in the shared SQLite snapshot across reloads and restart. The dashboard
+tracks operator-supplied file references; it does not generate geometry or
+supports or slice files. Three virtual printers, scheduling and manual clock advancement are implemented;
+fault recovery remains planned. The seeded artifact is a reference and estimates, not a file that
+can be sent to a physical printer.
 
 ## Setup
 
@@ -50,7 +53,16 @@ Data defaults to `factory.sqlite3` in the working directory. Set
 starts a new session, pauses the clock, clears command replay history, and sets
 both agent controls OFF. No agents exist or initialize in this phase.
 
-The UI uses explicit UTC input labels. Choose the seeded blue PLA figure,
+The Overview opens first; choose the Modeling tab for model preparation. Add a model name and operator-supplied file reference,
+then move the task through support preparation and human review. A review can
+approve the task or return it to modeling with a visible revision note. These
+stage changes are validated by the backend and do not call a model. Enter positive
+print-duration and filament estimates plus material and printer requirements.
+Approval creates one artifact selectable in Orders; it does not create an order
+or certify, generate or slice the referenced file. Create an order explicitly
+to send approved work to scheduling.
+
+The Orders tab uses explicit UTC input labels. Choose the seeded blue PLA figure,
 quantity and deadlines; add an order and reload to verify it remains. Errors
 preserve form inputs. If state conflicts, refresh and retry. Successful repeats
 are separate orders; an uncertain network retry reuses its command key while
@@ -109,3 +121,7 @@ then passed after reconciling save and refresh responses against the current
 session/revision. Both response completion orderings are covered.
 Verified from the repository root with `.\.venv\Scripts\python.exe scripts/check.py coverage`;
 Windows process-cleanup permissions were needed for Playwright server shutdown.
+
+Modeling integration verification (2026-11-14): `python scripts/check.py coverage`
+passed with 47 backend tests, 57 frontend tests and 2 browser tests, 100%
+statement/branch coverage, schema drift and build checks. No live models ran.

@@ -2,6 +2,11 @@ import type { components } from './types';
 export type Snapshot = components['schemas']['FactorySnapshot'];
 export type OrderInput = components['schemas']['OrderCreate'];
 export class RejectedCommand extends Error {}
+export async function modelingCommand(path:'/api/modeling/tasks'|'/api/modeling/actions',body:components['schemas']['ModelTaskCommand']|components['schemas']['ModelActionCommand']):Promise<Snapshot> {
+  const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!response.ok) throw new RejectedCommand('Modeling change rejected. Refresh state and check the task details.');
+  return response.json();
+}
 export async function productionCommand(path:'/api/start'|'/api/advance',body:components['schemas']['StartCommand']|components['schemas']['AdvanceCommand']):Promise<Snapshot> {
   const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if (!response.ok) throw new RejectedCommand('Production command failed. Refresh the queue and try again.');

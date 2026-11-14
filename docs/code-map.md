@@ -7,6 +7,8 @@ virtual environment. `python scripts/check.py full` verifies the entire slice;
 ```mermaid
 graph LR
   UI["App / OrderForm / OrderQueue"] -->|HTTP via api.ts| API["api.py"]
+  UI -->|contains modeling tab| BOARD["ModelingBoard"]
+  BOARD -->|validates transitions| WORKFLOW["workflow.ts"]
   API -->|validated command| SERVICE["service.py"]
   API -->|schema| CONTRACTS["contracts.py"]
   CONTRACTS -->|generates via schema.py| TYPES["types.ts"]
@@ -72,4 +74,30 @@ graph LR
 | [playwright.config.ts](../playwright.config.ts) | Test-owned backend/frontend servers, separate DB/output per run. | Browser test and clean exit |
 | [development.md](development.md) | Setup, startup/restart, check commands, coverage scope and platform verification matrix. | Links and agreement with executed commands |
 
+
+## Modeling workflow
+
+| File | Responsibility | Verification |
+| --- | --- | --- |
+| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted workflow board, task intake, print estimates, retry controls, stage actions, and review outcomes. Does not generate models or supports. | ModelingBoard tests, workflow module |
+| [workflow.ts](../frontend/src/dashboard/workflow.ts) | Validates deterministic task creation and modeling/supports/review/approval transitions. No inference; backend owns persistence in the integrated app. | `workflow.test.ts` |
+| [ModelingBoard.test.tsx](../frontend/src/dashboard/ModelingBoard.test.tsx) | Verifies dashboard stage progression, approval, and revision return. | `npm test` |
+| [workflow.test.ts](../frontend/src/dashboard/workflow.test.ts) | Verifies required inputs, allowed transitions, and invalid action rejection. | `npm test` |
+
 Return to the [repository map](knowledge-map.md) for requirements and research.
+
+## Modeling production handoff
+
+| File | Responsibility | Verification |
+| --- | --- | --- |
+| [modeling.py](../backend/print_assist/modeling.py) | Validated stage transitions and atomic approved-artifact creation through service transactions. | `python -m pytest backend/tests/integration/test_modeling.py` |
+| [test_modeling.py](../backend/tests/integration/test_modeling.py) | Persistence, replay, invalid transition/input rejection and approved artifact order intake. | `python -m pytest backend/tests/integration/test_modeling.py` |
+
+```mermaid
+graph LR
+  Board[ModelingBoard] -->|typed commands via api.ts| API[api.py]
+  API -->|revision and replay guards| Service[service.py]
+  Service -->|validated transition| Modeling[modeling.py]
+  Modeling -->|approval creates| Artifact[Orderable artifact]
+  Service -->|atomic snapshot| SQLite[store.py]
+```

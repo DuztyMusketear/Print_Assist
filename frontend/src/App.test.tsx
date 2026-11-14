@@ -4,6 +4,117 @@ import {test,expect,vi} from 'vitest';
 import App from './App';
 import {state,orderedState} from './test-fixtures';
 
+test('modeling is available alongside the default production overview',async()=>{
+  vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)));
+  const user=userEvent.setup();
+  render(<App/>);
+  await screen.findByText(/No orders yet/);
+  expect(screen.getByRole('tab',{name:'Overview'})).toHaveAttribute('aria-selected','true');
+  await user.click(screen.getByRole('tab',{name:'Modeling'}));
+  expect(screen.getByRole('heading',{name:'Modeling dashboard'})).toBeVisible();
+});
+
+async function fillModel(user:ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByLabelText('Model name'),'Planter');
+  await user.type(screen.getByLabelText('Model file reference'),'planter.stl');
+  await user.type(screen.getByLabelText('Estimated print minutes'),'60');
+  await user.type(screen.getByLabelText('Estimated filament grams'),'30');
+  await user.type(screen.getByLabelText('Filament type'),'PLA');
+  await user.type(screen.getByLabelText('Filament color'),'blue');
+  await user.type(screen.getByLabelText('Required printer capabilities (comma separated)'),'FFF');
+}
+
+const modelTask={id:'model-1',title:'Planter',modelReference:'planter.stl',stage:'modeling',duration_seconds:3600,filament_grams:30,filament_type:'PLA',color:'blue',required_capabilities:['FFF']};
+
+test('saved modeling tasks can be created and moved through server commands',async()=>{
+  const user=userEvent.setup();
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[modelTask]})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:2,modeling_tasks:[{...modelTask,stage:'supports'}]})));
+  render(<App/>); await screen.findByText(/No orders yet/);
+  await user.click(screen.getByRole('tab',{name:'Modeling'}));
+  await fillModel(user);
+  await user.click(screen.getByRole('button',{name:'Add to modeling'}));
+  await user.click(await screen.findByRole('button',{name:'Prepare supports'}));
+  await screen.findByRole('button',{name:'Send to review'});
+  expect(String(transport.mock.calls[1][0])).toBe('/api/modeling/tasks');
+  expect(String(transport.mock.calls[2][0])).toBe('/api/modeling/actions');
+});
+
+test('modeling handles uncertain retries, blocks different changes, and reports rejection',async()=>{
+  const user=userEvent.setup();
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[modelTask]})))
+    .mockRejectedValueOnce(new Error('Response lost'))
+    .mockResolvedValueOnce(new Response('',{status:409}))
+    .mockResolvedValueOnce(new Response('',{status:409}));
+  render(<App/>); await screen.findByText(/No orders yet/);
+  await user.click(screen.getByRole('tab',{name:'Modeling'}));
+  await fillModel(user);
+  await user.click(screen.getByRole('button',{name:'Add to modeling'}));
+  await screen.findByText('Response lost');
+  await user.click(screen.getByRole('button',{name:'Prepare supports'}));
+  await screen.findByText('Retry the previous modeling change first.');
+  await user.click(screen.getByRole('button',{name:'Add to modeling'}));
+  await screen.findByText(/Modeling change rejected/);
+  expect(JSON.parse(String(transport.mock.calls[1][1]!.body)).idempotency_key).toBe(JSON.parse(String(transport.mock.calls[2][1]!.body)).idempotency_key);
+  await user.click(screen.getByRole('button',{name:'Prepare supports'}));
+  await waitFor(()=>expect(transport).toHaveBeenCalledTimes(4));
+});
+
+test('late modeling results cannot roll back refreshed production state',async()=>{
+  let finish!:(response:Response)=>void;
+  const user=userEvent.setup();
+  vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[modelTask]})))
+    .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:3,modeling_tasks:[{...modelTask,stage:'review'}]})));
+  render(<App/>); await screen.findByText(/No orders yet/);
+  await user.click(screen.getByRole('tab',{name:'Modeling'}));
+  await user.click(screen.getByRole('button',{name:'Prepare supports'}));
+  await user.click(screen.getByRole('button',{name:'Refresh queue'}));
+  await screen.findByRole('button',{name:'Approve'});
+  await act(async()=>finish(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[{...modelTask,stage:'supports'}]}))));
+  expect(screen.getByRole('button',{name:'Approve'})).toBeInTheDocument();
+});
+
+test('lost modeling action can be retried after refresh changes its stage',async()=>{
+  const user=userEvent.setup();
+  const newer={...state,revision:1,modeling_tasks:[{...modelTask,stage:'supports'}]};
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[modelTask]})))
+    .mockRejectedValueOnce(new Error('Response lost'))
+    .mockResolvedValueOnce(new Response(JSON.stringify(newer)))
+    .mockResolvedValueOnce(new Response(JSON.stringify(newer)));
+  render(<App/>); await screen.findByText(/No orders yet/);
+  await user.click(screen.getByRole('tab',{name:'Modeling'}));
+  await user.click(screen.getByRole('button',{name:'Prepare supports'}));
+  await screen.findByText('Response lost');
+  await user.click(screen.getByRole('button',{name:'Refresh queue'}));
+  await screen.findByRole('button',{name:'Send to review'});
+  await user.click(screen.getByRole('button',{name:'Retry modeling change'}));
+  await waitFor(()=>expect(screen.queryByText('Response lost')).not.toBeInTheDocument());
+  expect(transport.mock.calls[1][1]!.body).toBe(transport.mock.calls[3][1]!.body);
+});
+
+test('modeling retry failures are visible and a new session releases pending work',async()=>{
+  const user=userEvent.setup();
+  const newer={...state,session_id:'00000000-0000-4000-8000-000000000099',modeling_tasks:[modelTask]};
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[modelTask]})))
+    .mockRejectedValueOnce(new Error('Lost response'))
+    .mockRejectedValueOnce(new Error('Still disconnected'))
+    .mockResolvedValueOnce(new Response(JSON.stringify(newer)))
+    .mockResolvedValueOnce(new Response(JSON.stringify(newer)));
+  render(<App/>); await screen.findByText(/No orders yet/);
+  await user.click(screen.getByRole('tab',{name:'Modeling'}));
+  await user.click(screen.getByRole('button',{name:'Prepare supports'}));
+  await screen.findByText('Lost response');
+  await user.click(screen.getByRole('button',{name:'Retry modeling change'}));
+  await screen.findByText('Still disconnected');
+  await user.click(screen.getByRole('button',{name:'Refresh queue'}));
+  await waitFor(()=>expect(transport).toHaveBeenCalledTimes(4));
+  await user.click(screen.getByRole('button',{name:'Retry modeling change'}));
+  await waitFor(()=>expect(screen.queryByText('Still disconnected')).not.toBeInTheDocument());
+  expect(transport).toHaveBeenCalledTimes(5);
+});
+
 test('overview shows simulated printers and tabs open the order workspace',async()=>{
   const user=userEvent.setup();
   const printers=[1,2,3].map(number=>({id:`printer-${number}`,status:'idle',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}}));
