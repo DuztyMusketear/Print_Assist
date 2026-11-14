@@ -122,6 +122,9 @@ its relationships to the knowledge map when it is created.
 
 ## Task 1: Offline order-entry vertical slice
 
+**Status:** Implemented on `feat/order-intake`; see
+[setup and verification](../../development.md). Subsequent tasks are not started.
+
 **Branch:** `feat/order-intake`.
 **Files:** Create toolchain/check runner, contracts/store/service/API, seed factory,
 frontend shell/API/types/OrderForm/OrderQueue, `.gitignore`, and development guide.
@@ -135,23 +138,23 @@ frontend shell/API/types/OrderForm/OrderQueue, `.gitignore`, and development gui
 409 conflicts. Generate TypeScript contract types from the API schema and
 verify regeneration produces no drift.
 
-- [ ] Set up dependencies and test harness, then write failing behavior tests:
+- [x] Set up dependencies and test harness, then write failing behavior tests:
   valid order appears once; zero/fractional quantity, invalid dates, and unknown
   artifact are rejected; same idempotency key replays safely; stale revision
   conflicts; restart retains the order but returns controls OFF/clock paused.
-- [ ] Run `python -m pytest backend/tests/unit/test_orders.py -q`; verify an
+- [x] Run `python -m pytest backend/tests/unit/test_orders.py -q`; verify an
   intended assertion fails after minimal importable interfaces exist.
-- [ ] Implement validated intake and SQLite transactions, then the order form
+- [x] Implement validated intake and SQLite transactions, then the order form
   and queue. Test error feedback and preservation of entered values on failure.
   No model provider dependency or initialization is allowed.
-- [ ] Implement root commands `python scripts/check.py unit`, `full`, `coverage`.
+- [x] Implement root commands `python scripts/check.py unit`, `full`, `coverage`.
   `full` includes backend/integration, frontend, type/build, and browser checks;
   `coverage` additionally enforces statement/branch targets. Runner failure must
   propagate a nonzero exit code. Offline checks block outbound traffic; browser
   and local-server access allow loopback only. Downloads belong to setup, not tests.
-- [ ] Run the focused tests, all three root commands, and the browser order-entry
+- [x] Run the focused tests, all three root commands, and the browser order-entry
   check. Expected: zero failures and one persisted order displayed in the UI.
-- [ ] Update knowledge map/setup docs and commit this slice. Record commands,
+- [x] Update knowledge map/setup docs and commit this slice. Record commands,
   expected environment, actual results, and known gaps.
 
 ## Task 2: Deterministic three-printer production

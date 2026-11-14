@@ -11,8 +11,9 @@ reviewable agent assistance. We aim to compete on a simpler overall experience,
 reliable coordination, and predictable costs. These benefits and willingness to
 pay still need customer validation.
 
-**Current status:** Planning and documentation only. No runnable application or
-automated test suite exists yet. Physical printer control, design generation,
+**Current status:** Phase 1 implements offline order entry and a persisted queue,
+with unit, API integration, and browser tests. Printer simulation, scheduling,
+and recovery are planned next. Physical printer control, design generation,
 slicing, marketplace integrations, and billing are outside the MVP.
 
 The planned stack is React/TypeScript with Vite, Python/FastAPI, and SQLite,
@@ -20,6 +21,8 @@ with native Windows/macOS/Linux setup and an optional Docker Compose path.
 Platform support will be claimed only after verification. All development uses
 offline fakes; live application agents remain disabled until the framework is
 verified and an operator explicitly enables a bounded demo.
+
+See [development setup](./docs/development.md) to run the app and offline checks.
 
 See the [product specification](./SPEC.md) for the MVP scope, requirements,
 architecture, agent execution controls, and delivery plan.

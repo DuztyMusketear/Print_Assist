@@ -1,8 +1,8 @@
 # Repository knowledge map
 
-Start here to find responsibilities and related files. This map describes files
-that exist today; there is no application implementation or executable test suite
-yet. Runtime architecture proposals are in the specification.
+Start here to find responsibilities and related files. Phase 1 implements offline
+order intake and persistence. The [code map](code-map.md) indexes every current
+source/configuration/test file. Later runtime architecture remains planned.
 
 ## Current graph
 
@@ -29,6 +29,10 @@ graph LR
     README -->|links business hypotheses| BUSINESS
     RESEARCH["docs/market-research.md"] -->|informs hypotheses in| BUSINESS
     MAP -->|indexes| RESEARCH
+    CODE["docs/code-map.md"] -->|indexes implementation of| PLAN
+    MAP -->|links source responsibilities| CODE
+    DEV["docs/development.md"] -->|runs and verifies| CODE
+    README -->|links setup| DEV
 ```
 
 ## File index
@@ -39,10 +43,12 @@ graph LR
 | [SPEC.md](../SPEC.md) | Customer, business outcomes, MVP scope, proposed architecture, agent controls, TDD policy, acceptance criteria, and pricing hypotheses. Requirements rather than implemented behavior. | README, instructions | Review requirements for consistency; preserve offline development and explicit live-demo gates. |
 | [AGENTS.md](../AGENTS.md) | Contributor/agent rules for branches, navigation, graph maintenance, tests, and authorization boundaries. No automated branch enforcement. | Specification, map | Compare rules with spec and current workflow. |
 | [docs/knowledge-map.md](knowledge-map.md) | This index and relationship graph. No runtime behavior. | All indexed files | Confirm links resolve, entries match files, and edges match inspected relationships. |
-| [MVP implementation plan](superpowers/plans/2026-11-13-mvp-implementation.md) | Proposed web-app architecture, six test-first milestones, contracts, portability checks, and offline readiness gate. All implementation paths are planned. | Specification, instructions | Review milestone coverage against spec and verify links. No execution results yet. |
+| [MVP implementation plan](superpowers/plans/2026-11-13-mvp-implementation.md) | Six test-first milestones and contracts. Phase 1 implemented; later milestones remain planned. | Specification, instructions, development setup | Review milestone coverage against spec and verify actual results in development setup. |
 | [Judging readiness](judging-readiness.md) | User-supplied rubric weights, evidence gaps, financial worksheet guidance, growth limits, and pitch checklist. Preparation rather than achieved scores. | Implementation plan, specification | Check weights total 100%, distinguish assumptions from evidence, verify links. |
 | [Business validation](business-validation.md) | Desk-research approach, archived optional interview guide, hypothetical pricing/cost model, evidence gaps, and demo script. No interviews planned or customer validation claimed. | Judging checklist, implementation plan | Verify arithmetic, dated source attribution, assumption labels, and local links. |
 | [Market research](market-research.md) | Dated vendor comparison, attributed customer anecdotes, niche hypotheses, pricing implications, and research limits. No scope changes or customer validation claimed. | Business validation brief, specification | Review source links, distinguish old anecdotes from current vendor claims, and validate arithmetic/local links. |
+| [Code map](code-map.md) | Exact source, configuration, test, and tooling responsibilities and relationships for Phase 1. | Plan, setup, implementation files | Validate file links and update alongside code. |
+| [Development setup](development.md) | Native setup/run/check commands, restart semantics, coverage boundaries and actual platform status. | README, code map | Full check command and local-link review. |
 
 ## How to extend the map
 
