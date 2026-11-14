@@ -5,7 +5,8 @@ Sources: [specification](../SPEC.md), [MVP implementation plan](superpowers/plan
 and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers.md).
 
 **Last audit: 2026-11-14, including local `feat/compact-overview-layout` changes based
-on `23f97e8`.** Clock/forecast/monitoring additions below await integration into `main`.
+on `5d490dc`, with an operator-reported idle/start usability gap recorded.**
+Recent feature additions below await integration into `main`.
 These are local story IDs,
 not remote issues. Status reflects inspected code and tests; passing coverage
 for current code does not mean unimplemented acceptance criteria are complete.
@@ -50,10 +51,11 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 | PA-203 | Implemented | Seeded/empty resets, new-session guards and safe lost-response replay. |
 | PA-301 | Partial | Reviewable future schedule proposals, explicit material reservations and validated apply. |
 | PA-302 | Implemented | Conservative capacity/material estimates, deadline risk and unavailable reasons. |
-| PA-303 | Implemented | Serial one-second refresh, connection errors, simulated temperature telemetry and controls/history. |
+| PA-303 | Partial | Monitoring/controls implemented; operator cannot clearly get active prints. Close PA-307 and verify the user journey. |
 | PA-304 | To Do | Incoming-order review/acceptance; guided manual/profile intake now exists. |
 | PA-305 | Partial | Prepared-model asset ingestion, estimate provenance and optional real layer/toolpath data. |
 | PA-306 | To Do | Explicit cancel/discard with scrap and consumed-material accounting. |
+| PA-307 | To Do / P0 | Explain idle/completed/no-work state and provide an obvious working start-print path. |
 | PA-401, PA-402, PA-403 | To Do | Fault isolation, reviewed recovery and failure-to-completion demonstration. |
 | PA-501, PA-502, PA-503 | To Do | Fake agent gateway, controls, budgets and cancellation/zero-inference safeguards. |
 | PA-601 | To Do | Simulated business metrics and matched scenario comparisons. |
@@ -63,7 +65,9 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 
 ## Next development order and traceability
 
-1. Clock, forecasting and live monitoring are implemented locally. Next: PA-301 reviewable proposals and material reservations. Printer
+1. First address PA-307: reproduce the reported idle/start experience and make
+   the path from an idle printer to an active print clear. Then PA-301 proposals
+   and material reservations. Clock/forecast/monitoring code exists locally. Printer
    controls, assignment explanations/history and PA-203 resets are implemented
    by the [production controls plan](superpowers/plans/2026-11-14-production-controls.md).
    Reference SPEC sections 6-7 and MVP plan Task 2.
@@ -225,7 +229,7 @@ Acceptance criteria:
 
 ### PA-303 — Operate the floor through a live production dashboard
 
-**Status:** Implemented on `feat/clock-forecast-monitoring` (audit 2026-11-14).
+**Status:** Partial; implementation exists, operator acceptance reopened for PA-307 (2026-11-14).
 
 Tabs, real printer/job/progress/material state, 3D views, explicit refresh,
 stale-response guards, activity history and printer controls exist. Browser tests
@@ -553,3 +557,54 @@ selection persists into the detailed tab; Overview camera controls are collapsib
 3D/STL previews remain deliberate deviations from the reference SVG. Sidebar chat,
 fault/recovery controls and agent-network indicators remain PA-401/402/501 work;
 current sidebar text explicitly marks orchestration as planned.
+
+## Current phase review and idle-printer report (2026-11-14)
+
+| Phase | Current position | Remaining acceptance/work |
+| --- | --- | --- |
+| 1: Foundation | Implemented | Maintain persisted intake, validation and offline checks. |
+| 2: Virtual production | Core engine implemented; user start experience needs verification | Three printers, assignment, material/quantity accounting, clock and reset exist. Close PA-307 before claiming the user can reliably operate the floor. |
+| 3: Scheduling/dashboard | Partial | Compact 3D dashboard, forecasting, profiles and guided printing exist. PA-301 proposals/reservations, PA-304 incoming review, PA-305 asset/provenance work, PA-306 cancel/scrap and PA-307 usability remain. |
+| 4: Faults/recovery | To Do | Fault injection, deterministic isolation, reviewed recovery and complete recovery demonstration. |
+| 5: Agent framework | To Do | Offline fake gateway, explicit controls, budgets, cancellation and tool/run activity. Live provider remains separately gated PA-701. |
+| 6: Metrics/packaging/demo | Partial preparation | Business metrics/comparisons, portable serving/package and full demo/rehearsal evidence remain. |
+
+Partner handoff remains printable geometry plus slicer-derived per-model time and
+filament weight. The local application can import prepared profile metadata;
+geometry registration/provenance still needs PA-305. Application work can continue
+against the labeled example profile while waiting for the real assets.
+
+### PA-307 - Make idle-to-active printing obvious and verify it with the operator
+
+**Status:** To Do. **P0.** Next action before new feature expansion.
+
+User reports that all printers remain idle; pause and offline controls work, but
+active printing has not been successfully reached in their experience. Do not
+close this report solely because automated happy-path tests pass.
+
+Read-only preview observation on 2026-11-14: all three printers were idle, all five
+attempts completed, orders fulfilled at 4/4 and 1/1, and the clock running at 300x.
+There was no remaining/pending work. This explains the observed idle snapshot; it
+does not prove that every attempted start by the operator succeeded or failed.
+The existing inspector only shows Start when an assigned job is pending, leaving
+an idle printer with Pause/Offline and no obvious model/quantity start action.
+A running clock does not create new work. High speed can also make brief active
+states easy to miss.
+
+Acceptance:
+- Reproduce the user's path from a completed/idle workshop and from a fresh queue.
+- Distinguish no assigned work, all work complete, pending manual start, paused
+  clock/printer, offline equipment and incompatible/blocked jobs in plain words.
+- Offer a prominent start/new-print action from Overview/idle inspection that
+  guides to model and quantity selection without guessing the next tab.
+- Preserve the existing Orders automatic path (choose model/copies, Start automatic
+  printing) and manual pending-start path; show the assignment/start result and
+  explain why a printer remains idle when work cannot start.
+- Make clock speed/paused status clear enough to see active printing; verify
+  start, visible motion/progress, pause, resume and completion with the operator.
+- Add regression tests for the reproduced gap, then run full offline coverage.
+
+Recent completed code verification at 5d490dc: 71 backend, 125 frontend and 9
+browser tests with 100% statement/branch coverage. Those results cover implemented
+paths and do not resolve this reported usability/acceptance gap. This update is
+documentation only; no jobs were created, reset or started for this audit.

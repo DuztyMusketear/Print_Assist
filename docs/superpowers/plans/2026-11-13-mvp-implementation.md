@@ -20,7 +20,10 @@ alternative local setup, not a prerequisite for native development.
 
 ## Current implementation audit - 2026-11-14
 
-Phase 1 is implemented; Tasks 2 and 3 have partial production/dashboard foundations.
+Phase 1 is implemented; Task 2 core simulation exists and Task 3 remains partial.
+Operator acceptance is open for the idle-to-active printing path (PA-307): the
+preview was idle with all five sample items complete, while the user could not
+clearly reach active printing. Address that before further feature expansion.
 The original Task 2/3 completion checkboxes remain open because reviewable schedule proposals and material reservations remain incomplete. The local clock/monitoring follow-up adds run/pause, forecasts and live telemetry.
 The local [production controls follow-up](2026-11-14-production-controls.md)
 adds pause/resume/offline/online, scenario resets, activity and manual workflow
