@@ -74,6 +74,8 @@ graph LR
 
 | [Clock and monitoring plan](superpowers/plans/2026-11-14-clock-monitoring.md) | Single-owner accelerated clock, conservative forecasts and serial live polling. | SPEC, backlog, code map | Root coverage and browser checks. |
 
+| [Dashboard stability plan](superpowers/plans/2026-11-14-dashboard-stability.md) | Stable 3D refresh, friendly labels and compact dashboard based on user visual reference. | Code map, SPEC, production overview | Coverage/browser and layout inspection. |
+
 ## How to extend the map
 
 When implementation begins, add each source/configuration/test file to the table.

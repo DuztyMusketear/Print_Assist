@@ -36,16 +36,18 @@ export function mountScene(host:HTMLElement,options:SceneOptions) {
   volume.position.y=125;scene.add(volume);
   const height=options.part?options.part.size[1]:40;
   const nozzleHeight=options.placeholder||options.part?height*options.progress+10:80;
-  box('gantry',[268,9,12],[0,nozzleHeight+20,-12],0x9aa6b1);
-  box('print-head',[28,30,28],[0,nozzleHeight+14,0],0xf1823f);
+  const gantry=box('gantry',[268,9,12],[0,nozzleHeight+20,-12],0x9aa6b1);
+  const head=box('print-head',[28,30,28],[0,nozzleHeight+14,0],0xf1823f);
   const nozzle=new Mesh(new CylinderGeometry(2,0,8,12),new MeshStandardMaterial({color:0xe6bf65}));
   nozzle.position.set(0,nozzleHeight-4,0);scene.add(nozzle);
+  let partMaterial:MeshStandardMaterial|undefined;let ghostMaterial:MeshStandardMaterial|undefined;
   if(options.part || options.placeholder) {
     const geometry=options.part?options.part.geometry.clone():new BoxGeometry(40,40,40).translate(0,20,0);
     const color=colors[options.color.toLowerCase()] ?? 0x51c5bd;
     const mesh=new Mesh(geometry,new MeshStandardMaterial({color,roughness:0.65,clippingPlanes:[new Plane(new Vector3(0,-1,0),height*options.progress+0.01)]}));
+    partMaterial=mesh.material;
     mesh.name='printed-part';scene.add(mesh);
-    const ghost=new Mesh(geometry,new MeshStandardMaterial({color,transparent:true,opacity:0.12,depthWrite:false,wireframe:true}));scene.add(ghost);
+    const ghost=new Mesh(geometry,new MeshStandardMaterial({color,transparent:true,opacity:0.12,depthWrite:false,wireframe:true}));ghostMaterial=ghost.material;scene.add(ghost);
   }
   let disposed=false;
   function draw() {renderer.render(scene,camera);}
@@ -58,6 +60,17 @@ export function mountScene(host:HTMLElement,options:SceneOptions) {
   controls.addEventListener('change',draw);
   host.append(renderer.domElement);resize();
   const handle={
+    update(progress:number,color:string) {
+      if(disposed) return;
+      const nozzleHeight=options.placeholder||options.part?height*progress+10:80;
+      gantry.position.y=nozzleHeight+20;head.position.y=nozzleHeight+14;nozzle.position.y=nozzleHeight-4;
+      if(partMaterial && ghostMaterial) {
+        partMaterial.clippingPlanes![0].constant=height*progress+0.01;
+        partMaterial.color.setHex(colors[color.toLowerCase()] ?? 0x51c5bd);
+        ghostMaterial.color.copy(partMaterial.color);
+      }
+      draw();
+    },
     command(action:CameraCommand) {
       if(disposed) return;
       const offset=camera.position.clone().sub(controls.target);

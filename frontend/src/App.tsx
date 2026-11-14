@@ -1,3 +1,4 @@
+import {printerLabel,partLabel} from './display';
 import {useMonitoring} from './monitoring';
 import {useEffect,useRef,useState} from 'react';
 import {readState,addOrder,scheduleOrders,productionCommand,modelingCommand,RejectedCommand,type Snapshot,type OrderInput} from './api';
@@ -90,7 +91,7 @@ export default function App() {
       setError((reason as Error).message);
     }
   }
-  return <main>
+  return <main className={tab==='Overview'?'overview':''}>
     <header><div><p className="eyebrow">YOUR PRODUCTION WORKSPACE</p><h1>Print Assist</h1><p>Keep customer orders moving.</p></div>
       <span className="badge">Agents OFF · Offline prototype</span></header>
     <p className="notice">Simulated manufacturing · Print-ready files · No physical printer control</p>
@@ -104,13 +105,19 @@ export default function App() {
         <label>Clock speed <select aria-label="Clock speed" value={state.clock_speed ?? 60} onChange={event=>void command('/api/clock',{running:state.running,speed:Number(event.target.value) as 1|60|300|3600})}>{[1,60,300,3600].map(speed=><option key={speed} value={speed}>{speed}x</option>)}</select></label>
         <button onClick={()=>void command('/api/clock',{running:!state.running,speed:(state.clock_speed ?? 60) as 1|60|300|3600})}>{state.running?'Pause clock':'Run clock'}</button>
       </section>
-      {(tab==='Overview'||tab==='Printers') && <section><h2>Simulated temperatures</h2><p>Illustrative telemetry; not measured hardware temperatures.</p>{state.telemetry?.map(item=><p key={String(item.printer_id)}>{String(item.printer_id)}: nozzle {String(item.nozzle_c)} C / bed {String(item.bed_c)} C</p>)}</section>}
-
+      {tab==='Overview' && <div className="summary-grid" aria-label="Production summary">
+        <section><span>Active printers</span><strong>{state.printers.filter(p=>p.status==='running').length} / {state.printers.length}</strong></section>
+        <section><span>Items remaining</span><strong>{state.orders.reduce((sum,o)=>sum+o.quantity-o.successful_quantity,0)}</strong></section>
+        <section><span>Items completed</span><strong>{state.orders.reduce((sum,o)=>sum+o.successful_quantity,0)}</strong></section>
+        <section><span>Orders at risk</span><strong>{state.forecasts?.filter(f=>f.risk!=='on_time').length ?? 0}</strong></section>
+      </div>}
+      <div className={tab==='Overview'?'overview-workspace':''}>
       {(tab==='Overview'||tab==='Printers') && <PrinterFloor state={state} detailed={tab==='Printers'} onControl={(printer_id,action)=>command('/api/printers/control',{printer_id,action})}/> }
       {tab==='Printers' && <ScenarioReset onReset={scenario=>command('/api/scenarios/reset',{scenario})}/>}
       {(tab==='Overview'||tab==='Schedule') && <ActivityFeed events={state.events}/>}
-      {tab==='Schedule' && <section><h2>Schedule</h2><button onClick={()=>void schedule('automatic')}>Schedule automatically</button> <button onClick={()=>void schedule('manual')}>Schedule for manual start</button> <button onClick={()=>void command('/api/advance',{seconds:3600})}>Advance 1 hour</button><ul>{state.jobs.map((job,index)=><li key={String(job.id ?? index)}>{String(job.id)} · {String(job.status)} · {String(job.printer_id)} {(job.status==='pending'||job.status==='paused') && <button onClick={()=>void command('/api/start',{job_id:String(job.id)})}>{job.status==='paused'?'Resume':'Start'} {String(job.id)}</button>}</li>)}</ul><OrderQueue state={state}/></section>}
-      {tab==='Overview' && <><section><h2>Example production activity</h2><p>Example only: a blue PLA figure is printing on Printer 1 (45% complete); another order is waiting for an available printer.</p></section><OrderQueue state={state}/></>}
+      </div>
+      {tab==='Schedule' && <section><h2>Schedule</h2><button onClick={()=>void schedule('automatic')}>Schedule automatically</button> <button onClick={()=>void schedule('manual')}>Schedule for manual start</button> <button onClick={()=>void command('/api/advance',{seconds:3600})}>Advance 1 hour</button><ul>{state.jobs.map((job,index)=><li key={String(job.id ?? index)}>{partLabel(String(job.id))} · {String(job.status)} · {printerLabel(String(job.printer_id))} {(job.status==='pending'||job.status==='paused') && <button onClick={()=>void command('/api/start',{job_id:String(job.id)})}>{job.status==='paused'?'Resume':'Start'} {partLabel(String(job.id))}</button>}</li>)}</ul><OrderQueue state={state}/></section>}
+      {tab==='Overview' && <OrderQueue state={state}/>}
       {tab==='Orders' && <div className="workspace"><OrderForm artifacts={state.artifacts} onSubmit={submit}/><OrderQueue state={state}/></div>}
     </> : <p>Waiting for production state…</p>}
   </main>;

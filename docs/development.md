@@ -203,3 +203,22 @@ Verification on Windows/Chromium (2026-11-14):
 production build passed. Browser workflow confirms automatic progress and live
 forecast display. Read-only review findings have regression coverage. No models
 or physical printers ran. Vite retains its existing large-bundle advisory.
+
+## Stable dashboard refresh and compact presentation
+
+Printer scenes retain their canvas/camera across polling and update clipping,
+nozzle height and color in place. Equal asset metadata no longer reloads STL files.
+Printer headings/control labels use Printer 1, Printer 2, etc.; part references
+show Part 1 and activity uses compact hexadecimal order references. Persisted IDs
+and command payloads are unchanged. The dark responsive overview uses real summary
+counts and contained activity panels, following the user's local HTML visual example.
+No chat or recovery behavior is implied by that visual reference.
+
+Verification (2026-11-14): root coverage run reached 100% backend/frontend
+statement/branch coverage (69 backend, 98 frontend tests); its browser checks
+exposed two assertions still using old labels. After correcting those assertions,
+`.venv\Scripts\python.exe scripts/check.py full` passed 69 backend, 98 frontend
+and 7 browser tests plus schema/build checks. Browser regression verifies canvas
+identity and floor height across refresh. Desktop 1440px and mobile 390px visual
+inspection found no horizontal overflow. Read-only feature review found no
+critical/important issues. Existing Vite bundle advisory remains.

@@ -7,6 +7,13 @@ test('real 3D beds render; camera controls and example STL work offline',async({
     return route.continue();
   });
   await page.goto('/');
+  await expect(page.locator('canvas')).toHaveCount(3);
+  const beforeBox=await page.locator('.printer-floor').boundingBox();
+  await page.evaluate(()=>{(window as unknown as {savedCanvas:Element|null}).savedCanvas=document.querySelector('canvas');});
+  await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.getByRole('button',{name:'Refresh queue',exact:true}).click()]);
+  expect(await page.evaluate(()=>(window as unknown as {savedCanvas:Element}).savedCanvas===document.querySelector('canvas'))).toBe(true);
+  expect((await page.locator('.printer-floor').boundingBox())?.height).toBe(beforeBox?.height);
+
   await expect(page.locator('.printer-canvas canvas')).toHaveCount(3);
   await expect(page.getByRole('heading',{name:'Virtual printers'})).toBeVisible();
   await page.getByRole('tab',{name:'Printers',exact:true}).click();
@@ -24,7 +31,7 @@ test('real 3D beds render; camera controls and example STL work offline',async({
   await page.getByRole('button',{name:'Reset camera'}).click();
   await page.getByRole('slider',{name:'Example progress'}).fill('75');
   await expect(page.getByText('75%',{exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'Inspect printer-2'}).click();
+  await page.getByRole('button',{name:'Inspect Printer 2'}).click();
   await expect(page.getByRole('checkbox',{name:'Preview example part'})).not.toBeChecked();
   await expect(page.getByText('Empty build plate')).toBeVisible();
   expect(external).toEqual([]);
@@ -34,7 +41,7 @@ test('WebGL failure retains readable printer statuses and fallback',async({page}
   await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>null;});
   await page.goto('/');
   await expect(page.getByText(/3D preview unavailable/)).toHaveCount(3);
-  await expect(page.getByText('printer-1',{exact:true})).toBeVisible();
+  await expect(page.getByText('Printer 1',{exact:true})).toBeVisible();
 });
 
 test('approved visual model flows through ordering, scheduling and real progress',async({page})=>{
@@ -63,7 +70,7 @@ test('approved visual model flows through ordering, scheduling and real progress
   await page.getByRole('button',{name:'Advance 1 hour',exact:true}).click();
   await page.getByRole('tab',{name:'Printers',exact:true}).click();
   await expect(page.locator('.printer-card').getByText('Visual tower order',{exact:true})).toBeVisible();
-  await expect(page.locator('.printer-card').getByText(/Job.*50%/)).toBeVisible();
+  await expect(page.locator('.printer-card').getByText(/Part.*50%/)).toBeVisible();
   await expect(page.locator('.printer-card canvas')).toBeVisible();
   await expect(page.getByText('Loading part model...')).toBeHidden();
 });

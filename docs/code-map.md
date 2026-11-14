@@ -202,3 +202,32 @@ graph LR
   ClockTests[test_monitoring.py] -->|verifies owner and estimates| API
   PollTests[monitoring.test.tsx] -->|verifies scheduling and cleanup| Poll
 ```
+
+## Dashboard stability and readable identifiers
+
+App.tsx/styles.css now own the dark compact dashboard shell, real summary metrics,
+responsive floor/activity grid and stable panel sizes. PrinterFloor.tsx owns friendly
+station headings, compact part references, progress bars and per-printer simulated
+telemetry. ProductionControls.tsx uses friendly station labels and compact activity
+references; backend command IDs remain unchanged. App/PrinterFloor/ProductionControls
+component tests assert the new presentation and preserve command checks.
+
+| File | Purpose, relationships and verification |
+| --- | --- |
+| [display.ts](../frontend/src/display.ts) | Presentation-only printer/part/short hexadecimal order labels, shared by App, PrinterFloor and ProductionControls. Verify display unit tests. |
+| [display.test.ts](../frontend/src/display.test.ts) | Friendly, custom and long-ID label examples. `npm test --workspace frontend -- src/display.test.ts`. |
+| [PrinterScene.tsx](../frontend/src/printers/PrinterScene.tsx) | Asset metadata identity controls loading; live progress/color update the existing scene without resetting cameras. Async stale-load cleanup remains. Verify PrinterScene tests. |
+| [scene.ts](../frontend/src/printers/scene.ts) | Incremental clipping/material/nozzle updates preserve renderer, mesh and camera; geometry is disposed only on scene replacement/unmount. Verify scene tests. |
+| [PrinterScene.test.tsx](../frontend/src/printers/PrinterScene.test.tsx) | Equal metadata snapshots reuse renderer/load and apply latest progress/color; existing stale/unmount/fallback cases. Frontend suite. |
+| [scene.test.ts](../frontend/src/printers/scene.test.ts) | Live clipping update preserves camera/canvas, plus empty/placeholder/disposed updates. Frontend suite. |
+| [printer-views.spec.ts](../tests/e2e/printer-views.spec.ts) | Real canvas identity and floor height survive refresh; existing WebGL/camera/asset workflows. Root full/coverage checks. |
+
+```mermaid
+graph LR
+  App -->|friendly presentation| Display[display.ts]
+  PrinterFloor -->|station and part labels| Display
+  ProductionControls -->|compact activity references| Display
+  PrinterScene -->|incremental progress and color| Scene[scene.ts]
+  SceneTests[scene.test.ts] -->|verifies camera and geometry preservation| Scene
+  PrinterBrowser[printer-views.spec.ts] -->|verifies refresh identity and panel height| PrinterScene
+```

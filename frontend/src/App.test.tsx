@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import {test,expect,vi} from 'vitest';
 import App from './App';
 vi.mock('./monitoring',()=>({useMonitoring:()=>{}}));
-vi.mock('./printers/scene',()=>({mountScene:()=>({command:()=>{},dispose:()=>{}})}));
+vi.mock('./printers/scene',()=>({mountScene:()=>({command:()=>{},update:()=>{},dispose:()=>{}})}));
 import {state,orderedState} from './test-fixtures';
 
 test('selected printer controls send guarded commands and show their updated status',async()=>{
@@ -13,8 +13,8 @@ test('selected printer controls send guarded commands and show their updated sta
   const user=userEvent.setup();render(<App/>);
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Printers'}));
-  await user.click(screen.getByRole('button',{name:'Pause printer-1'}));
-  await screen.findByRole('button',{name:'Resume printer-1'});
+  await user.click(screen.getByRole('button',{name:'Pause Printer 1'}));
+  await screen.findByRole('button',{name:'Resume Printer 1'});
   expect(transport.mock.calls[1][0]).toBe('/api/printers/control');
 });
 
@@ -69,7 +69,7 @@ test.each([[false,'Advance 1 hour'],[true,'Advance 1 hour'],[false,'Schedule aut
   await user.click(screen.getByRole('checkbox',{name:/I understand/}));
   await user.click(screen.getByRole('button',{name:'Reset scenario'}));
   await waitFor(()=>expect(screen.getByRole('checkbox',{name:/I understand/})).not.toBeChecked());
-  await user.click(screen.getByRole('button',{name:'Pause printer-1'}));
+  await user.click(screen.getByRole('button',{name:'Pause Printer 1'}));
   await screen.findByText(/Production command failed/);
   await act(async()=>{if(fails)reject(new Error('Old error'));else finish(new Response(JSON.stringify({...original,revision:10})));});
   expect(screen.getByText(/Production command failed/)).toBeInTheDocument();
@@ -257,10 +257,10 @@ test('overview shows simulated printers and tabs open the order workspace',async
   const printers=[1,2,3].map(number=>({id:`printer-${number}`,status:'idle',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}}));
   vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,printers})));
   render(<App/>);
-  expect(await screen.findByText('printer-1')).toBeInTheDocument();
-  expect(screen.getByText('printer-3')).toBeInTheDocument();
+  expect(await screen.findByText('Printer 1')).toBeInTheDocument();
+  expect(screen.getByText('Printer 3')).toBeInTheDocument();
   expect(screen.queryByRole('heading',{name:'New production order'})).not.toBeInTheDocument();
-  expect(screen.getByText(/Example production activity/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Production summary')).toBeInTheDocument();
   await user.click(screen.getByRole('tab',{name:'Orders'}));
   expect(screen.getByRole('heading',{name:'New production order'})).toBeInTheDocument();
 });
@@ -274,7 +274,7 @@ test('schedule tab submits automatic scheduling and displays running work',async
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Schedule'}));
   await user.click(screen.getByRole('button',{name:'Schedule automatically'}));
-  expect(await screen.findByText(/job-1/)).toBeInTheDocument();
+  expect(await screen.findByText(/Part 1/)).toBeInTheDocument();
   expect(String(transport.mock.calls[1][0])).toBe('/api/schedule');
   expect(JSON.parse(String(transport.mock.calls[1][1]!.body)).payload.mode).toBe('automatic');
 });
@@ -290,7 +290,7 @@ test('operator can start a pending job and advance simulation time',async()=>{
   render(<App/>);
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Schedule'}));
-  await user.click(screen.getByRole('button',{name:'Start job-1'}));
+  await user.click(screen.getByRole('button',{name:'Start Part 1'}));
   await screen.findByText(/running/);
   await user.click(screen.getByRole('button',{name:'Advance 1 hour'}));
   await screen.findByText(/completed/);
@@ -306,7 +306,7 @@ test('operator can resume a paused job after restart',async()=>{
   render(<App/>);
   await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Schedule'}));
-  await user.click(screen.getByRole('button',{name:'Resume job-1'}));
+  await user.click(screen.getByRole('button',{name:'Resume Part 1'}));
   expect(await screen.findByText(/running/)).toBeInTheDocument();
 });
 
@@ -322,7 +322,7 @@ test('schedule and production failures are visible and can be retried',async()=>
   await user.click(screen.getByRole('tab',{name:'Schedule'}));
   await user.click(screen.getByRole('button',{name:'Schedule for manual start'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Scheduling failed');
-  await user.click(screen.getByRole('button',{name:'Start job-1'}));
+  await user.click(screen.getByRole('button',{name:'Start Part 1'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Production command failed');
   await user.click(screen.getByRole('button',{name:'Schedule for manual start'}));
   await waitFor(()=>expect(screen.queryByRole('alert')).not.toBeInTheDocument());
@@ -379,7 +379,7 @@ test('an uncertain command must be retried before another production action',asy
   await user.click(screen.getByRole('tab',{name:'Schedule'}));
   await user.click(screen.getByRole('button',{name:'Advance 1 hour'}));
   await screen.findByRole('alert');
-  await user.click(screen.getByRole('button',{name:'Start job-1'}));
+  await user.click(screen.getByRole('button',{name:'Start Part 1'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Retry the previous production command');
   expect(transport).toHaveBeenCalledTimes(2);
 });
@@ -407,7 +407,7 @@ test('overview displays the current job and its progress for a printer',async()=
   const current={...state,printers:[printer],jobs:[{id:'job-1',order_id:'order-1',printer_id:'printer-1',status:'running',elapsed_seconds:3600,duration_seconds:7200}]};
   vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(current)));
   render(<App/>);
-  expect(await screen.findByText(/job-1/)).toBeInTheDocument();
+  expect(await screen.findByText(/Part 1/)).toBeInTheDocument();
   expect(screen.getByText(/50%/)).toBeInTheDocument();
 });
 
@@ -416,7 +416,7 @@ test('overview handles a job without progress fields',async()=>{
   const current={...state,printers:[printer],jobs:[{id:'job-1',order_id:'order-1',printer_id:'printer-1',status:'running'}]};
   vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(current)));
   render(<App/>);
-  expect(await screen.findByText(/job-1.*0%/)).toBeInTheDocument();
+  expect(await screen.findByText(/Part 1.*0%/)).toBeInTheDocument();
 });
 
 test('loads state, saves an order, and refreshes the queue with agents OFF',async()=>{
@@ -578,7 +578,7 @@ test.each([null,'2026-11-15T04:00:00Z'])('overview displays forecast and simulat
     forecasts:[{order_id:orderedState.orders[0].id,completion,risk:completion?'on_time':'unavailable',reason:'Capacity estimate'}],
     telemetry:[{printer_id:'printer-1',nozzle_c:210,bed_c:60}]})));
   render(<App/>);await screen.findByText(/Estimated print completion:/);
-  expect(screen.getByText(/nozzle 210 C/)).toBeInTheDocument();
+  expect(screen.getByText(/Estimated print completion:/)).toBeInTheDocument();
   expect(screen.getByText(/Capacity estimate/)).toHaveTextContent(completion ?? 'Unavailable');
 });
 

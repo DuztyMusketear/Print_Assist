@@ -6,6 +6,8 @@ const cameras:[CameraCommand,string][]=[['left','Rotate left'],['right','Rotate 
 export function PrinterScene({asset,progress,color,hasJob,label}:PrinterSceneProps) {
   const host=useRef<HTMLDivElement>(null);
   const handle=useRef<ReturnType<typeof mountScene>|null>(null);
+  const latest=useRef({progress,color});latest.current={progress,color};
+  const assetKey=JSON.stringify(asset);
   const [error,setError]=useState('');
   const [loading,setLoading]=useState(false);
   const [fits,setFits]=useState(true);
@@ -21,12 +23,14 @@ export function PrinterScene({asset,progress,color,hasJob,label}:PrinterScenePro
           part=loaded;setFits(loaded.fits);
         }
         handle.current=mountScene(host.current!,{part,progress,color,placeholder:hasJob&&!asset,onError:setError});
+        handle.current.update(latest.current.progress,latest.current.color);
       } catch(reason) {if(live)setError((reason as Error).message);}
       finally {if(live)setLoading(false);}
     }
     void start();
     return ()=>{live=false;controller.abort();handle.current?.dispose();handle.current=null;part?.geometry.dispose();};
-  },[asset,progress,color,hasJob]);
+  },[assetKey,hasJob]);
+  useEffect(()=>{handle.current?.update(progress,color);},[progress,color]);
   return <div className="printer-scene" role="group" aria-label={label}>
     <div ref={host} className="printer-canvas" hidden={Boolean(error)} />
     {error && <p role="status">3D preview unavailable: {error}. Printer status and progress remain available.</p>}

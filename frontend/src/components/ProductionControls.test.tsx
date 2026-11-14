@@ -6,14 +6,14 @@ import {PrinterControls,ScenarioReset,ActivityFeed} from './ProductionControls';
 test('printer actions follow operational state and surface failures',async()=>{
   const user=userEvent.setup();const onControl=vi.fn().mockResolvedValue(undefined);
   const view=render(<PrinterControls id="printer-1" status="running" onControl={onControl}/>);
-  await user.click(screen.getByRole('button',{name:'Pause printer-1'}));
+  await user.click(screen.getByRole('button',{name:'Pause Printer 1'}));
   expect(onControl).toHaveBeenCalledWith('printer-1','pause');
-  await user.click(screen.getByRole('button',{name:'Take printer-1 offline'}));
+  await user.click(screen.getByRole('button',{name:'Take Printer 1 offline'}));
   view.rerender(<PrinterControls id="printer-1" status="offline" onControl={onControl}/>);
-  await user.click(screen.getByRole('button',{name:'Bring printer-1 online'}));
+  await user.click(screen.getByRole('button',{name:'Bring Printer 1 online'}));
   view.rerender(<PrinterControls id="printer-1" status="paused" onControl={onControl}/>);
   onControl.mockRejectedValueOnce(new Error('Printer state changed'));
-  await user.click(screen.getByRole('button',{name:'Resume printer-1'}));
+  await user.click(screen.getByRole('button',{name:'Resume Printer 1'}));
   expect(await screen.findByRole('alert')).toHaveTextContent('Printer state changed');
   view.rerender(<PrinterControls id="printer-1" status="faulted" onControl={onControl}/>);
   expect(screen.getByText(/No manual controls/)).toBeInTheDocument();
@@ -43,6 +43,6 @@ test('activity distinguishes entity references, sources and legacy events',()=>{
     {type:'order_created',timestamp:'2026-11-15T00:00:00Z'},
   ]}/>);
   expect(screen.getByText('Assigned work')).toBeInTheDocument();
-  expect(screen.getByText(/printer-1/)).toHaveTextContent('job-1');
+  expect(screen.getByText(/Printer 1/)).toHaveTextContent('Order ORDER1');
   expect(screen.getByText('order created')).toBeInTheDocument();
 });

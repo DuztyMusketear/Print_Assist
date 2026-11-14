@@ -17,10 +17,10 @@ test('seeded production can pause, go offline, resume and complete before reset'
   await page.getByRole('button',{name:'Schedule automatically',exact:true}).click();
   await expect(page.locator('section li').filter({hasText:'running'}).first()).toBeVisible();
   await page.getByRole('tab',{name:'Printers',exact:true}).click();
-  await page.getByRole('button',{name:'Pause printer-1',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Resume printer-1',exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'Take printer-1 offline',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Bring printer-1 online',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Pause Printer 1',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Resume Printer 1',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Take Printer 1 offline',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Bring Printer 1 online',exact:true})).toBeVisible();
   const before=await (await page.request.get('http://127.0.0.1:8000/api/state')).json();
   await page.getByRole('tab',{name:'Schedule',exact:true}).click();
   await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/advance')),page.getByRole('button',{name:'Advance 1 hour',exact:true}).click()]);
@@ -28,8 +28,8 @@ test('seeded production can pause, go offline, resume and complete before reset'
   expect(stopped.jobs[0].elapsed_seconds).toBe(before.jobs[0].elapsed_seconds);
   expect(stopped.printers[0].material.grams).toBe(before.printers[0].material.grams);
   await page.getByRole('tab',{name:'Printers',exact:true}).click();
-  await page.getByRole('button',{name:'Bring printer-1 online',exact:true}).click();
-  await page.getByRole('button',{name:'Resume printer-1',exact:true}).click();
+  await page.getByRole('button',{name:'Bring Printer 1 online',exact:true}).click();
+  await page.getByRole('button',{name:'Resume Printer 1',exact:true}).click();
   await expect(page.locator('.printer-status')).toHaveText('running');
   await page.getByRole('tab',{name:'Schedule',exact:true}).click();
   for(let hour=0;hour<3;hour++) {

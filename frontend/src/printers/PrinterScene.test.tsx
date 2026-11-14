@@ -11,7 +11,7 @@ vi.mock('./scene',()=>({mountScene:vi.fn()}));
 const asset={id:'example-tower',name:'Example',path:'/models/example-tower.stl',units:'mm' as const,rotation_degrees:[0,0,0] as [number,number,number]};
 const props={asset:undefined,progress:0,color:'blue',hasJob:false,label:'Printer 1'};
 test('empty view mounts camera controls and disposes on unmount',async()=>{
-  const handle={command:vi.fn(),dispose:vi.fn()};vi.mocked(mountScene).mockReturnValue(handle);
+  const handle={command:vi.fn(),update:vi.fn(),dispose:vi.fn()};vi.mocked(mountScene).mockReturnValue(handle);
   const user=userEvent.setup();const view=render(<PrinterScene {...props}/>);
   for(const name of ['Rotate left','Rotate right','Zoom in','Zoom out','Pan left','Pan right','Reset camera']) await user.click(screen.getByRole('button',{name}));
   expect(handle.command).toHaveBeenCalledTimes(7);
@@ -21,7 +21,7 @@ test('empty view mounts camera controls and disposes on unmount',async()=>{
 test('loads model, warns about fit, and releases its geometry',async()=>{
   const geometry=new BoxGeometry();const dispose=vi.spyOn(geometry,'dispose');
   vi.mocked(loadPart).mockResolvedValue({geometry,size:[240,40,40],fits:false});
-  vi.mocked(mountScene).mockReturnValue({command:vi.fn(),dispose:vi.fn()});
+  vi.mocked(mountScene).mockReturnValue({command:vi.fn(),update:vi.fn(),dispose:vi.fn()});
   const view=render(<PrinterScene {...props} asset={asset} hasJob/>);
   await screen.findByText(/exceeds the simulated build volume/);
   expect(mountScene).toHaveBeenCalled();view.unmount();expect(dispose).toHaveBeenCalledOnce();
@@ -29,7 +29,7 @@ test('loads model, warns about fit, and releases its geometry',async()=>{
 test('stale model loads dispose without replacing a new view',async()=>{
   let finish!:(value:Awaited<ReturnType<typeof loadPart>>)=>void;
   vi.mocked(loadPart).mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));
-  vi.mocked(mountScene).mockReturnValue({command:vi.fn(),dispose:vi.fn()});
+  vi.mocked(mountScene).mockReturnValue({command:vi.fn(),update:vi.fn(),dispose:vi.fn()});
   const view=render(<PrinterScene {...props} asset={asset}/>);
   view.rerender(<PrinterScene {...props} hasJob/>);
   const geometry=new BoxGeometry();const dispose=vi.spyOn(geometry,'dispose');
@@ -50,7 +50,21 @@ test('loading and renderer failures keep a readable fallback; unmounted errors a
   await act(async()=>reject(new Error('Aborted')));
 });
 test('context loss shows the scene fallback',async()=>{
-  vi.mocked(mountScene).mockImplementationOnce((_host,options)=>{queueMicrotask(()=>options.onError('3D context lost'));return {command:vi.fn(),dispose:vi.fn()};});
+  vi.mocked(mountScene).mockImplementationOnce((_host,options)=>{queueMicrotask(()=>options.onError('3D context lost'));return {command:vi.fn(),update:vi.fn(),dispose:vi.fn()};});
   render(<PrinterScene {...props}/>);
   await waitFor(()=>expect(screen.getByText(/3D context lost/)).toBeInTheDocument());
+});
+
+
+test('poll snapshots and progress preserve the renderer and loaded model',async()=>{
+  const handle={command:vi.fn(),update:vi.fn(),dispose:vi.fn()};
+  vi.mocked(mountScene).mockReturnValue(handle);
+  vi.mocked(loadPart).mockResolvedValue({geometry:new BoxGeometry(),size:[40,40,40],fits:true});
+  const view=render(<PrinterScene {...props} asset={asset} hasJob/>);
+  await waitFor(()=>expect(mountScene).toHaveBeenCalledOnce());
+  view.rerender(<PrinterScene {...props} asset={{...asset,rotation_degrees:[0,0,0]}} hasJob progress={0.6} color="red"/>);
+  await waitFor(()=>expect(handle.update).toHaveBeenLastCalledWith(0.6,'red'));
+  expect(mountScene).toHaveBeenCalledOnce();
+  expect(loadPart).toHaveBeenCalledOnce();
+  expect(handle.dispose).not.toHaveBeenCalled();
 });

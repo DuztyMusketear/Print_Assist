@@ -1,3 +1,4 @@
+import {printerLabel,orderLabel} from '../display';
 import {useState} from 'react';
 import type {components} from '../types';
 import {EntryField} from './EntryField';
@@ -5,7 +6,7 @@ export type PrinterAction=components['schemas']['PrinterControlPayload']['action
 export type Scenario=components['schemas']['ResetPayload']['scenario'];
 export type ControlHandler=(id:string,action:PrinterAction)=>Promise<void>;
 const actions:Record<string,PrinterAction[]>={idle:['pause','offline'],reserved:['pause','offline'],running:['pause','offline'],paused:['resume','offline'],offline:['online']};
-const labels:Record<PrinterAction,(id:string)=>string>={pause:id=>'Pause '+id,resume:id=>'Resume '+id,offline:id=>'Take '+id+' offline',online:id=>'Bring '+id+' online'};
+const labels:Record<PrinterAction,(id:string)=>string>={pause:id=>'Pause '+printerLabel(id),resume:id=>'Resume '+printerLabel(id),offline:id=>'Take '+printerLabel(id)+' offline',online:id=>'Bring '+printerLabel(id)+' online'};
 
 export function PrinterControls({id,status,onControl}:{id:string;status:string;onControl:ControlHandler}) {
   const [busy,setBusy]=useState(false);const [error,setError]=useState('');
@@ -41,9 +42,9 @@ type Event=Partial<components['schemas']['ActivityEvent']> & Pick<components['sc
 export function ActivityFeed({events}:{events:Event[]}) {
   return <section className="activity-feed"><h2>Production activity</h2>
     {events.length===0?<p>No activity yet</p>:<ul>{events.slice().reverse().map((event,index)=><li key={index}>
-      <strong>{event.message || event.type.replaceAll('_',' ')}</strong>
+      <strong>{(event.message || event.type.replaceAll('_',' ')).replace(/printer-(\d+)/g,'Printer $1')}</strong>
       <p>{event.source ?? 'user'} / {event.status ?? 'accepted'} / <time dateTime={event.timestamp}>{event.timestamp}</time></p>
-      <small>{[event.printer_id,event.job_id,event.order_id].filter(Boolean).join(' / ')}</small>
+      <small>{[event.printer_id && printerLabel(event.printer_id),event.order_id && orderLabel(event.order_id)].filter(Boolean).join(' / ')}</small>
     </li>)}</ul>}
   </section>;
 }

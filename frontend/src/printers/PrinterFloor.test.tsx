@@ -11,18 +11,19 @@ test('overview shows three views; detail selection and example preview remain lo
   const view=render(<PrinterFloor state={snapshot} detailed={false}/>);
   expect(screen.getAllByRole('group')).toHaveLength(3);
   view.rerender(<PrinterFloor state={snapshot} detailed/>);
-  await user.click(screen.getByRole('button',{name:'Inspect printer-2'}));
-  expect(screen.getByRole('group',{name:'3D view of printer-2'})).toBeInTheDocument();
+  await user.click(screen.getByRole('button',{name:'Inspect Printer 2'}));
+  expect(screen.getByRole('group',{name:'3D view of Printer 2'})).toBeInTheDocument();
   await user.click(screen.getByRole('checkbox',{name:'Preview example part'}));
   expect(screen.getByText(/Example geometry/)).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Example progress'),{target:{value:'75'}});
   expect(screen.getByText('75%')).toBeInTheDocument();
-  await user.click(screen.getByRole('button',{name:'Inspect printer-3'}));
+  await user.click(screen.getByRole('button',{name:'Inspect Printer 3'}));
   expect(screen.getByRole('checkbox',{name:'Preview example part'})).not.toBeChecked();
   view.rerender(<PrinterFloor state={{...state,printers:[]}} detailed/>);
   expect(screen.getByText('No virtual printers available')).toBeInTheDocument();
 });
 test('resolves visual association and displays job status and progress',()=>{
-  render(<PrinterFloor state={{...orderedState,printers,visual_assets:[asset],artifacts:[{...state.artifacts[0],visual_asset_id:asset.id}],jobs:[{id:'job-1',printer_id:'printer-1',order_id:orderedState.orders[0].id,status:'running',elapsed_seconds:3600,duration_seconds:7200}]}} detailed={false}/>);
-  expect(screen.getByText(/job-1.*50%/)).toBeInTheDocument();
+  render(<PrinterFloor state={{...orderedState,printers,telemetry:[{printer_id:'printer-1',nozzle_c:210,bed_c:60,simulated:true}],visual_assets:[asset],artifacts:[{...state.artifacts[0],visual_asset_id:asset.id}],jobs:[{id:'job-1',printer_id:'printer-1',order_id:orderedState.orders[0].id,status:'running',elapsed_seconds:3600,duration_seconds:7200}]}} detailed={false}/>);
+  expect(screen.getByText(/Part 1.*50%/)).toBeInTheDocument();
+  expect(screen.getByText(/Nozzle 210 C/)).toHaveTextContent('simulated');
 });

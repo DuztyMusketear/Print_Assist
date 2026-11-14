@@ -24,6 +24,10 @@ test('builds printer/bed geometry, clips at progress and releases camera/geometr
   const original=camera.position.clone();
   for(const command of ['left','right','zoom-in','zoom-out','pan-left','pan-right','reset'] as const) handle.command(command);
   expect(camera.position.distanceTo(original)).toBeLessThan(0.0001);
+  handle.update(0.75,'red');
+  expect(mesh.material).toHaveProperty('clippingPlanes.0.constant',75.01);
+  expect(camera.position.distanceTo(original)).toBeLessThan(0.0001);
+  expect(host.querySelectorAll('canvas')).toHaveLength(1);
   resize();
   const disposal=vi.spyOn(mesh.geometry,'dispose');
   handle.dispose();handle.dispose();
@@ -32,7 +36,7 @@ test('builds printer/bed geometry, clips at progress and releases camera/geometr
   resize();
   expect(mocks.render).toHaveBeenCalledTimes(rendered);
   expect(mocks.size).toHaveBeenCalledTimes(resized);
-  handle.command('left');
+  handle.command('left');handle.update(1,'blue');
   expect(disposal).toHaveBeenCalledOnce();
   expect(disconnect).toHaveBeenCalledOnce();
   expect(mocks.loseContext).toHaveBeenCalled();
@@ -45,9 +49,11 @@ test('empty beds stay empty; missing models use a placeholder and context loss r
   const onError=vi.fn();
   const empty=mountScene(host,{part:null,progress:0,color:'custom',placeholder:false,onError});
   expect((mocks.render.mock.calls.at(-1)![0] as Scene).getObjectByName('printed-part')).toBeUndefined();
+  empty.update(0.5,'blue');
   empty.dispose();
-  mountScene(host,{part:null,progress:1,color:'custom',placeholder:true,onError});
+  const placeholder=mountScene(host,{part:null,progress:1,color:'custom',placeholder:true,onError});
   expect((mocks.render.mock.calls.at(-1)![0] as Scene).getObjectByName('printed-part')).toBeDefined();
+  placeholder.update(0.5,'custom');
   host.querySelector('canvas')!.dispatchEvent(new Event('webglcontextlost',{cancelable:true}));
   expect(onError).toHaveBeenCalledWith(expect.stringContaining('3D context'));
   vi.unstubAllGlobals();
