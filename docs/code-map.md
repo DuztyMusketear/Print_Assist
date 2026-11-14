@@ -8,6 +8,7 @@ virtual environment. `python scripts/check.py full` verifies the entire slice;
 graph LR
   UI["App / OrderForm / OrderQueue"] -->|HTTP via api.ts| API["api.py"]
   UI -->|contains modeling tab| BOARD["ModelingBoard"]
+  BOARD -->|remove callback dispatched by App| API
   BOARD -->|validates transitions| WORKFLOW["workflow.ts"]
   API -->|validated command| SERVICE["service.py"]
   API -->|schema| CONTRACTS["contracts.py"]
@@ -18,6 +19,11 @@ graph LR
   UNIT["Unit and component tests"] -->|verify behavior| SERVICE
   INTEGRATION["API integration tests"] -->|verify contracts and persistence| API
   BROWSER["Playwright order intake"] -->|verifies real UI and backend| UI
+  NISTASSET["public/demo-models/NIST STL"] -->|prefills curated demo task in| BOARD
+  NISTASSET -->|binary triangles parsed and drawn by| NISTVIEW["NistModelPreview.tsx"]
+  NISTVIEW -->|renders matching tasks in| BOARD
+  NISTDOC["NIST asset provenance record"] -->|documents source, checksum, and limits for| NISTASSET
+  NISTTEST["NIST dashboard workflow E2E"] -->|verifies enlarged view, removal, and task flow| NISTVIEW
 ```
 
 ## Source and test responsibilities
@@ -25,7 +31,7 @@ graph LR
 | File | Owned behavior / relationships | Verification |
 | --- | --- | --- |
 | [backend/print_assist/__init__.py](../backend/print_assist/__init__.py) | Package marker; no initialization side effects. | Backend suite/imports |
-| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, command and snapshot schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration/test_orders_api.py` |
+| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, command and snapshot schema, including linked support tasks and paired model/support artifacts. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration/test_orders_api.py` |
 | [scenarios.py](../backend/print_assist/scenarios.py) | Deterministic empty-orders seed with three idle virtual printers and one print-ready artifact reference. | Service/API tests |
 | [store.py](../backend/print_assist/store.py) | SQLite transactions, snapshot storage, command-result table and connection lifetime. | Store/service tests |
 | [service.py](../backend/print_assist/service.py) | One-owner authoritative intake, legacy printer-state initialization, session/revision checks, idempotency and atomic order/events. | `python -m pytest backend/tests/unit/test_service.py` |
@@ -40,21 +46,22 @@ graph LR
 | [test_checks.py](../backend/tests/unit/test_checks.py) | Root runner executes subprocesses and propagates failure without continuing. | Backend unit suite |
 | [test_orders_api.py](../backend/tests/integration/test_orders_api.py) | Real app/SQLite HTTP behavior, response schema, offline operation with fake credentials. | Backend integration suite |
 | [frontend/src/main.tsx](../frontend/src/main.tsx) | DOM mounting and stylesheet import only. | Browser test/build |
-| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs and printer overview, state loading, retry key ownership, stale-response suppression and order composition. Schedule controls are in progress. | Frontend App tests |
+| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs and printer overview, state loading, retry key ownership, stale-response suppression, order composition, persisted modeling removal actions, and approved-artifact order-use checks. Schedule controls are in progress. | Frontend App tests |
 | [api.ts](../frontend/src/api.ts) | HTTP transport and actionable save/load errors. | Frontend transport tests |
 | [types.ts](../frontend/src/types.ts) | Generated OpenAPI types; do not hand-edit. | `python scripts/schema.py --check` |
-| [styles.css](../frontend/src/styles.css) | Responsive visual layout for intake, modeling and queue, including field-help text. No business logic. | Build/browser review |
+| [styles.css](../frontend/src/styles.css) | Responsive layout for intake, modeling and queue, field help, removal actions, and enlarged model-preview dialog. No business logic. | Build/browser review |
 | [OrderForm.tsx](../frontend/src/components/OrderForm.tsx) | Inputs with icon-triggered tooltips and examples, UTC command payload, busy/error states, preservation on failure. | Frontend OrderForm tests |
 | [OrderQueue.tsx](../frontend/src/components/OrderQueue.tsx) | Empty state, saved quantity/deadlines/status and completion display. | Frontend OrderQueue tests |
 | [test-setup.ts](../frontend/src/test-setup.ts) | DOM cleanup, mock restoration and default fetch denial. | Frontend suite |
 | [test-fixtures.ts](../frontend/src/test-fixtures.ts) | Complete typed empty/ordered snapshot fixtures. | Frontend suite/typecheck |
-| [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, overlapping refresh/save, retry key reuse, busy state, late success/failure handling. | `npm test` |
+| [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, overlapping refresh/save, retry key reuse, busy state, late success/failure handling, revisioned modeling-task removal, and the approved-artifact order-use check. | `npm test` |
 | [api.test.ts](../frontend/src/api.test.ts) | Transport command body and load/conflict/validation errors. | `npm test` |
 | [OrderForm.test.tsx](../frontend/src/components/OrderForm.test.tsx) | Field explanations, submit payload, rejected-input preservation and invalid deadline feedback. | `npm test` |
 | [OrderQueue.test.tsx](../frontend/src/components/OrderQueue.test.tsx) | Empty and saved order presentation. | `npm test` |
 | [scripts/check.py](../scripts/check.py) | Portable unit/full/coverage orchestration; short-circuits on failure; per-run outputs. | Runner unit tests and all three check modes |
 | [scripts/schema.py](../scripts/schema.py) | Offline OpenAPI generation, TS generation and drift check in temporary storage. | Full/coverage modes |
 | [order-intake.spec.ts](../tests/e2e/order-intake.spec.ts) | Browser-to-real-backend creation and reload persistence; fails external requests. | `npm run e2e` |
+| [modeling-dashboard.spec.ts](../tests/e2e/modeling-dashboard.spec.ts) | Verifies NIST preview gestures, Snack Sticks page-reference intake, support assessment with removal notes, combined review, revision persistence, paired approval, removal confirmation, order selection, and zero external requests. | `npm run e2e` |
 
 ## Configuration and documentation
 
@@ -69,9 +76,9 @@ graph LR
 | [package-lock.json](../package-lock.json) | Resolved JS versions/integrities. | `npm ci` |
 | [frontend/package.json](../frontend/package.json) | React/Vite/TypeScript and component testing dependencies/scripts. | npm tests/build |
 | [frontend/tsconfig.json](../frontend/tsconfig.json) | Strict TS/browser compilation. | `npm run build` |
-| [frontend/vite.config.ts](../frontend/vite.config.ts) | Loopback dev server/API proxy, DOM tests and coverage inclusion/exclusion. | Full/coverage checks |
+| [frontend/vite.config.ts](../frontend/vite.config.ts) | Loopback dev server/API proxy (ports can be overridden for parallel local runs), DOM tests and coverage inclusion/exclusion. | Full/coverage checks |
 | [frontend/index.html](../frontend/index.html) | Browser title, responsive viewport and mount entry. | Browser test/build |
-| [playwright.config.ts](../playwright.config.ts) | Test-owned backend/frontend servers, separate DB/output per run. | Browser test and clean exit |
+| [playwright.config.ts](../playwright.config.ts) | Test-owned backend/frontend servers (ports can be overridden), separate DB/output per run. | Browser test and clean exit |
 | [development.md](development.md) | Setup, startup/restart, check commands, coverage scope and platform verification matrix. | Links and agreement with executed commands |
 
 
@@ -79,9 +86,12 @@ graph LR
 
 | File | Responsibility | Verification |
 | --- | --- | --- |
-| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted workflow board, task intake with icon-triggered field help/examples and editable material/color suggestions, print estimates, retry controls, stage actions, and review outcomes. Does not generate models or supports. | ModelingBoard tests, workflow module |
-| [workflow.ts](../frontend/src/dashboard/workflow.ts) | Validates deterministic task creation and modeling/supports/review/approval transitions. No inference; backend owns persistence in the integrated app. | `workflow.test.ts` |
-| [ModelingBoard.test.tsx](../frontend/src/dashboard/ModelingBoard.test.tsx) | Verifies input descriptions, material/color suggestions, custom material entry, stage progression, approval, and revision return. | `npm test` |
+| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted board with distinct model and linked support-assessment tasks, optional support file/material/removal details, combined review and approval handoff, task removal, order-use checks, conditional NIST preview, and a linked Snack Sticks support demo page. Does not generate support geometry or slice files. | ModelingBoard tests, NistModelPreview, workflow module |
+| [NistModelPreview.tsx](../frontend/src/dashboard/NistModelPreview.tsx) | Loads and validates the bundled binary STL, renders shaded triangles, opens a high-resolution enlarged dialog on click, supports mouse-drag rotation and independent pinch zoom only in that dialog, preserves rotate/reset buttons, and explains NIST artifact features. | `ModelingBoard.test.tsx`, modeling dashboard browser workflow |
+| [workflow.ts](../frontend/src/dashboard/workflow.ts) | Validates model tasks, linked support assessments, required-support and no-support paths into combined review, approval, and revision return. Backend owns persistence in the integrated app. | `workflow.test.ts` |
+| [ModelingBoard.test.tsx](../frontend/src/dashboard/ModelingBoard.test.tsx) | Verifies support assessment and optional support details, combined review, paired approval, no-support path to review, revision return, removal guards, and NIST preview gestures. | `npm test` |
+| [public/demo-models/nist-test-artifact.stl](../frontend/public/demo-models/nist-test-artifact.stl) | Bundled NIST public-domain STL served as a modeling dashboard demo download. | ModelingBoard tests and browser workflow; verify checksum against asset record |
+| [public/demo-models/README.md](../frontend/public/demo-models/README.md) | NIST source, public-domain notice, checksum, local mesh check, and demo-estimate caveat. | Check source URL and checksum against bundled asset. |
 | [workflow.test.ts](../frontend/src/dashboard/workflow.test.ts) | Verifies required inputs, allowed transitions, and invalid action rejection. | `npm test` |
 
 Return to the [repository map](knowledge-map.md) for requirements and research.
@@ -90,15 +100,18 @@ Return to the [repository map](knowledge-map.md) for requirements and research.
 
 | File | Responsibility | Verification |
 | --- | --- | --- |
-| [modeling.py](../backend/print_assist/modeling.py) | Validated stage transitions and atomic approved-artifact creation through service transactions. | `python -m pytest backend/tests/integration/test_modeling.py` |
-| [test_modeling.py](../backend/tests/integration/test_modeling.py) | Persistence, replay, invalid transition/input rejection and approved artifact order intake. | `python -m pytest backend/tests/integration/test_modeling.py` |
+| [modeling.py](../backend/print_assist/modeling.py) | Validated linked support-task assessment, combined review, paired model/support artifact approval, task removal, and order-use protection. | `python -m pytest backend/tests/integration/test_modeling.py` |
+| [test_modeling.py](../backend/tests/integration/test_modeling.py) | Persists model and support task together, requires an assessment, sends no-support models to review, validates revisions/removal, and verifies order intake. | `python -m pytest backend/tests/integration/test_modeling.py` |
 
 ```mermaid
 graph LR
   Board[ModelingBoard] -->|typed commands via api.ts| API[api.py]
+  Board -->|creates support task and paired review package| Modeling[modeling.py]
+  Board -->|click opens canvas dialog; drag rotates and pinch zooms independently| Preview[NistModelPreview.tsx]
   API -->|revision and replay guards| Service[service.py]
-  Service -->|validated transition| Modeling[modeling.py]
-  Modeling -->|approval creates| Artifact[Orderable artifact]
+  Service -->|validated transition| Modeling
+  Modeling -->|approval stores model and linked support task together| Artifact[Orderable artifact]
+  Modeling -->|removal drops task and unused artifact| Artifact
   Service -->|atomic snapshot| SQLite[store.py]
 ```
 

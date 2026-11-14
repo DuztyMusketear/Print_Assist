@@ -53,14 +53,41 @@ Data defaults to `factory.sqlite3` in the working directory. Set
 starts a new session, pauses the clock, clears command replay history, and sets
 both agent controls OFF. No agents exist or initialize in this phase.
 
-The Overview opens first; choose the Modeling tab for model preparation. Add a model name and operator-supplied file reference,
-then move the task through support preparation and human review. A review can
-approve the task or return it to modeling with a visible revision note. These
-stage changes are validated by the backend and do not call a model. Enter positive
-print-duration and filament estimates plus material and printer requirements.
-Approval creates one artifact selectable in Orders; it does not create an order
-or certify, generate or slice the referenced file. Create an order explicitly
-to send approved work to scheduling.
+The Overview opens first; choose the Modeling tab for model preparation. Add a
+model name and operator-supplied file reference. The Supports lane creates a
+separate linked support task where the operator records whether supports are
+needed and, when they are, an optional slicer-project/file reference, material
+estimate, and removal notes. Either answer goes to Review; the reviewer sees the
+model and support task together and can approve or request changes. Approval
+stores the model and support task together on one orderable artifact. These
+stage changes are validated by the backend and do not call a model or slicer.
+Enter positive print-duration and filament estimates plus material and printer
+requirements. Approval creates one artifact selectable in Orders; it does not
+create an order or certify, generate, or slice the referenced file. Create an
+order explicitly to send approved work to scheduling.
+
+For a repeatable demo, use the bundled NIST Additive Manufacturing Test Artifact
+card in Modeling. It links to the unchanged public-domain STL and pre-fills a
+demo task. After adding it, the task card shows a shaded mesh preview. Click the
+mesh to open the enlarged view; mouse dragging rotates the model there, and
+pinching zooms independently without changing rotation. The rotate and reset
+buttons remain available in both views. The task card also shows a guide to the
+model's features.
+The guide covers the center hole, cylinders, pin/hole pairs, stepped walls, ramp,
+and lateral features. Press Escape or click the shaded area to close the preview.
+The Modeling page also links to [Snack Sticks by ryan5sampson on Pinshape](https://pinshape.com/items/106174-3d-printed-snack-sticks)
+as a support-requiring demo. Its page states supports are required and lists the file
+under CC BY; the dashboard uses the page URL as a model reference and does not
+bundle the STL. Preserve attribution if redistributing the file.
+Removing a task in Modeling, Supports, or Review asks for confirmation
+before deleting it. For Approved tasks, the dashboard checks existing orders
+first; an in-use model stays in the list with an explanation. Confirming removal
+of an unused approved model also removes its orderable artifact. Its
+120-minute/35-gram PLA values are presentation assumptions, not
+NIST settings or slicer results. The NIST file is an experimental design, not an
+ASTM standard, and is not claimed as physically printed or certified by this
+app. See the [asset record](../frontend/public/demo-models/README.md) for
+provenance, checksum, and the local mesh check.
 
 The Orders tab uses explicit UTC input labels. Choose the seeded blue PLA figure,
 quantity and deadlines; add an order and reload to verify it remains. Errors
@@ -87,6 +114,9 @@ The runner stops on a failing child command. Browser checks need ports 8000 and
 5173 free and permissions to create/terminate child processes. Servers are
 owned and stopped by Playwright. Sandboxed Windows sessions may need elevated
 tool execution permissions for process cleanup; this is not an app requirement.
+When a preview already occupies the default ports, set `PRINT_ASSIST_API_PORT`
+to `8001` and `PRINT_ASSIST_WEB_PORT` to `5174` before running the check; the
+browser server and Vite API proxy use those values together.
 
 Backend tests block outbound socket connections, allowing numeric loopback for
 the Windows event loop. Frontend unit tests fail actual fetch calls unless a
@@ -136,3 +166,44 @@ Icon-tooltip verification (2026-11-14): backend/frontend coverage gates reached
 ambiguous input/help-button selectors; exact-label selectors resolved this.
 `python scripts/check.py full` then passed all tests, schema drift/build and
 both browser workflows, including hover, keyboard focus and Escape dismissal.
+
+NIST demo verification (2026-11-14): `PRINT_ASSIST_API_PORT=8001`,
+`PRINT_ASSIST_WEB_PORT=5174`, then `python scripts/check.py coverage` passed
+47 backend tests, 61 frontend tests, and 3 browser tests with 100% statement and
+branch coverage. The browser test fetched the 369,684-byte STL, completed the
+modeling/support/review approval flow, and selected the artifact for an order.
+The original preview remained available on ports 8000/5173.
+
+NIST mesh preview verification (2026-11-14): the same isolated-port coverage
+command passed 47 backend tests, 67 frontend tests, and 3 browser tests. The
+browser test loaded the bundled triangle mesh, checked the feature guide and
+rotation control, and completed approval/order selection; frontend statement,
+branch, function, and line coverage all reached 100%. The browser test also
+dragged the mesh with the mouse, confirmed its view changed, and checked that
+dragging did not trigger click-to-enlarge.
+
+Model removal and enlarged preview verification (2026-11-14): isolated-port
+`python scripts/check.py coverage` passed 50 backend tests, 76 frontend tests,
+and 3 browser tests at 100% application coverage. The browser test enlarged the
+mesh, confirmed the high-resolution canvas and existing controls, completed the
+workflow, then confirmed task removal. UI tests cover cancel/confirm at modeling,
+supports, and review stages plus the approved-task order-use check. Backend
+integration tests verified approved artifact cleanup and rejected removal when
+an order already uses it.
+
+Enlarged preview gesture verification (2026-11-14): isolated-port
+`python scripts/check.py coverage` passed 50 backend tests, 76 frontend tests,
+and 3 browser tests. Frontend and backend statement and branch coverage were
+100%; schema drift and production build passed. Component tests verified that
+the task card does not rotate while dragging, the enlarged view rotates by mouse,
+pinching changes zoom independently, and the existing rotate/reset controls work.
+The browser workflow verified enlarged-only mouse rotation without zoom change.
+
+Linked support task verification (2026-11-14): isolated-port
+`python scripts/check.py coverage` passed 56 backend tests, 81 frontend tests,
+and 3 browser tests. Backend and frontend statement and branch coverage were
+100%; schema generation and production build passed. Tests verify that support
+assessment is required, no-support findings go directly to Review, required
+supports appear with the model in Review, approval stores the linked support task
+on the same artifact, and review revisions clear stale support data. The browser
+workflow also used the linked Snack Sticks source page as its model reference.

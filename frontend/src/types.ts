@@ -200,6 +200,7 @@ export interface components {
             filament_grams: number;
             /** Required Capabilities */
             required_capabilities: string[];
+            support_task?: components["schemas"]["SupportTask"] | null;
         };
         /** CommandEnvelope */
         CommandEnvelope: {
@@ -269,7 +270,8 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "prepare-supports" | "submit-review" | "approve" | "request-changes";
+            action: "prepare-supports" | "submit-review" | "approve" | "request-changes" | "remove";
+            support_assessment?: components["schemas"]["SupportAssessment"] | null;
         };
         /** ModelActionCommand */
         ModelActionCommand: {
@@ -312,6 +314,7 @@ export interface components {
             stage: "modeling" | "supports" | "review" | "approved";
             /** Reviewoutcome */
             reviewOutcome?: "changes-requested" | null;
+            support_task?: components["schemas"]["SupportTask"] | null;
         };
         /** ModelTaskCommand */
         ModelTaskCommand: {
@@ -465,6 +468,35 @@ export interface components {
         StartPayload: {
             /** Job Id */
             job_id: string;
+        };
+        /** SupportAssessment */
+        SupportAssessment: {
+            /** Supports Required */
+            supports_required: boolean;
+            /** Support Reference */
+            support_reference?: string | null;
+            /** Support Material Grams */
+            support_material_grams?: number | null;
+            /** Removal Notes */
+            removal_notes?: string | null;
+        };
+        /** SupportTask */
+        SupportTask: {
+            /** Id */
+            id: string;
+            /**
+             * Assessment Status
+             * @enum {string}
+             */
+            assessment_status: "pending" | "ready-for-review" | "not-required";
+            /** Supports Required */
+            supports_required?: boolean | null;
+            /** Support Reference */
+            support_reference?: string | null;
+            /** Support Material Grams */
+            support_material_grams?: number | null;
+            /** Removal Notes */
+            removal_notes?: string | null;
         };
         /** ValidationError */
         ValidationError: {

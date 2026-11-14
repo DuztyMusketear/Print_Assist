@@ -65,18 +65,6 @@ class AdvanceCommand(ScheduleCommand):
     payload: AdvancePayload
 
 
-class Artifact(BaseModel):
-    id: str
-    name: str
-    revision: int
-    reference: str
-    filament_type: str
-    color: str
-    duration_seconds: int
-    filament_grams: float
-    required_capabilities: list[str]
-
-
 class ModelTaskCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     title: Annotated[str, Field(min_length=1)]
@@ -88,10 +76,42 @@ class ModelTaskCreate(BaseModel):
     required_capabilities: Annotated[list[Annotated[str, Field(min_length=1)]], Field(min_length=1)]
 
 
+class SupportAssessment(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    supports_required: bool
+    support_reference: str | None = None
+    support_material_grams: Annotated[float | None, Field(ge=0, allow_inf_nan=False)] = None
+    removal_notes: str | None = None
+
+
+class SupportTask(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    id: str
+    assessment_status: Literal['pending', 'ready-for-review', 'not-required']
+    supports_required: bool | None = None
+    support_reference: str | None = None
+    support_material_grams: Annotated[float | None, Field(ge=0, allow_inf_nan=False)] = None
+    removal_notes: str | None = None
+
+
+class Artifact(BaseModel):
+    id: str
+    name: str
+    revision: int
+    reference: str
+    filament_type: str
+    color: str
+    duration_seconds: int
+    filament_grams: float
+    required_capabilities: list[str]
+    support_task: SupportTask | None = None
+
+
 class ModelTask(ModelTaskCreate):
     id: str
     stage: Literal['modeling', 'supports', 'review', 'approved']
     reviewOutcome: Literal['changes-requested'] | None = None
+    support_task: SupportTask | None = None
 
 
 class ModelTaskCommand(ScheduleCommand):
@@ -101,7 +121,8 @@ class ModelTaskCommand(ScheduleCommand):
 class ModelAction(BaseModel):
     model_config = ConfigDict(extra='forbid')
     task_id: str
-    action: Literal['prepare-supports', 'submit-review', 'approve', 'request-changes']
+    action: Literal['prepare-supports', 'submit-review', 'approve', 'request-changes', 'remove']
+    support_assessment: SupportAssessment | None = None
 
 
 class ModelActionCommand(ScheduleCommand):

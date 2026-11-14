@@ -30,15 +30,48 @@ test('saved modeling tasks can be created and moved through server commands',asy
   const user=userEvent.setup();
   const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
     .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[modelTask]})))
-    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:2,modeling_tasks:[{...modelTask,stage:'supports'}]})));
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:2,modeling_tasks:[{...modelTask,stage:'supports',support_task:{id:'support-1',assessment_status:'pending'}}]})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:3,modeling_tasks:[{...modelTask,stage:'review',support_task:{id:'support-1',assessment_status:'ready-for-review',supports_required:true}}]})));
   render(<App/>); await screen.findByText(/No orders yet/);
   await user.click(screen.getByRole('tab',{name:'Modeling'}));
   await fillModel(user);
   await user.click(screen.getByRole('button',{name:'Add to modeling'}));
   await user.click(await screen.findByRole('button',{name:'Prepare supports'}));
-  await screen.findByRole('button',{name:'Send to review'});
+  await user.selectOptions(await screen.findByRole('combobox',{name:'Support requirement'}),'required');
+  await user.click(screen.getByRole('button',{name:'Send model and support assessment to review'}));
+  await screen.findByRole('button',{name:'Approve model and supports'});
   expect(String(transport.mock.calls[1][0])).toBe('/api/modeling/tasks');
   expect(String(transport.mock.calls[2][0])).toBe('/api/modeling/actions');
+  const reviewCommand=JSON.parse(String(transport.mock.calls[3][1]!.body));
+  expect(reviewCommand.payload.support_assessment.supports_required).toBe(true);
+});
+
+test('saved modeling tasks can be removed through a revisioned server command',async()=>{
+  const user=userEvent.setup();
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[modelTask]})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[]})));
+  render(<App/>); await screen.findByText(/No orders yet/);
+  await user.click(screen.getByRole('tab',{name:'Modeling'}));
+  await user.click(screen.getByRole('button',{name:'Remove Planter'}));
+  await user.click(screen.getByRole('button',{name:'Confirm removal'}));
+  await waitFor(()=>expect(screen.queryByRole('button',{name:'Remove Planter'})).not.toBeInTheDocument());
+  expect(transport.mock.calls[1][0]).toBe('/api/modeling/actions');
+  const command=JSON.parse(String(transport.mock.calls[1][1]!.body));
+  expect(command.payload).toEqual({task_id:'model-1',action:'remove'});
+});
+
+test('blocks approved-task removal when the artifact appears in an order',async()=>{
+  const task={...modelTask,stage:'approved'};
+  const usedOrder={...orderedState.orders[0],artifact_id:'model-model-1'};
+  const artifact={...state.artifacts[0],id:'model-model-1',name:'Planter'};
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[task],orders:[usedOrder],artifacts:[...state.artifacts,artifact]})));
+  const user=userEvent.setup();render(<App/>);
+  await screen.findByRole('heading',{name:'Production queue (1)'});
+  await user.click(screen.getByRole('tab',{name:'Modeling'}));
+  await user.click(screen.getByRole('button',{name:'Remove Planter'}));
+  expect(screen.getByRole('alert')).toHaveTextContent('approved artifact is already used by an order');
+  expect(screen.queryByRole('dialog',{name:'Confirm task removal'})).not.toBeInTheDocument();
+  expect(transport).toHaveBeenCalledTimes(1);
 });
 
 test('modeling handles uncertain retries, blocks different changes, and reports rejection',async()=>{
@@ -71,9 +104,9 @@ test('late modeling results cannot roll back refreshed production state',async()
   await user.click(screen.getByRole('tab',{name:'Modeling'}));
   await user.click(screen.getByRole('button',{name:'Prepare supports'}));
   await user.click(screen.getByRole('button',{name:'Refresh queue'}));
-  await screen.findByRole('button',{name:'Approve'});
+  await screen.findByRole('button',{name:'Approve model and supports'});
   await act(async()=>finish(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[{...modelTask,stage:'supports'}]}))));
-  expect(screen.getByRole('button',{name:'Approve'})).toBeInTheDocument();
+  expect(screen.getByRole('button',{name:'Approve model and supports'})).toBeInTheDocument();
 });
 
 test('lost modeling action can be retried after refresh changes its stage',async()=>{
@@ -88,7 +121,7 @@ test('lost modeling action can be retried after refresh changes its stage',async
   await user.click(screen.getByRole('button',{name:'Prepare supports'}));
   await screen.findByText('Response lost');
   await user.click(screen.getByRole('button',{name:'Refresh queue'}));
-  await screen.findByRole('button',{name:'Send to review'});
+  await screen.findByRole('button',{name:'Send model and support assessment to review'});
   await user.click(screen.getByRole('button',{name:'Retry modeling change'}));
   await waitFor(()=>expect(screen.queryByText('Response lost')).not.toBeInTheDocument());
   expect(transport.mock.calls[1][1]!.body).toBe(transport.mock.calls[3][1]!.body);
