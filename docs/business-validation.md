@@ -5,6 +5,9 @@ explicit hypotheses, not customer validation. No interviews or outreach have
 been conducted for this document. It supplements the
 [judging checklist](judging-readiness.md) without expanding product scope.
 
+See the [market research follow-up](market-research.md) for additional
+competitors, customer anecdotes, pricing challenges and niche hypotheses.
+
 ## 1. Buyer and differentiation hypothesis
 
 Initial recruiting profile: an owner-operated filament-print business with
@@ -35,7 +38,32 @@ deeper verification. Discovery must establish whether sellers have an unsolved
 problem despite existing tools. A future integration with existing management
 software may be more attractive than replacing it; no integration is added to MVP.
 
-## 2. Interview guide and decision rules
+## 2. Desk research and workflow evaluation
+
+**Current decision:** No customer interviews or outreach are planned. They are
+not a hackathon dependency. Use public operator discussions, vendor documentation,
+pricing, and reproducible internal workflow comparisons instead.
+
+For each public signal, record its URL, date, operator context, concrete task or
+complaint, whether a vendor is speaking, and whether current documentation
+addresses it. Include satisfied users and contradictory evidence; do not treat
+multiple comments in one thread as independent market validation.
+
+Compare the same order/recovery task using the documented competing workflow
+and our eventual prototype. Label documentation-based comparisons separately
+from hands-on tests. Measure our own steps, completion time, and errors without
+presenting the team as representative customers. No new accounts, paid trials,
+or live agents are needed for this work.
+
+Continue a niche hypothesis when several independent public sources describe
+the same concrete problem and the prototype addresses it clearly. This is a
+prioritization heuristic, not proof of demand, willingness to pay, or superiority.
+Keep pricing hypothetical and state what remains unknown in the pitch.
+
+### Archived interview guide: future reference only
+
+The material below is retained as an optional future resource. It is not part
+of the current delivery plan and does not require the user to recruit anyone.
 
 Suggested first round: five qualified sellers, recruited by the team after
 explicit authorization for any assistant-sent messages. Five interviews can
@@ -161,7 +189,7 @@ This is a target script, not a record of delivered functionality.
 | 0:55-1:35 | Inject a fault; operator asks to protect urgent orders while preserving a material constraint | Changing intent creates a replanning task; safety stops equipment deterministically |
 | 1:35-2:10 | Review a proposal identifying affected orders, compatible printer, material use and remaining risk; apply once | Reasoning is inspectable and actions are validated |
 | 2:10-2:35 | Show completion and matched scenario results, labeled simulated | Benefits have measurable definitions; no invented savings |
-| 2:35-3:00 | Pricing hypothesis, bounded costs, pilot plan and realistic next step | A business hypothesis with an evidence-based validation path |
+| 2:35-3:00 | Pricing hypothesis, bounded costs, desk-research evidence and realistic next step | A business hypothesis with transparent evidence limits |
 
 Agent-value comparison: compare manual controls, deterministic scheduling, and
 assisted intent entry on the same task. Capture operator actions/time in an
@@ -178,7 +206,7 @@ live reasoning. Explain that physical printing remains unvalidated.
 
 | Deliverable | Current status | Next evidence needed |
 | --- | --- | --- |
-| Buyer/problem | Specific hypothesis and interview guide | Actual seller incident accounts and observed workflow |
+| Buyer/problem | Hypothesis supported by attributed public anecdotes | Broader independent public evidence and internal workflow comparison; direct customer validation remains unavailable |
 | Competitive context | Three public vendor reference points | Deeper feature comparison and seller switching objections |
 | Pricing/cost logic | Two test concepts and sensitivity calculation | Willingness to pay, measured usage, actual supplier/support costs |
 | Market size | Not established | Qualified buyer count and realistic acquisition channel |

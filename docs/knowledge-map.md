@@ -27,6 +27,8 @@ graph LR
     README -->|links implementation roadmap| PLAN
     README -->|links evidence checklist| JUDGING
     README -->|links business hypotheses| BUSINESS
+    RESEARCH["docs/market-research.md"] -->|informs hypotheses in| BUSINESS
+    MAP -->|indexes| RESEARCH
 ```
 
 ## File index
@@ -39,7 +41,8 @@ graph LR
 | [docs/knowledge-map.md](knowledge-map.md) | This index and relationship graph. No runtime behavior. | All indexed files | Confirm links resolve, entries match files, and edges match inspected relationships. |
 | [MVP implementation plan](superpowers/plans/2026-11-13-mvp-implementation.md) | Proposed web-app architecture, six test-first milestones, contracts, portability checks, and offline readiness gate. All implementation paths are planned. | Specification, instructions | Review milestone coverage against spec and verify links. No execution results yet. |
 | [Judging readiness](judging-readiness.md) | User-supplied rubric weights, evidence gaps, financial worksheet guidance, growth limits, and pitch checklist. Preparation rather than achieved scores. | Implementation plan, specification | Check weights total 100%, distinguish assumptions from evidence, verify links. |
-| [Business validation](business-validation.md) | Sourced competitor observations, customer interview guide, hypothetical pricing/cost model, market evidence gaps, and demo script. No customer validation claimed. | Judging checklist, implementation plan | Verify arithmetic, dated source attribution, assumption labels, and local links. |
+| [Business validation](business-validation.md) | Desk-research approach, archived optional interview guide, hypothetical pricing/cost model, evidence gaps, and demo script. No interviews planned or customer validation claimed. | Judging checklist, implementation plan | Verify arithmetic, dated source attribution, assumption labels, and local links. |
+| [Market research](market-research.md) | Dated vendor comparison, attributed customer anecdotes, niche hypotheses, pricing implications, and research limits. No scope changes or customer validation claimed. | Business validation brief, specification | Review source links, distinguish old anecdotes from current vendor claims, and validate arithmetic/local links. |
 
 ## How to extend the map
 

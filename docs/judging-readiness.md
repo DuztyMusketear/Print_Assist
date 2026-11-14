@@ -35,6 +35,10 @@ The optional live demo still requires all readiness and budget gates.
 
 ## Business evidence worksheet to prepare
 
+No customer interviews or outreach are planned. Use attributed desk research
+and internal workflow comparisons; direct customer validation and willingness
+to pay remain unknown and are not prerequisites for building the MVP.
+
 - Buyer: small filament-print business owner. Record how they work today, what
   fails, time spent monitoring, alternatives used, and willingness to pay.
 - Pricing: printer-capacity subscription plus included bounded AI usage; exact

@@ -541,10 +541,11 @@ offline operation must remain independent of commercial AI allowances.
 
 ### Validation before commercial commitments
 
-Interview small filament-printing sellers about their current workflow, missed
-deadlines, monitoring effort, failed-print costs, fleet size, existing tools,
-and willingness to pay. Check whether scheduling and recovery are valuable
-enough to justify a subscription and whether printer count feels fair.
+For the hackathon, use public seller discussions, competitor documentation and
+pricing, and internal workflow comparisons to inform the customer/problem and
+financial hypotheses. No interviews or outreach are planned or required.
+Include conflicting evidence and distinguish public anecdotes from measured
+demand. Willingness to pay and printer-count pricing remain unvalidated.
 
 Customer pilots should measure actual effort, waste, and production readiness
 against the seller's existing process. Evaluate willingness to pay alongside
