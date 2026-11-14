@@ -35,7 +35,7 @@ graph LR
 | [test_checks.py](../backend/tests/unit/test_checks.py) | Root runner executes subprocesses and propagates failure without continuing. | Backend unit suite |
 | [test_orders_api.py](../backend/tests/integration/test_orders_api.py) | Real app/SQLite HTTP behavior, response schema, offline operation with fake credentials. | Backend integration suite |
 | [frontend/src/main.tsx](../frontend/src/main.tsx) | DOM mounting and stylesheet import only. | Browser test/build |
-| [App.tsx](../frontend/src/App.tsx) | State loading, retry key ownership, stale-response suppression, queue/form composition. | Frontend App tests |
+| [App.tsx](../frontend/src/App.tsx) | State loading, retry key ownership, stale-response suppression, save reconciliation against current session/revision, queue/form composition. | Frontend App tests |
 | [api.ts](../frontend/src/api.ts) | HTTP transport and actionable save/load errors. | Frontend transport tests |
 | [types.ts](../frontend/src/types.ts) | Generated OpenAPI types; do not hand-edit. | `python scripts/schema.py --check` |
 | [styles.css](../frontend/src/styles.css) | Responsive visual layout for intake/queue. No business logic. | Build/browser review |
@@ -43,7 +43,7 @@ graph LR
 | [OrderQueue.tsx](../frontend/src/components/OrderQueue.tsx) | Empty state, saved quantity/deadlines/status and completion display. | Frontend OrderQueue tests |
 | [test-setup.ts](../frontend/src/test-setup.ts) | DOM cleanup, mock restoration and default fetch denial. | Frontend suite |
 | [test-fixtures.ts](../frontend/src/test-fixtures.ts) | Complete typed empty/ordered snapshot fixtures. | Frontend suite/typecheck |
-| [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, retry key reuse, busy state, late success/failure handling. | `npm test` |
+| [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, overlapping refresh/save, retry key reuse, busy state, late success/failure handling. | `npm test` |
 | [api.test.ts](../frontend/src/api.test.ts) | Transport command body and load/conflict/validation errors. | `npm test` |
 | [OrderForm.test.tsx](../frontend/src/components/OrderForm.test.tsx) | Submit payload, rejected-input preservation and invalid deadline feedback. | `npm test` |
 | [OrderQueue.test.tsx](../frontend/src/components/OrderQueue.test.tsx) | Empty and saved order presentation. | `npm test` |

@@ -95,10 +95,17 @@ not included in application coverage percentages. New exclusions need review.
 
 | Environment | Status |
 | --- | --- |
-| Windows, Python 3.14.7, Node 26.13.1, Chromium | Unit, full and coverage commands passed: 26 backend tests (23 in unit-only mode), 17 frontend tests, 1 browser test; type drift and build passed. |
+| Windows, Python 3.14.7, Node 26.13.1, Chromium | Coverage command passed on 2026-11-14: 26 backend tests, 19 frontend tests, 1 browser test; 100% statement/branch coverage, type drift and build passed. |
 | macOS / Linux native | Setup documented; not executed here. |
 | Other browsers / CPU architectures | Not verified. |
 | Docker Compose | Planned for milestone 6; not implemented. |
 
 Do not claim universal system compatibility from this matrix. No live model or
 physical printer execution was performed.
+
+Pre-merge regression: refreshing while a save was pending previously discarded
+the successful save response. The new UI test failed with the saved order absent,
+then passed after reconciling save and refresh responses against the current
+session/revision. Both response completion orderings are covered.
+Verified from the repository root with `.\.venv\Scripts\python.exe scripts/check.py coverage`;
+Windows process-cleanup permissions were needed for Playwright server shutdown.

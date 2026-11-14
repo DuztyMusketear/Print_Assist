@@ -12,20 +12,23 @@ export default function App() {
     const current=++sequence.current;
     try {
       const loaded=await readState();
-      if(current===sequence.current) {setState(loaded);setError('');}
+      if(current===sequence.current) {
+        setState(previous=>previous?.session_id===loaded.session_id && previous.revision>loaded.revision ? previous : loaded);
+        setError('');
+      }
     } catch(reason) {
       if(current===sequence.current) setError((reason as Error).message);
     }
   }
   useEffect(()=>{void load();},[]);
   async function submit(payload:OrderInput) {
-    const current=++sequence.current;
+    ++sequence.current;
     const signature=JSON.stringify([state!.session_id,payload]);
     if(pending.current?.signature!==signature) pending.current={signature,key:crypto.randomUUID()};
     const updated=await addOrder({session_id:state!.session_id,expected_revision:state!.revision,
       idempotency_key:pending.current.key,payload});
     pending.current=undefined;
-    if(current===sequence.current && updated.revision>=state!.revision) setState(updated);
+    setState(previous=>updated.session_id===previous!.session_id && updated.revision>=previous!.revision ? updated : previous);
   }
   return <main>
     <header><div><p className="eyebrow">YOUR PRODUCTION WORKSPACE</p><h1>Print Assist</h1><p>Keep customer orders moving.</p></div>

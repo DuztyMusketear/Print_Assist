@@ -98,6 +98,25 @@ test('late submission result does not overwrite newer refreshed state',async()=>
   expect(screen.getByText(/5 items/)).toBeInTheDocument();
 });
 
+test.each([false,true])('refresh during a save cannot hide the successfully saved order (refresh finishes last: %s)',async(refreshLast)=>{
+  let finish!:(response:Response)=>void;
+  let finishRefresh!:(response:Response)=>void;
+  vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
+    .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
+    .mockImplementationOnce(()=>new Promise(resolve=>{finishRefresh=resolve;}));
+  const user=userEvent.setup();
+  render(<App/>);
+  await screen.findByText(/No orders yet/);
+  await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-15T12:00');
+  await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-16T12:00');
+  await user.click(screen.getByRole('button',{name:'Add order'}));
+  await user.click(screen.getByRole('button',{name:'Refresh queue'}));
+  if(!refreshLast) await act(async()=>finishRefresh(new Response(JSON.stringify(state))));
+  await act(async()=>finish(new Response(JSON.stringify(orderedState))));
+  if(refreshLast) await act(async()=>finishRefresh(new Response(JSON.stringify(state))));
+  expect(screen.getByText(/2 items/)).toBeInTheDocument();
+});
+
 test('replaying an uncertain save cannot roll back a newer queue revision',async()=>{
   const newer={...orderedState,revision:2,orders:[{...orderedState.orders[0],quantity:5}]};
   vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
