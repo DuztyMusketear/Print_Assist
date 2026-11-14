@@ -41,6 +41,8 @@ graph LR
     MAP -->|indexes design| DESIGN
     OVERVIEWPLAN["Production overview implementation plan"] -->|implements| DESIGN
     MAP -->|indexes plan| OVERVIEWPLAN
+    PRINTER3D["Interactive printer design (draft)"] -->|extends visualization of| DESIGN
+    MAP -->|indexes proposed design| PRINTER3D
 ```
 
 ## File index
@@ -60,6 +62,8 @@ graph LR
 | [Remaining phase backlog](backlog.md) | Fifteen Jira-style stories for Phases 2-6 plus a deferred live-adapter story; priorities, dependencies and acceptance criteria. Local IDs, not remote issues. | Implementation plan, specification | Check story coverage, dependencies, links and shared definition of done. |
 | [Production overview design](superpowers/specs/2026-11-14-production-overview-design.md) | Approved virtual printers, automatic/manual scheduling, dashboard tabs and AI ownership boundary. | Implementation plan, backlog, specification | Review design against agreed scope and shared contracts. |
 | [Production overview implementation plan](superpowers/plans/2026-11-14-production-overview.md) | Test-first tasks for virtual printer state, scheduling, dashboard and verification. | Production overview design, code map | Check task coverage against design and update as implementation evolves. |
+
+| [Interactive printer design](superpowers/specs/2026-11-14-interactive-printer-design.md) | Draft 3D printer/bed views, STL part assets and persisted visual associations; runtime behavior remains planned. | Production overview design, specification, code map | Review contracts, scope and proposed defaults before implementation. |
 
 ## How to extend the map
 
