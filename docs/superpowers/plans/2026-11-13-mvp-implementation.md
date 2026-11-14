@@ -27,7 +27,7 @@ clearly reach active printing. Address that before further feature expansion.
 Reviewable future proposals and material reservations are implemented locally by the schedule-proposal follow-up. Operator verification of PA-307 remains open, alongside Phase 3 incoming-review/model-ingestion follow-ups. The local clock/monitoring follow-up adds run/pause, forecasts and live telemetry.
 The local [production controls follow-up](2026-11-14-production-controls.md)
 adds pause/resume/offline/online, scenario resets, activity and manual workflow
-verification; those additions await integration into main.
+verification; evidence is recorded in their focused implementation plans.
 Tasks 4-6 remain outstanding; native setup/research preparation are
 supporting pieces, not full milestone acceptance. Additional persisted modeling
 and interactive STL views are implemented under their focused plans.

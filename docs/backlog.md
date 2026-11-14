@@ -6,7 +6,7 @@ and [interactive printer plan](superpowers/plans/2026-11-14-interactive-printers
 
 **Last audit: 2026-11-14, including local `feat/compact-overview-layout` changes based
 on `5d490dc`, with an operator-reported idle/start usability gap recorded.**
-Recent feature additions below await integration into `main`.
+Statuses describe the audited implementation; operator verification remains separate from automated test results.
 These are local story IDs,
 not remote issues. Status reflects inspected code and tests; passing coverage
 for current code does not mean unimplemented acceptance criteria are complete.
