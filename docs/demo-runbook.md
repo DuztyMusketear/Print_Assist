@@ -48,9 +48,9 @@ These events can follow one another in the same workshop without reset.
    The new feasible urgent part moves ahead of approved future work; active prints
    keep running. Compare actual before/after completion estimates in event history.
 2. Select Printer thermal fault and an active printer. Choose automatic recovery only
-   if you want to authorize safe complete on-time plans. Trigger the fault. The
+   if you want to authorize feasible compatible parts, including work that will finish late. Trigger the fault. The
    equipment isolates immediately; the ordinary recovery planner redistributes work
-   if policy/feasibility permit, otherwise the incident requires operator review.
+   if policy/feasibility permit. Late production or shipping estimates produce warnings while compatible work continues; blocked parts remain held. Operator-review mode still requires approving the feasible plan.
 3. Inspect Incidents & Schedule Impact for diagnosis, original/revised assignments,
    waste and affected orders. Deadline risks appear red. To demonstrate a blocked
    or late case, use an infeasible incoming deadline or restrictive material/capacity;
@@ -84,3 +84,26 @@ sidebar, above Scenario controls. It requires configured registered OpenAI sign-
 see [account setup](openai-assistant-setup.md). Demo events do not require this connection
 and do not invoke models. Never present deterministic event/tool history as LLM reasoning.
 The Agent network labels unavailable specialists and ordinary deterministic tools.
+
+
+## Quick fault demonstration with every station printing
+
+1. In Scenario controls > Reset workshop, choose **Active printers + automatic
+   recovery**. Read the replacement warning, acknowledge reset and press Reset scenario.
+   This replaces current workshop data; do not use it to preserve an existing run.
+2. Every compatible registered FFF printer starts a real sample job with future jobs
+   queued. The clock is paused so the presenter can inspect the whole floor first.
+   Sample profiles are simulated estimates. Non-compatible printers are reported.
+3. Inject a fault into any active target. The ordinary fault/recovery services choose
+   redistribution; the demo does not hardcode assignments or success.
+4. For filament runout, open that printer's **Load filament** controls. Keep the
+   default **Add filament**, enter measured grams, acknowledge matching loaded
+   material and Add filament. This works even while the printer is faulted or running.
+5. The matching refill automatically clears the filament fault and reevaluates
+   eligible work; no separate Mark resolved click is needed and stock is added once.
+   Inspect the incident for the recorded refill and equipment-clearance actions.
+   Thermal/clog/connection faults still require their relevant repair confirmation.
+6. Restored compatible capacity receives normal approved work/backlog. Run the clock
+   to demonstrate exact completion. Refill may also be performed during an active
+   print without changing the part or its material; type/color replacement remains
+   blocked until the printer is uncommitted and safe.

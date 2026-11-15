@@ -19,14 +19,14 @@ test('Orders keep checked capacity visible during live refreshes and search real
  const estimate=page.locator('.draft-estimate');await expect(estimate.getByText('Fits the selected deadline',{exact:true})).toBeVisible();await expect(estimate).toContainText('Last checked:');
  for(let poll=0;poll<6;poll++){
   await page.clock.runFor(1000);
-  await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.getByRole('button',{name:'Refresh queue',exact:true}).click()]);
+  await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.clock.runFor(1000)]);
   await expect(estimate.getByText('Fits the selected deadline',{exact:true})).toBeVisible();
  }
  expect(requests).toBe(1);
  await command(page,'/api/orders',{artifact_id:'figure-pla-blue',quantity:1,priority:0,production_due:'2026-11-16T00:00:00Z',ship_by:'2026-11-17T00:00:00Z'});
  await command(page,'/api/schedule',{mode:'automatic'});
  await command(page,'/api/advance',{seconds:600});holdNext=true;
- await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.getByRole('button',{name:'Refresh queue',exact:true}).click()]);
+ await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.clock.runFor(1000)]);
  await expect(estimate.getByText('Fits the selected deadline',{exact:true})).toBeVisible();
  await page.clock.runFor(5000);await expect.poll(()=>requests).toBe(2);await expect.poll(()=>Boolean(release)).toBe(true);
  await expect(estimate.getByText('Fits the selected deadline',{exact:true})).toBeVisible();await expect(estimate.getByText(/Checking current printer/)).toHaveCount(0);

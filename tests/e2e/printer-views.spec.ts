@@ -10,7 +10,7 @@ test('real 3D beds render; camera controls and example STL work offline',async({
   await expect(page.locator('.printer-canvas canvas')).toHaveCount(3);
   const beforeBox=await page.locator('.printer-floor').boundingBox();
   await page.evaluate(()=>{(window as unknown as {savedCanvas:Element|null}).savedCanvas=document.querySelector('.printer-canvas canvas');});
-  await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.getByRole('button',{name:'Refresh queue',exact:true}).click()]);
+  await page.waitForResponse(response=>response.url().endsWith('/api/state'));
   expect(await page.evaluate(()=>(window as unknown as {savedCanvas:Element}).savedCanvas===document.querySelector('.printer-canvas canvas'))).toBe(true);
   expect((await page.locator('.printer-floor').boundingBox())?.height).toBe(beforeBox?.height);
 

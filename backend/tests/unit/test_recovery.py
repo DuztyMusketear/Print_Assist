@@ -50,7 +50,8 @@ def test_recovery_revalidates_stock_and_reject_retains_hold():
     rejected=reject_recovery(state,dict(incident_id=incident['id'],confirmed=True))
     assert rejected['orders'][0]['recovery_holds']==[incident['id']]
     cleared=clear_fault(rejected,dict(incident_id=incident['id'],confirmed=True))
-    assert cleared['printers'][0]['status']=='idle'
+    assert not cleared['printers'][0].get('fault')
+    assert any(j['printer_id']==cleared['printers'][0]['id'] and j['order_id']!=incident['order_ids'][0] and j['status']=='running' for j in cleared['jobs'])
     assert cleared['orders'][0]['recovery_holds']==[incident['id']]
 
 
@@ -131,15 +132,13 @@ def test_recovery_reports_progress_and_keeps_applied_comparison_immutable():
     assert 'resolved' in state['incidents'][0]['summary']
 
 
-@pytest.mark.parametrize('restriction',['manual','late','blocked','other_hold'])
-def test_automatic_policy_escalates_uncertain_or_late_plans(restriction):
+@pytest.mark.parametrize('restriction',['manual','blocked'])
+def test_automatic_policy_preserves_manual_starts_and_unavailable_capacity(restriction):
     from print_assist.recovery import set_recovery_policy, automatic_recovery
     state=faulted();state=set_recovery_policy(state,dict(mode='automatic'))
     if restriction=='manual':state['orders'][0]['schedule_mode']='manual'
-    if restriction=='late':state['orders'][0]['production_due']='2026-11-15T00:00:01Z'
     if restriction=='blocked':
         for p in state['printers'][1:]:p['material']['grams']=0
-    if restriction=='other_hold':state['orders'][0]['recovery_holds'].append('other')
     result=automatic_recovery(state,state['incidents'][0]['id'])
     assert result==state
 
@@ -234,3 +233,71 @@ def test_unassigned_required_parts_are_distinct_from_blocked_incident_parts():
     for printer in state['printers'][1:]:printer['capabilities']=[]
     blocked=propose_recovery(state,state['incidents'][0]['id'])
     assert any(p['action']=='blocked' for p in blocked['part_impacts'] if ':unassigned:' not in p['part_key'])
+
+
+
+def test_automatic_recovery_keeps_all_feasible_parts_printing_even_after_shipping_deadline():
+    from print_assist.recovery import automatic_recovery
+    from print_assist.proposals import propose,apply_proposal
+    from print_assist.monitoring import project
+    state=scenario_state('seeded');state['orders']=state['orders'][:1]
+    state['orders'][0].update(quantity=8,production_due='2026-11-15T01:00:00Z',ship_by='2026-11-15T03:00:00Z')
+    state=apply_proposal(state,propose(state,'automatic')['id'],'automatic')
+    state=inject_fault(state,dict(printer_id=state['printers'][0]['id'],fault_type='thermal',event_id='late-all'))
+    owned=state['incidents'][0]['job_ids'];healthy=deepcopy([j for j in state['jobs'] if j['status']=='running'])
+    state['recovery_policy']='automatic'
+    result=automatic_recovery(state,state['incidents'][0]['id'])
+    assert result['incidents'][0].get('applied')
+    assert not result['orders'][0]['recovery_holds']
+    assert all(j['printer_id']!='printer-1' for j in result['jobs'] if j['status'] in {'running','planned'})
+    assert [j for j in result['jobs'] if j['id'] in {a['id'] for a in healthy}]==healthy
+    impact=result['incidents'][0]['impacts'][0]
+    assert impact['shipping_risk']=='late' and impact['ship_by']=='2026-11-15T03:00:00Z'
+    assert project(result)['forecasts'][0]['shipping_risk']=='late'
+    assert advance(result,86400)['orders'][0]['successful_quantity']==8
+
+
+def test_automatic_partial_recovery_moves_feasible_work_and_retains_only_unfeasible_part_holds():
+    from print_assist.recovery import automatic_recovery
+    state=faulted();job=deepcopy(state['jobs'][0]);job.update(id='extra-held',status='recovery_pending',elapsed_seconds=0)
+    state['jobs'].append(job);state['incidents'][0]['job_ids'].append(job['id'])
+    for p in state['printers'][1:]:p['material']['grams']=25
+    state['printers'][1]['material']['grams']=50
+    state['recovery_policy']='automatic'
+    result=automatic_recovery(state,state['incidents'][0]['id'])
+    assert result['incidents'][0].get('applied')
+    assert result['orders'][0]['recovery_holds']==[state['incidents'][0]['id']]
+    assert len(result['incidents'][0]['proposal_versions'][0]['proposal']['assignments'])==1
+    assert any(j['status']=='planned' and j.get('recovery_incident_id') for j in result['jobs'])
+
+
+
+def test_unrelated_manual_future_queue_does_not_block_automatic_recovery_elsewhere():
+    from print_assist.recovery import automatic_recovery
+    state=faulted();state['recovery_policy']='automatic'
+    order=dict(state['orders'][0],id='manual-held',quantity=1,schedule_mode='manual',requires_schedule_review=True,recovery_holds=[])
+    state['orders'].append(order)
+    manual=dict(id='manual-future',order_id=order['id'],printer_id=state['printers'][1]['id'],status='planned',duration_seconds=7200,elapsed_seconds=0,schedule_mode='manual')
+    state['jobs'].append(manual)
+    result=automatic_recovery(state,state['incidents'][0]['id'])
+    assert result['incidents'][0].get('applied')
+    assert next(j for j in result['jobs'] if j['id']==manual['id'])==manual
+    replacement=next(j for j in result['jobs'] if j.get('replaces_job_id'))
+    assert replacement['printer_id']==state['printers'][2]['id']
+    assert result['orders'][-1]['requires_schedule_review']
+
+
+
+def test_repair_reevaluates_remaining_partial_automatic_recovery_without_extra_operator_steps():
+    from print_assist.recovery import automatic_recovery,clear_fault
+    state=faulted();job=deepcopy(state['jobs'][0]);job.update(id='extra-held',status='recovery_pending',elapsed_seconds=0)
+    state['jobs'].append(job);state['incidents'][0]['job_ids'].append(job['id'])
+    for p in state['printers'][1:]:p['material']['grams']=25
+    state['printers'][1]['material']['grams']=50
+    state['recovery_policy']='automatic'
+    partial=automatic_recovery(state,state['incidents'][0]['id'])
+    assert partial['orders'][0]['recovery_holds']
+    result=clear_fault(partial,dict(incident_id=state['incidents'][0]['id'],confirmed=True))
+    assert not result['orders'][0]['recovery_holds']
+    assert result['printers'][0]['status']=='running'
+    assert next(j for j in result['jobs'] if j['id']=='extra-held')['status'] in {'running','planned'}

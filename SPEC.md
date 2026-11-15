@@ -143,7 +143,8 @@ the seeded demo jobs.
   Geometry preview is independent of slicing; the file alone supplies no print
   estimates. Existing approved artifacts remain reusable without reentering settings.
 - The primary journey is Models -> Orders -> Schedule -> Overview, with Overview
-  as the landing page and advanced preparation/manual controls available separately.
+  as the landing page and leftmost navigation tab. The Print Assist brand returns
+  to Overview without resetting production. Advanced preparation/manual controls remain separate.
   Quantity and production/ship deadlines lead to a visual printer timeline and
   explicit confirmation before automatic printing. The guided path rejects late
   or incomplete proposals and permits corrections to uncommitted held orders.
@@ -334,12 +335,12 @@ applied automatically.
   Order completion is the latest required part; unresolved parts mean unknown ETA.
 - Preserve healthy active prints and completed output. Restart failed parts at full
   estimated cost, retain consumed material as waste and protect each incident's holds.
-- A separate opt-in simulation policy may apply only complete, compatible, on-time
-  recovery plans. Review remains the startup/reset default; faulted equipment always
+- A separate opt-in automatic simulation policy applies feasible compatible automatic
+  parts, including late and partial plans; shipping/production risks are warnings, not stops. Review remains the startup/reset default; faulted equipment always
   needs explicit simulated clearance. Agent controls never authorize safety bypasses.
 - Physical fault clearance requires operator acknowledgement and refill details where
   applicable. Monitored network faults may clear on a current, validated printer signal
-  confirming both connectivity and safe state. Clearance does not approve held parts.
+  confirming both connectivity and safe state. Clearance reevaluates outstanding work through the configured recovery policy; review/manual holds are not bypassed.
   Present incidents as compact type/status flags with inspectable details. Completed
   recovery applications show progress/history instead of an invalid repeat preview.
 - Overview includes Incidents & Schedule Impact, history, risks, progress and a
@@ -695,3 +696,58 @@ requests, redact callback credentials from access logs, and keep request/stream 
 Manual advice uses captured state; retries preserve identity without duplicate inference.
 Factory reset invalidates an old reply. Provider failures are not successful messages.
 Registration settings and ephemeral server-session limits are documented separately.
+
+
+## Fault, filament and shipping usability refinement
+
+Automatic recovery redistributes all feasible affected automatic parts, preserving
+healthy active prints and completed output even when revised production or shipping
+completion is late. Retain only unresolved quantities for incompatible capacity or
+insufficient material; never let an unrelated manual queue block recovery elsewhere.
+Manual starts and explicit operator-review policy remain guarded. Resolve physical
+faults using an inspection acknowledgement bound to the actual incident/session,
+not live clock revisions; repaired capacity immediately reevaluates approved queues
+and remaining partial automatic recovery. Never clear a different/currently replaced
+fault or silently approve manual work.
+
+Forecasts and impact history distinguish production_due/risk from ship_by/shipping_risk.
+Shipping warnings are red and say compatible healthy production continues. Model/order
+UI states exact required filament against actual loaded colors/types. Simulated spool
+replacement requires confirmation and an idle/offline/paused, fault-free printer with
+no active or future commitments. Replacing a spool updates its measured stock rather
+than pretending an existing blue spool can print a black part.
+
+Ship-by input is directly visible in Orders. Live monitoring replaces the manual
+Refresh queue button. Account connection shows actionable OpenAI registration and
+callback setup when unconfigured; actual sign-in still requires an issued approved
+client, and a user subscription alone does not register this application.
+
+
+Incident inspection must show the relevant equipment resolution inline before reports:
+known positive refill for material faults, acknowledged thermal/clog repair, or a safe
+connection signal. Controls remain subject to existing safety/confirmation rules.
+Keep the selected incident compact: default-close summary/waste and schedule/lineage/
+evidence reports, while production/shipping risk alerts remain immediately visible.
+
+
+### Refinement: refill in any printer state and active fault demonstrations
+
+Adding a positive known amount of the currently loaded filament is supported for
+idle, running, reserved, paused, offline and faulted printers. This is additive
+inventory, not replacement: material/type/color, part progress and existing
+reservations remain unchanged. A confirmed matching refill automatically clears a
+current filament-runout or insufficient-material fault using the recorded stock,
+without requiring another Mark resolved action or adding grams twice. Thermal,
+clog and connection faults remain isolated until their own repair is confirmed.
+Manual/review approvals and all start-time material guards remain enforced.
+Changing type/color or replacing measured spool stock keeps the earlier no-active-
+commitment/no-fault safeguards.
+
+An explicit acknowledged Active printers + automatic recovery reset prepares the
+registered fleet for fault demonstrations. It resets work/history/faults/stock as
+the reset control discloses, retains registered IDs/material/capabilities, creates
+approved simulated sample profiles through normal workflows and schedules enough
+parts for active printers and future backlogs. The clock is paused and no fault is
+injected until the presenter chooses a target. Automatic recovery is enabled only
+by this opt-in preset; ordinary empty/seeded scenarios retain their previous defaults.
+Unsupported registered printers are reported rather than falsely shown printing.

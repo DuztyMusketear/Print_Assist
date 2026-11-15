@@ -89,3 +89,9 @@ test('historical progress tolerates orphan queued references without inventing w
  expect(screen.getByText('Select a model')).toBeVisible();
  expect(screen.queryByRole('list',{name:'Current deadline warnings'})).not.toBeInTheDocument();
 });
+
+
+test('late shipping is a visible business warning while healthy production continues',()=>{
+ render(<OperationalStatus state={{...orderedState,forecasts:[{order_id:orderedState.orders[0].id,risk:'late',shipping_risk:'late',completion:'2026-11-17T12:00:00Z',reason:''}]}}/>);
+ expect(screen.getByText(/Ship-by deadline at risk:/)).toHaveClass('deadline-risk');expect(screen.getByText(/Ship-by deadline at risk:/)).toHaveTextContent('Printing continues');
+});

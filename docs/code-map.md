@@ -58,7 +58,7 @@ graph LR
 | [test_checks.py](../backend/tests/unit/test_checks.py) | Root runner executes subprocesses and propagates failure without continuing. | Backend unit suite |
 | [test_orders_api.py](../backend/tests/integration/test_orders_api.py) | Real app/SQLite HTTP behavior, response schema, offline operation with fake credentials. | Backend integration suite |
 | [frontend/src/main.tsx](../frontend/src/main.tsx) | DOM mounting and stylesheet import only. | Browser test/build |
-| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs, state loading, preset-to-modeling task creation, persisted modeling color updates, control/reset composition, retry ownership and late-response suppression across session replacement. The integrated modeling board does not show the standalone intake form. Delegates 3D views to PrinterFloor. | Frontend App tests |
+| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs, state loading, preset-to-modeling task creation with independent intent/session preflight guards that tolerate same-session monitoring, persisted modeling color updates, control/reset composition, retry ownership and late-response suppression across session replacement. The integrated modeling board does not show the standalone intake form. Delegates 3D views to PrinterFloor. | Frontend App tests |
 | [api.ts](../frontend/src/api.ts) | HTTP transport, backend validation detail, and actionable save/load errors. | Frontend transport tests |
 | [types.ts](../frontend/src/types.ts) | Generated OpenAPI types; do not hand-edit. | `python scripts/schema.py --check` |
 | [styles.css](../frontend/src/styles.css) | Responsive layout for intake, modeling, queue, support review, removal actions, enlarged model preview, and 3D printer/control panels. No business logic. | Build/browser review |
@@ -66,7 +66,7 @@ graph LR
 | [OrderQueue.tsx](../frontend/src/components/OrderQueue.tsx) | Empty state, saved quantity/deadlines/status and completion display. | Frontend OrderQueue tests |
 | [test-setup.ts](../frontend/src/test-setup.ts) | DOM cleanup, mock restoration and default fetch denial. | Frontend suite |
 | [test-fixtures.ts](../frontend/src/test-fixtures.ts) | Complete typed empty/ordered snapshot fixtures. | Frontend suite/typecheck |
-| [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, control/reset retries, cross-session overlapping reads/mutations, retry-key preservation and stale success/failure handling. | `npm test` |
+| [App.test.tsx](../frontend/src/App.test.tsx) | Load/save/refresh, control/reset retries, same-session polling during preset preflight, changed-session preset suppression, cross-session overlapping reads/mutations, retry-key preservation and stale success/failure handling. | `npm test` |
 | [api.test.ts](../frontend/src/api.test.ts) | Transport command body and load/conflict/validation errors. | `npm test` |
 | [OrderForm.test.tsx](../frontend/src/components/OrderForm.test.tsx) | Field explanations, submit payload, rejected-input preservation and invalid deadline feedback. | `npm test` |
 | [OrderQueue.test.tsx](../frontend/src/components/OrderQueue.test.tsx) | Empty and saved order presentation. | `npm test` |
@@ -426,7 +426,7 @@ graph LR
 
 ## Guided saved models, example shop intake and print timeline
 
-App.tsx orders tabs Models/Orders/Schedule/Overview/Printers while landing on
+App.tsx orders tabs Overview/Models/Orders/Schedule/Printers while landing on
 Overview. It mounts the library and preparation tools with session keys, wires
 new typed commands through the existing production receipt/reset guards, and
 returns to Overview only after same-session schedule confirmation. api.ts includes
@@ -583,7 +583,7 @@ graph LR
 | [fault-recovery.spec.ts](../tests/e2e/fault-recovery.spec.ts) | Offline fault isolation, reviewed/automatic recovery, exact quantities, repeat/reset and stale/rejected workflows. | Root full/coverage |
 
 IncidentPanel defaults to compact printer/type/resolution flags; explicit inspection
-opens reports and actions. Settings, recommendations and assignments stay collapsed.
+opens inline repair actions first. Summary/waste, order impact, lineage/evidence, settings, recommendations and assignments stay collapsed.
 Applied recovery uses saved impacts/progress and hides invalid repeat previews while
 partial held work can still be reviewed. Physical issues use acknowledged Mark resolved;
 network faults wait for a safe connected signal, with a clearly labeled simulator.
@@ -792,3 +792,96 @@ refresh loop so one-second simulation updates cannot starve or flicker estimates
 New draft/session/invalid input clears stale advice immediately; background refresh
 retains prior advice with its checked simulation time and labels failed refreshes.
 The authoritative schedule remains revalidated by the existing backend before start.
+
+
+## Fault resolution, matching filament and shipping warnings
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [test_filament_setup.py](../backend/tests/unit/test_filament_setup.py) | Safe confirmed spool replacement, material-driven dispatch, unknown/faulted/committed printer rejection and unrelated queue preservation. | `python -m pytest backend/tests/unit/test_filament_setup.py` |
+| [test_filament_setup_api.py](../backend/tests/integration/test_filament_setup_api.py) | Typed spool changes, positive stock, confirmation, transaction/replay and rejected updates preserving state. | Backend integration suite |
+| [FilamentSetup.tsx](../frontend/src/components/FilamentSetup.tsx) | Explicit type/color/stock spool replacement on safe selected printers, acknowledgement/busy/error handling; mounted by PrinterFloor through App's guarded command. | Frontend coverage suite |
+| [FilamentSetup.test.tsx](../frontend/src/components/FilamentSetup.test.tsx) | Selected spool payload, acknowledgement invalidation, state/queue guards and visible retry failures. | Frontend coverage suite |
+| [MaterialCompatibility.tsx](../frontend/src/components/MaterialCompatibility.tsx) | Shows selected model's required color/type/per-copy mass beside real loaded spools; explains mismatch and load-matching-filament action. Does not claim to reserve stock. | Frontend coverage suite |
+| [MaterialCompatibility.test.tsx](../frontend/src/components/MaterialCompatibility.test.tsx) | Black model versus blue inventory, matching profile, missing model and absent printers. | Frontend coverage suite |
+| [fault-guidance.spec.ts](../tests/e2e/fault-guidance.spec.ts) | Actual UI/API black-spool setup, direct ship-by field, no Refresh queue; all feasible late fault parts redistribute, shipping warnings appear, inspection survives revisions, repair and exact completion. | `npm run e2e -- tests/e2e/fault-guidance.spec.ts` |
+
+Existing controls.py owns load_filament; contracts/api/service expose its transactional
+route and typed shipping forecast fields. recovery.py permits late/partial automatic
+plans while preserving manual queues and incident holds; physical clear invokes the
+same configured recovery and scheduling path. monitoring.py and schedule_impact.py
+report shipping separately from production deadlines. IncidentPanel binds inspection
+to actual incident identity, shows both risks, and guides explicit review; its tests
+cover clock/session/fault replacement. OperationalStatus shows immediate red shipping
+warnings without stopping prints. QuickPrint displays ship-by directly and composes
+material guidance. App removes manual Refresh queue but retains live monitoring;
+App and affected E2E tests use actual/controlled polling rather than a removed button.
+OrchestratorPanel and its tests expose exact callback/official registration setup;
+no account/model request is fabricated when registration is absent.
+
+```mermaid
+graph LR
+    SpoolUI[FilamentSetup] -->|guarded material command| SpoolAPI[api.py / service.py]
+    SpoolAPI -->|validated replacement| Controls[controls.py]
+    Controls -->|reevaluates approved queues| Scheduler[scheduling.py]
+    Required[MaterialCompatibility] -->|reads profiles and loaded stock| Snapshot[FactorySnapshot]
+    Recovery[recovery.py] -->|late feasible work continues| Scheduler
+    Shipping[monitoring.py / schedule_impact.py] -->|separate ship-by risk| IncidentUI[IncidentPanel / OperationalStatus]
+```
+
+
+### Compact incident repair and Overview navigation
+
+IncidentPanel now places the fault-specific refill/repair acknowledgement and Mark
+resolved action directly in the inspected incident, ahead of optional reports.
+Production and shipping risk alerts remain visible while order-impact tables,
+summary/waste, lineage and evidence are closed. styles.css reduces row/form spacing
+and bounds the incident list. App exposes a keyboard-accessible Print Assist brand
+button that returns to Overview without changing manufacturing state. Overview is
+the leftmost tab; the manual workflow guide retains its model-to-order process.
+IncidentPanel/App component tests verify these behaviors and original guards.
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [incident-navigation.spec.ts](../tests/e2e/incident-navigation.spec.ts) | Overview-first tab order and keyboard brand navigation without production mutation; compact fault inspection, immediate refill/clog resolution, positive refill and acknowledgement guards across revisions, collapsed reports and mobile width. | `npm run e2e` |
+
+
+### Additive refill and active fault-demo preparation
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [test_fault_demo_preset.py](../backend/tests/unit/test_fault_demo_preset.py) | Registered fleet/material preservation, real approved sample modeling/scheduling, active printers and future queues, explicit automatic recovery, paused clock, unsupported-fleet warning, faults/repairs/exact quantities. | Backend unit suite |
+| [test_fault_demo_reset.py](../backend/tests/integration/test_fault_demo_reset.py) | Transactional active demo reset retains registered custom printer/material and idempotent reset receipt. | Backend integration suite |
+| [refill-active-demo.spec.ts](../tests/e2e/refill-active-demo.spec.ts) | Acknowledged active-fleet preparation, actual runout, adding stock while faulted/running, automatic material-fault clearance on confirmed matching refill without double stock or a separate repair click, unchanged part identity and full completion. | `npm run e2e` |
+
+controls.load_filament now distinguishes additive `refill` from guarded `replace`.
+Refill adds matching type/color in every printer state, preserves commitments and
+records current-incident refill evidence. A current filament-runout or insufficient-
+material fault immediately uses recovery.clear_fault with that evidence; other
+fault types remain isolated. Manual/review work is not implicitly approved. Existing spool
+replacement still rejects active commitments/faults. recovery.clear_fault accepts
+recorded positive refill with remaining stock, so automatic material-fault clearance
+and legacy/manual repair do not charge stock twice. Thermal/clog/connection repair
+and dispatch material checks remain separate and enforced.
+FilamentSetup exposes Add filament by default, while replacement is a separate
+mode. IncidentPanel displays recorded refill and explains that blank repair input
+avoids another addition. Existing unit/API/component tests cover these changes.
+
+scenarios.scenario_state('fault-demo', registered_printers) builds sample profiles
+through modeling approval and normal proposals, preserving registered identity,
+material and capabilities. service.reset supplies the current fleet only for this
+preset; normal empty/seeded baselines are unchanged. ProductionControls exposes
+its explicit acknowledged reset option; no ordinary fault event silently resets
+production. The preset resets stock/faults as disclosed, starts real compatible
+jobs with future queues, pauses the clock and enables automatic recovery. Non-FFF
+or empty fleets report limitations instead of inventing active equipment.
+
+```mermaid
+graph LR
+  MaterialCommand[LoadFilamentPayload mode] -->|add matching stock| Controls[controls.load_filament]
+  Controls -->|incident-specific evidence| Repair[recovery.clear_fault]
+  MaterialUI[FilamentSetup] -->|same revisioned material command| Controls
+  ResetUI[ProductionControls] -->|acknowledged fault-demo reset| Service[service.reset]
+  Service -->|registered fleet| Demo[scenarios fault-demo]
+  Demo -->|real approved sample profiles and proposal| Scheduler[modeling / proposals / scheduling]
+```

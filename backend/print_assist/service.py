@@ -186,6 +186,10 @@ class FactoryService:
                 state['revision']+=1
                 self.store.save(db,state)
 
+    def load_filament(self,command):
+        from .controls import load_filament
+        return self._transition(command,'load-filament',lambda state:load_filament(state,command.payload.model_dump(mode='json')))
+
     def printer_control(self,command):
         return self._transition(command,'printer-control',lambda state: control_printer(state,command.payload.printer_id,command.payload.action))
 
@@ -195,7 +199,8 @@ class FactoryService:
 
     def reset(self,command):
         def replace(state):
-            result=scenario_state(command.payload.scenario)
+            result=scenario_state(command.payload.scenario,
+                state['printers'] if command.payload.scenario=='fault-demo' else None)
             result['session_id']=str(uuid4())
             record(result,'scenario_reset','Reset to '+command.payload.scenario+' scenario',source='system')
             return result

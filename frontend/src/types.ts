@@ -497,6 +497,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/printers/material": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Load Filament */
+        post: operations["load_filament_api_printers_material_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/printers/control": {
         parameters: {
             query?: never;
@@ -990,6 +1007,10 @@ export interface components {
         };
         /** Forecast */
         Forecast: {
+            /** Ship By */
+            ship_by?: string | null;
+            /** Shipping Risk */
+            shipping_risk?: ("on_time" | "late" | "unavailable") | null;
             /**
              * Order Id
              * Format: uuid
@@ -1078,6 +1099,44 @@ export interface components {
              */
             idempotency_key: string;
             payload: components["schemas"]["LibraryUpload"];
+        };
+        /** LoadFilamentCommand */
+        LoadFilamentCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["LoadFilamentPayload"];
+        };
+        /** LoadFilamentPayload */
+        LoadFilamentPayload: {
+            /** Printer Id */
+            printer_id: string;
+            /** Filament Type */
+            filament_type: string;
+            /** Color */
+            color: string;
+            /** Grams */
+            grams: number;
+            /**
+             * Mode
+             * @default replace
+             * @enum {string}
+             */
+            mode: "replace" | "refill";
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
         };
         /** MaterialReservation */
         MaterialReservation: {
@@ -1439,7 +1498,7 @@ export interface components {
              * Scenario
              * @enum {string}
              */
-            scenario: "empty" | "seeded";
+            scenario: "empty" | "seeded" | "fault-demo";
         };
         /** ReviseOrderCommand */
         ReviseOrderCommand: {
@@ -2693,6 +2752,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AdvanceCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    load_filament_api_printers_material_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoadFilamentCommand"];
             };
         };
         responses: {

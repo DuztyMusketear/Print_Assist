@@ -51,7 +51,9 @@ def project(state):
                 ends[order['id']].append(available[pid])
         finish=now+timedelta(seconds=max(ends[order['id']],default=0))
         due=datetime.fromisoformat(order['production_due'].replace('Z','+00:00'))
-        forecasts.append(dict(order_id=order['id'],completion=None if reason else finish.isoformat(),
+        ship_by=order.get('ship_by',order['production_due'])
+        shipping_due=datetime.fromisoformat(ship_by.replace('Z','+00:00'))
+        forecasts.append(dict(order_id=order['id'],ship_by=ship_by,shipping_risk='unavailable' if reason else 'late' if finish>shipping_due else 'on_time',completion=None if reason else finish.isoformat(),
             risk='unavailable' if reason else 'late' if finish>due else 'on_time',reason=reason))
     result['material_reservations']=ledger(state)
     result['forecasts']=forecasts

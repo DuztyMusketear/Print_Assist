@@ -46,3 +46,5 @@ test('activity distinguishes entity references, sources and legacy events',()=>{
   expect(screen.getByText(/Printer 1/)).toHaveTextContent('Order ORDER1');
   expect(screen.getByText('order created')).toBeInTheDocument();
 });
+
+test('active printer fault demo requires explicit acknowledged reset',async()=>{const user=userEvent.setup(),onReset=vi.fn().mockResolvedValue(undefined);render(<ScenarioReset onReset={onReset}/>);await user.selectOptions(screen.getByLabelText('Scenario'),'fault-demo');expect(onReset).not.toHaveBeenCalled();expect(screen.getByRole('button',{name:'Reset scenario'})).toBeDisabled();expect(screen.getByText(/future queues/)).toBeInTheDocument();await user.click(screen.getByRole('checkbox'));await user.click(screen.getByRole('button',{name:'Reset scenario'}));expect(onReset).toHaveBeenCalledWith('fault-demo');});

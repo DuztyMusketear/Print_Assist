@@ -208,9 +208,23 @@ class PrinterControlCommand(ScheduleCommand):
     payload: PrinterControlPayload
 
 
+class LoadFilamentPayload(BaseModel):
+    model_config=ConfigDict(extra='forbid',str_strip_whitespace=True)
+    printer_id: Annotated[str,Field(min_length=1)]
+    filament_type: Annotated[str,Field(min_length=1)]
+    color: Annotated[str,Field(min_length=1)]
+    grams: Annotated[float,Field(gt=0,allow_inf_nan=False)]
+    mode: Literal['replace','refill'] = 'replace'
+    confirmed: StrictBool = False
+
+
+class LoadFilamentCommand(ScheduleCommand):
+    payload: LoadFilamentPayload
+
+
 class ResetPayload(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    scenario: Literal['empty','seeded']
+    scenario: Literal['empty','seeded','fault-demo']
 
 
 class ResetCommand(ScheduleCommand):
@@ -393,6 +407,8 @@ class ActivityEvent(BaseModel):
 
 
 class Forecast(BaseModel):
+    ship_by: AwareDatetime | None = None
+    shipping_risk: Literal['on_time','late','unavailable'] | None = None
     order_id: UUID
     completion: AwareDatetime | None
     risk: Literal['on_time','late','unavailable']

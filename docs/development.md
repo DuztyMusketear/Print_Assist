@@ -462,7 +462,7 @@ holds. Recovery preserves healthy active work and compares original/revised part
 and order schedules, including indirect delays. Apply/reject uses transactional
 session/revision/idempotency guards. Partial followups and repeated faults retain
 lineage; completed output is never duplicated. Automatic simulation recovery is a
-separate opt-in for complete compatible on-time automatic work. Startup/reset
+separate opt-in for feasible compatible automatic work, including late/partial plans. Startup/reset
 returns to review; simulated equipment clearance remains explicit.
 
 Material exhaustion splits advancement at the boundary and continues healthy work.
@@ -763,3 +763,146 @@ Final root `.venv\Scripts\python.exe scripts/check.py coverage` on isolated port
 Existing Vite bundle-size advisory remains; WebGL fallback tests intentionally log
 renderer errors. Link checks and `git diff --check` pass. Work remains uncommitted
 on `fix/orders-estimate-search`; no merge or push was performed.
+
+
+## Fault recovery and material guidance fix - 2026-11-14
+
+Latest origin/main was pulled before edits; work is on fix/fault-recovery-guidance.
+Regression tests reproduced late/partial plans remaining fully held, unrelated manual
+queues blocking automatic recovery, revision-based inspection acknowledgement resets,
+shipping metadata lost at the response boundary, and the lack of a matching-spool
+workflow. Feasible automatic parts now continue despite shipping risk; manual/review
+settings remain explicit. Physical repair reevaluates approved/remaining automatic
+work and never bypasses a manual or unrelated incident hold.
+
+Orders display required versus loaded material and the ship-by input directly.
+Printers expose confirmed safe spool replacement, validated against status, faults
+and any reserved/active jobs. The manual queue refresh button is removed; frontend
+and real-browser workflow checks use controlled/live polling. Existing user data is
+not reset by development tests. OpenAI preview connection reports configured=false;
+registration is still required. The panel provides official link, exact callback
+and named server settings. No credentials were inspected or live model/auth calls run.
+
+
+Final verification from repository root, with PRINT_ASSIST_API_PORT=8002 and
+PRINT_ASSIST_WEB_PORT=5175: `.venv\Scripts\python.exe scripts/check.py coverage`
+exited 0. **310 backend + 391 frontend + 32 browser tests (733 total)** passed with
+100% application coverage, schema drift, TypeScript and production build. Existing
+Vite bundle-size advisory remains. An inherited browser assertion assumed pausing
+always completed before one clock tick; under load actual progress was 52%, so the
+assertion now uses the authoritative advanced job's progress rather than hardcoded
+50/51%. The new fault/material workflows pass without hardcoded recovery outcomes.
+
+Preview API was refreshed against its existing database after backing up state and
+checking no connected ChatGPT session. It had zero active printers; all 13 orders,
+recovery policy and prior running clock/speed were retained with no reset. Actual
+1440px desktop and 390px mobile inspection confirms direct ship-by input, zero
+Refresh queue buttons, accessible spool setup, no page errors or horizontal overflow.
+All new source/tests are mapped; documentation links (including encoded image paths)
+and git diff whitespace checks pass. Work remains local and uncommitted on the fix
+branch; no merge or remote push was performed.
+
+
+## Compact incident repair and Overview navigation - 2026-11-15
+
+Continued the existing local fault-guidance branch and preserved its prior changes.
+Inspection now exposes refill or repair acknowledgement and Mark resolved immediately,
+with fault-specific instructions. Summary/waste and order/part/evidence reports stay
+closed; production and shipping risk alerts stay visible. Existing positive refill,
+inspection identity, clock-safe acknowledgement and API confirmation guards remain.
+The incident list is bounded and spacing reduced. No manufacturing behavior changed.
+
+Overview is the first tab. The Print Assist heading contains a keyboard-accessible
+brand button that returns to Overview without changing orders, jobs or session.
+The workflow guide still describes the model/order/schedule/monitor process.
+
+New browser workflows verify no second disclosure is required for filament refill
+or clog resolution; selected incident height stays below 850px and a single closed
+incident panel below 220px at desktop. Existing order-impact browser tests now open
+the optional report explicitly. Actual preview desktop1440/mobile390 inspection
+reported no horizontal overflow or page errors and zero non-GET requests; no API
+restart, scenario reset or saved-data modification was performed.
+
+
+Root `.venv\Scripts\python.exe scripts/check.py coverage` with isolated API8002 /
+web5175 exited0: **310 backend + 394 frontend + 34 browser tests (738 total)**,
+100% application coverage, generated schema, TypeScript and production build pass.
+The final keyboard focus color uses an explicit theme color rather than an undefined
+CSS variable; a fresh build and the two targeted navigation/repair browser workflows
+verify that cosmetic adjustment. Existing Vite bundle-size advisory remains.
+
+
+## Additive refill and active-printer fault demonstration - 2026-11-15
+
+The root offline command with `PRINT_ASSIST_API_PORT=8002` and
+`PRINT_ASSIST_WEB_PORT=5175`, `.venv\Scripts\python.exe scripts/check.py coverage`,
+exited 0: **333 backend + 405 frontend + 35 browser tests (773 total)**, 100%
+application coverage, schema consistency, TypeScript and production build passed.
+Existing Vite bundle advisory remains; the WebGL fallback test intentionally logs
+renderer failures while checking readable fallback.
+
+Refill tests first reproduced blocked faulted/running/reserved printers and stock
+replacement instead of addition. The new mode adds matching material in every state,
+keeps running attempts and reservations, and records fault-specific refill evidence.
+Real API replay checks prove a faulted refill plus separate acknowledged clearance
+adds stock only once. Replacement still requires uncommitted safe equipment.
+
+The new actual-browser workflow acknowledges the active-fleet reset, verifies all
+registered default printers are running with future queues and no initial fault,
+injects real runout, adds 250 g while faulted, clears with recorded stock, then adds
+50 g while running without changing the part. All 12 sample parts complete without
+duplication. Prepared demo fleet tests cover one/three/four and mixed material
+registrations, unsupported/empty fleets, automatic recovery and idempotent reset.
+
+The local API preview was refreshed against the same saved SQLite database after
+checking no connected OpenAI session. A backup and pre-maintenance clock/policy
+metadata were kept under ignored .tools. The user workshop was empty with no active
+printers; no reset or demo injection was performed in it. Its paused clock and review
+policy were retained. Desktop 1440px and mobile 390px inspection found no page errors,
+no horizontal overflow and zero non-GET requests. The active demo remains an explicit
+acknowledged user choice. No live model calls, account sign-in or physical devices ran.
+
+
+## Automatic material-fault clearance on refill - 2026-11-15
+
+Red/green unit regressions reproduced runout and insufficient-material refills
+remaining faulted. The material command now records the matching positive addition,
+then calls the existing clear_fault operation using that evidence with no second
+addition. The confirmed refill itself acknowledges resolution of the material issue;
+thermal, clog and connection faults remain isolated. Review/manual production holds
+are not released by equipment clearance. API replay remains exactly-once.
+
+The existing active-demo browser regression now clears runout from Load filament
+without clicking Mark resolved, verifies one stock addition, resumed queued work,
+unchanged running refill identity and exactly 12 completed sample parts. No new
+endpoint or model calls were introduced. Preview API was restarted using the same
+saved database only after verifying no active printer, running clock or connected
+assistant; no reset was performed. Existing paused/review workshop state was retained.
+
+Verification uncovered a separate preset-to-modeling race: a background state poll
+advanced the shared read sequence while a preset preflight was pending, cancelling
+a valid same-session user request before its model command. A failing deterministic
+App regression reproduced this exact interleaving. Preset requests now use their
+own intent serial and source/current/returned session checks; background monitoring
+can proceed without cancelling them. Explicit changed-session preflight checks and
+existing reset/retry ownership tests protect scenario replacement. Existing
+monotonic revision and modeling-command conflict guards remain in place.
+
+Earlier complete-suite attempts each passed backend, frontend, schema and build
+checks but finished 34/35 browser checks: one observed the existing clock-control
+conflict race, and two exposed the preset preflight race above. Both original
+browser checks passed when run individually without changing their assertions.
+The repeated preset failure motivated the targeted application fix rather than
+adding test retries or increasing timeouts.
+
+Final rerun: `.venv\Scripts\python.exe scripts/check.py coverage` with isolated
+API port 8002 and web port 5175 passed all stages: **338 backend tests, 408
+frontend tests, and 35 browser workflows (781 total)**; backend and frontend
+coverage each reached 100%. Schema consistency and the production build passed.
+The browser run included automatic material-fault clearance through all twelve
+demo parts and the preset-to-modeling workflow. PowerShell reported the redirected
+Vite/WebGL warning stream as `NativeCommandError` and the outer tool returned 1;
+the recorded check stages all passed, ending in `35 passed`, so a native process
+exit code of zero was not independently captured. `git diff --check` and local
+documentation links passed. Preview remains available at http://127.0.0.1:5173
+with its original saved state preserved. No commit, merge or push was performed.

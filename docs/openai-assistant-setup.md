@@ -8,9 +8,18 @@ registration is configured, and it never presents a fake connected account.
 
 ## Registration and runtime configuration
 
+If Continue with ChatGPT is disabled, the API reports that its client ID/callback
+configuration is missing or invalid. The panel shows **ChatGPT setup required**,
+the official registration guide, a selectable callback for the current browser
+origin, and the two server setting names. Refreshing the panel cannot create an
+OAuth registration. An ordinary ChatGPT subscription does not register this app.
+
 Register Print Assist with OpenAI for website Sign in with ChatGPT. The registered
 client must be approved for the requested ChatGPT-plan Responses permissions, not
-only identity sign-in. Commercial participation is subject to OpenAI availability.
+only identity sign-in. As checked on November 14, 2026, the official website guide
+describes access as a limited trial for selected commercial partners and directs
+interested partners to their OpenAI representative. Registration availability and
+inference approval remain external prerequisites; development cannot supply them.
 The separate dynamic open-source flow is not assumed here: this repository's
 publication/licensing status has not been established for that registration route.
 

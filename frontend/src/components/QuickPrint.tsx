@@ -1,3 +1,4 @@
+import {MaterialCompatibility} from './MaterialCompatibility';
 import {formatScheduleTime} from './scheduleView';
 import {useState,type FormEvent} from 'react';
 import type {Snapshot} from '../api';
@@ -39,7 +40,8 @@ export function QuickPrint({state,onQueue,onModels,initialModel,guided=false}:{s
  {guided&&query&&<p className="muted">{matches.length?`${matches.length} matching models. Choose a model below.`:'No models match. Try a different name, material or color.'}</p>}
  <div className="order-model-summary">{guided&&selected&&<ModelPreview name={selected.name} asset={state.visual_assets?.find(asset=>asset.id===selected.visual_asset_id)}/>}
  <div>{selected?<><p className="profile-estimates">Total estimated printer time: {printDuration(selected.duration_seconds*copies)} / Estimated filament: {(selected.filament_grams*copies).toFixed(1)} g / {selected.color} {selected.filament_type}</p><p className="muted">Est. print time: {Math.ceil(selected.duration_seconds/60)} min per part / Est. filament: {selected.filament_grams} g per part</p><p className="muted">Printer time is summed across all copies. The schedule shows when they will finish. Starts after confirmation.</p></>:<p>{state.artifacts.length?'Choose a matching model to continue.':'No prepared model available. Add a profile in Modeling first.'}</p>}</div></div>
- {guided?<><div className="order-plan-fields">{quantity}{dueField}</div><details className="shipping-options"><summary>Packing and ship-by date</summary><p>Leave time for packing after printing. Dates use UTC.</p>{shipField}</details></>:<>{quantity}<details><summary>Delivery dates (optional changes)</summary>{dueField}{shipField}</details></>}
+ {guided&&selected&&<MaterialCompatibility state={state} artifactId={selected.id}/>}
+ {guided?<><div className="order-plan-fields">{quantity}{dueField}{shipField}</div><p className="muted">Leave time for packing after printing. Dates use UTC.</p></>:<>{quantity}<details><summary>Delivery dates (optional changes)</summary>{dueField}{shipField}</details></>}
  {guided&&<div className={'draft-estimate '+(estimate&&!estimate.feasible?'conflict':'')} aria-live="polite">
   {estimating&&!estimate&&<p>Checking current printer capacity and filament...</p>}
   {estimate&&<><strong>{estimateError?'Previous estimate (refresh failed)':estimate.feasible?'Fits the selected deadline':'Selected deadline or quantity conflicts with capacity'}</strong><p>{estimate.reason}</p><p className="muted">{checkedAt&&<>Last checked: {formatScheduleTime(checkedAt)}. </>}Estimate refreshes when capacity changes, up to every 5 seconds. The schedule is checked again before printing.</p>{estimate.estimated_finish&&<p>Estimated finish: {formatScheduleTime(estimate.estimated_finish)}</p>}
