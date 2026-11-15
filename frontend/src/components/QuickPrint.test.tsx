@@ -67,7 +67,7 @@ test('missing prepared models cannot start printing',()=>{
 test('earliest-fit dates round up fractional minutes and a faster prepared profile remains an explicit choice',async()=>{
  vi.mocked(useOrderEstimate).mockReturnValue({estimate:{session_id:state.session_id,revision:0,feasible:false,on_time_quantity:0,estimated_finish:'2026-11-16T12:00:30Z',reason:'Late'},busy:false,error:''});
  const model={...state.artifacts[0],visual_asset_id:'part'},user=userEvent.setup();render(<QuickPrint guided state={{...state,artifacts:[model,{...model,id:'fast',name:'Fast prepared profile',duration_seconds:3600}]}} onQueue={vi.fn()} onModels={vi.fn()}/>);
- await user.click(screen.getByRole('button',{name:'Move dates to earliest fit'}));expect(screen.getByLabelText('Finish printing by (UTC)')).toHaveValue('2026-11-16T12:01');await user.click(screen.getByRole('button',{name:'Use faster profile: Fast prepared profile'}));expect(screen.getByLabelText('Model to print')).toHaveValue('fast');
+ await user.click(screen.getByRole('button',{name:'Move dates to earliest fit'}));expect(screen.getByLabelText('Finish printing by (UTC)')).toHaveValue('2026-11-16T12:01');await user.type(screen.getByLabelText('Search models for this order'),'Blue PLA figure');await user.click(screen.getByRole('button',{name:'Use faster profile: Fast prepared profile'}));expect(screen.getByLabelText('Model to print')).toHaveValue('fast');expect(screen.getByLabelText('Search models for this order')).toHaveValue('');
 });
 
 test('busy, feasible and failed estimates remain readable; quantity and model search work by keyboard',async()=>{
@@ -75,4 +75,32 @@ test('busy, feasible and failed estimates remain readable; quantity and model se
  await user.click(screen.getByRole('button',{name:'Increase copies'}));await user.click(screen.getByRole('button',{name:'Decrease copies'}));expect(screen.getByLabelText('Number of copies')).toHaveValue(1);await user.type(screen.getByLabelText('Search models for this order'),'PLA{Enter}');
  vi.mocked(useOrderEstimate).mockReturnValue({estimate:{session_id:state.session_id,revision:0,feasible:true,on_time_quantity:1,estimated_finish:null,reason:'Fits'},busy:false,error:''});view.rerender(<QuickPrint guided state={state} onQueue={vi.fn()} onModels={vi.fn()}/>);expect(screen.getByText('Fits the selected deadline')).toBeInTheDocument();
  vi.mocked(useOrderEstimate).mockReturnValue({estimate:undefined,busy:false,error:'Unable to estimate'});view.rerender(<QuickPrint guided state={state} onQueue={vi.fn()} onModels={vi.fn()}/>);expect(screen.getByRole('alert')).toHaveTextContent('Unable to estimate');
+});
+
+
+test('order search filters out the previous selection, matches material/color and explains an empty result',async()=>{
+ const user=userEvent.setup(),queue=vi.fn();
+ const models=[...state.artifacts,{...state.artifacts[0],id:'boat',name:'Boat',filament_type:'PETG',color:'red'}];
+ render(<QuickPrint guided state={{...state,artifacts:models}} onQueue={queue} onModels={vi.fn()}/>);
+ await user.type(screen.getByLabelText('Search models for this order'),'  boat  ');
+ expect(screen.queryByRole('option',{name:'Blue PLA figure'})).not.toBeInTheDocument();
+ expect(screen.getByLabelText('Model to print')).toHaveValue('');
+ expect(screen.getByRole('button',{name:'Review schedule first'})).toBeDisabled();
+ await user.selectOptions(screen.getByLabelText('Model to print'),'boat');
+ expect(screen.getByText(/Total estimated printer time/)).toHaveTextContent('red PETG');
+ await user.clear(screen.getByLabelText('Search models for this order'));await user.type(screen.getByLabelText('Search models for this order'),'red');
+ expect(screen.getByRole('option',{name:'Boat'})).toBeInTheDocument();
+ await user.clear(screen.getByLabelText('Search models for this order'));await user.type(screen.getByLabelText('Search models for this order'),'missing model{Enter}');
+ expect(screen.getByText(/No models match/)).toBeVisible();expect(screen.getByLabelText('Model to print')).toBeDisabled();expect(queue).not.toHaveBeenCalled();
+});
+
+
+test('background capacity checks retain the last checked result and distinguish a failed refresh',()=>{
+ const estimate={session_id:state.session_id,revision:0,feasible:true,on_time_quantity:1,estimated_finish:null,reason:'Fits'};
+ vi.mocked(useOrderEstimate).mockReturnValue({estimate,busy:true,error:'',checkedAt:state.simulation_time});
+ const view=render(<QuickPrint guided state={state} onQueue={vi.fn()} onModels={vi.fn()}/>);
+ expect(screen.getByText('Fits the selected deadline')).toBeVisible();expect(screen.queryByText(/Checking current printer/)).not.toBeInTheDocument();expect(screen.getByText(/Last checked:/)).toHaveTextContent('UTC');
+ vi.mocked(useOrderEstimate).mockReturnValue({estimate,busy:false,error:'Unable to refresh'});
+ view.rerender(<QuickPrint guided state={state} onQueue={vi.fn()} onModels={vi.fn()}/>);
+ expect(screen.getByText('Previous estimate (refresh failed)')).toBeVisible();expect(screen.queryByText('Fits the selected deadline')).not.toBeInTheDocument();
 });

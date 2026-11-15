@@ -274,7 +274,7 @@ files cover selection, motion cancellation and profile/quantity navigation.
 
 | File | Responsibility / related behavior | Verification |
 | --- | --- | --- |
-| [QuickPrint.tsx](../frontend/src/components/QuickPrint.tsx) | Approved-profile selection, read-only per-part estimates, quantity, explicit editable demo deadlines and automatic/manual atomic plan payload. Composed by App. | QuickPrint tests and guided browser workflow |
+| [QuickPrint.tsx](../frontend/src/components/QuickPrint.tsx) | Approved-profile selection with normalized actual name/material/color filtering, explicit matching selection/empty results, stable last-checked feasibility, quantity/deadlines and automatic/manual atomic plan payload. Composed by App. | QuickPrint tests and guided browser workflow |
 | [QuickPrint.test.tsx](../frontend/src/components/QuickPrint.test.tsx) | Modes, inherited metadata, unavailable models, model selection, date validation and retry-preserved choices. | Frontend suite |
 | [profile.ts](../frontend/src/dashboard/profile.ts) | Validates JSON profile fields/estimates and internal default virtual-printer compatibility; ModelingBoard imports metadata only. | Profile tests |
 | [profile.test.ts](../frontend/src/dashboard/profile.test.ts) | Complete/invalid metadata, positive estimates and compatibility/preview shape validation. | Frontend suite |
@@ -535,8 +535,8 @@ and the compact browser workflow verify rounding, labels and quantity updates.
 | [test_compact_planning.py](../backend/tests/integration/test_compact_planning.py) | Confirmed queue edits/deletion/release, history, stale/started guards, pure estimate alternatives and repeatable manual/automatic incoming simulation. | Root backend coverage |
 | [scheduleView.ts](../frontend/src/components/scheduleView.ts) | Current remaining-work slots, queued placement projection, deadline/overlap flags, stable order hues/guarded completion groups and bounded UTC day/week/month windows/ticks. | scheduleView/timeline tests |
 | [scheduleView.test.ts](../frontend/src/components/scheduleView.test.ts) | Calendar bounds/tick limits, overlapping/late allocations, stable distinct colors through append/completion and partial/blocked/overlap/unavailable/orphan completion guards. | Frontend coverage |
-| [useOrderEstimate.ts](../frontend/src/components/useOrderEstimate.ts) | Debounced read-only draft requests, loading/error feedback and late/session/unmount guards. | Hook tests/browser |
-| [useOrderEstimate.test.tsx](../frontend/src/components/useOrderEstimate.test.tsx) | Valid/disabled drafts, debounce/abort, changed input/session, network failure and cleanup without mutations. | Frontend coverage |
+| [useOrderEstimate.ts](../frontend/src/components/useOrderEstimate.ts) | Draft/session-debounced read-only requests, semantic capacity polling at most every five seconds, stable checked results/timestamp during background refresh, failure and stale-response guards. | Hook tests/browser |
+| [useOrderEstimate.test.tsx](../frontend/src/components/useOrderEstimate.test.tsx) | Valid/disabled drafts, debounce/abort, changed input/session, unchanged revision polling, continuous live updates, retained background results, retry/failure and cleanup without mutations. | Frontend coverage |
 | [ConfirmDialog.tsx](../frontend/src/components/ConfirmDialog.tsx) | Explicit confirmation/cancel, busy state, Escape, focus restoration and keyboard trapping across all enabled form controls. | ConfirmDialog tests/browser |
 | [ConfirmDialog.test.tsx](../frontend/src/components/ConfirmDialog.test.tsx) | Confirmation/cancellation, busy dismissal and full form/button keyboard traversal. | Frontend coverage |
 | [OrderSimulation.tsx](../frontend/src/components/OrderSimulation.tsx) | Individual local request form with model/mode/copies/dates and safe feedback; no automatic print start. | OrderSimulation/App/browser tests |
@@ -776,3 +776,19 @@ graph LR
   BulkTests[test_bulk_order_review.py] -->|atomic safety guards| Cancel
   CombinedBrowser[preset-integration.spec.ts] -->|offline combined workflow| BulkUI
 ```
+
+
+## Orders estimate stability and search regression
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [orders-estimate-search.spec.ts](../tests/e2e/orders-estimate-search.spec.ts) | Actual API-backed Orders page under deterministic browser time: unchanged polling makes one estimate, active production/material changes refresh without erasing advice, slow responses retain visible checked result, saved model search filters name/material/color and explains no matches without submitting. | `npm run e2e -- tests/e2e/orders-estimate-search.spec.ts` |
+
+QuickPrint keeps the library's selected model until a search excludes it, then
+requires explicit choice rather than silently printing a different model. Search
+never pins a nonmatching current model. useOrderEstimate excludes revision/activity
+noise from capacity identity; latest capacity is checked on a stable five-second
+refresh loop so one-second simulation updates cannot starve or flicker estimates.
+New draft/session/invalid input clears stale advice immediately; background refresh
+retains prior advice with its checked simulation time and labels failed refreshes.
+The authoritative schedule remains revalidated by the existing backend before start.

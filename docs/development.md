@@ -729,3 +729,37 @@ new Search models combobox. Code-map links, conflict-marker and whitespace check
 pass. Independent review found no remaining P1/P2 issue in the combined bulk guards.
 Existing Vite bundle advisory remains; WebGL-failure logs are intentional fallback
 coverage. The merge is authorized locally; no push is included in this integration.
+
+
+## Orders feasibility and search fix - 2026-11-14
+
+On local branch `fix/orders-estimate-search`, the draft estimator previously cleared
+its visible result on every manufacturing revision. A running simulation increments
+that revision every second, so the Orders page alternated checking/fit messages.
+The hook now debounces changed drafts and sessions, then checks the latest semantic
+capacity snapshot at a stable five-second interval. Revision/activity-only polling
+makes no estimate request; live ticks cannot restart the timer or starve a request.
+A background check preserves its last result and checked simulation time; a failed
+refresh labels previous advice clearly. Changed/invalid drafts and replaced sessions
+clear stale advice, and planning still revalidates authoritative backend state.
+
+Order search no longer pins the selected model among nonmatching results. It trims
+and filters names/material/colors, shows no matches explicitly, and requires an
+explicit model selection after excluding the previous choice. Enter does not submit.
+The existing faster-profile action clears an excluding search when choosing that
+profile, keeping the visible selector and submitted artifact consistent.
+
+Browser regression uses the real saved-model/manufacturing API with deterministic
+browser timers: idle polling makes one estimate; actual production advancement plus
+a held refresh response preserves visible checked advice; uploaded model name and
+material search works, empty results disable submission, Enter creates no order,
+and the page fits a 390px viewport. Desktop/mobile preview screenshots were inspected
+without any reset or production mutation; Vite hot reload exposes the fix immediately.
+
+
+Final root `.venv\Scripts\python.exe scripts/check.py coverage` on isolated ports
+8002/5175 exited 0: **298 backend + 375 frontend + 30 browser tests (703 total)**,
+100% application coverage, schema consistency, TypeScript and production build pass.
+Existing Vite bundle-size advisory remains; WebGL fallback tests intentionally log
+renderer errors. Link checks and `git diff --check` pass. Work remains uncommitted
+on `fix/orders-estimate-search`; no merge or push was performed.
