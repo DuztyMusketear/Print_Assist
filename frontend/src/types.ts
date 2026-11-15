@@ -632,8 +632,10 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "prepare-supports" | "submit-review" | "approve" | "request-changes" | "remove";
+            action: "set-color" | "prepare-supports" | "submit-review" | "approve" | "request-changes" | "remove";
             support_assessment?: components["schemas"]["SupportAssessment"] | null;
+            /** Color */
+            color?: ("blue" | "black" | "white" | "gray" | "red") | null;
         };
         /** ModelActionCommand */
         ModelActionCommand: {

@@ -29,14 +29,26 @@ export default function App() {
   const pending=useRef<{signature:string;key:string}|undefined>(undefined);
   const pendingCommand=useRef<{signature:string;body:Parameters<typeof productionCommand>[1]}|undefined>(undefined);
   const pendingModel=useRef<{signature:string;body:Parameters<typeof modelingCommand>[1]}|undefined>(undefined);
-  async function modelChange(path:Parameters<typeof modelingCommand>[0],payload:components['schemas']['ModelTaskCreate']|components['schemas']['ModelAction']) {
+  const preparationPanel=useRef<HTMLDetailsElement>(null);
+  async function modelChange(path:Parameters<typeof modelingCommand>[0],payload:components['schemas']['ModelTaskCreate']|components['schemas']['ModelAction'],freshState?:Snapshot) {
     ++sequence.current;
-    const signature=JSON.stringify([path,payload,state!.session_id]);
+    const latest=freshState ?? state!;
+    const signature=JSON.stringify([path,payload,latest.session_id]);
     if(pendingModel.current && pendingModel.current.signature!==signature) throw new Error('Retry the previous modeling change first.');
-    if(!pendingModel.current) pendingModel.current={signature,body:{session_id:state!.session_id,expected_revision:state!.revision,idempotency_key:crypto.randomUUID(),payload} as Parameters<typeof modelingCommand>[1]};
-    const body=pendingModel.current.body;
+    if(!pendingModel.current) pendingModel.current={signature,body:{session_id:latest.session_id,expected_revision:latest.revision,idempotency_key:crypto.randomUUID(),payload} as Parameters<typeof modelingCommand>[1]};
+    let body=pendingModel.current.body;
     try {
-      const updated=await modelingCommand(path,body);
+      let updated:Snapshot;
+      try {updated=await modelingCommand(path,body);}
+      catch(reason) {
+        if(!(reason instanceof RejectedCommand&&reason.status===409)) throw reason;
+        const current=await readState();
+        if(current.session_id!==body.session_id) throw new Error('The demo scenario changed. Select the preset again.');
+        setState(previous=>previous?.session_id===current.session_id&&previous.revision>current.revision?previous:current);
+        body={...body,expected_revision:current.revision,idempotency_key:crypto.randomUUID()};
+        pendingModel.current={signature,body};
+        updated=await modelingCommand(path,body);
+      }
       if(pendingModel.current?.body.idempotency_key===body.idempotency_key) pendingModel.current=undefined;
       setState(previous=>updated.session_id===previous!.session_id && updated.revision>=previous!.revision ? updated : previous);
     } catch(reason) {if(reason instanceof RejectedCommand && pendingModel.current?.body.idempotency_key===body.idempotency_key) pendingModel.current=undefined; throw reason;}
@@ -136,7 +148,7 @@ export default function App() {
     <div className="dashboard-toolbar"><nav role="tablist" aria-label="Dashboard sections">{(['Models','Orders','Schedule','Overview','Printers'] as const).map(name=><button key={name} role="tab" aria-selected={tab===name} onClick={()=>setTab(name)}>{name}</button>)}</nav>
     <button className="secondary" onClick={()=>void load()}>Refresh queue</button></div>
     {tab!=='Overview' && workflowGuide}
-    {state && <div hidden={tab!=='Models'}><ModelLibrary key={state.session_id} state={state} onChoose={id=>{setSelectedModel(id);setTab('Orders');}} onUpload={payload=>command('/api/library/models',payload,false,true)}/><details className="preparation-tools"><summary>Model preparation &amp; support review</summary><ModelingBoard key={state.session_id} visualAssets={state.visual_assets ?? []} items={state.modeling_tasks ?? []} onCreate={payload=>modelChange('/api/modeling/tasks',payload)} onProduction={modelId=>{setSelectedModel(modelId);setTab('Orders');}} onMove={(id,action,assessment)=>modelChange('/api/modeling/actions',{task_id:id,action,...(assessment?{support_assessment:assessment}:{})})} onRemove={id=>modelChange('/api/modeling/actions',{task_id:id,action:'remove'})} isArtifactInUse={id=>state.orders.some(order=>order.artifact_id===`model-${id}`)} onRetry={async()=>{if(pendingModel.current){const [path,payload]=JSON.parse(pendingModel.current.signature);await modelChange(path,payload);}else await load();}}/></details></div>}
+    {state && <div hidden={tab!=='Models'}><ModelLibrary key={state.session_id} state={state} onChoose={id=>{setSelectedModel(id);setTab('Orders');}} onUpload={payload=>command('/api/library/models',payload,false,true)} onSendToModeling={async payload=>{const current=++sequence.current;if(preparationPanel.current){preparationPanel.current.open=true;preparationPanel.current.scrollIntoView?.({behavior:'smooth',block:'start'});}const latest=await readState();if(current!==sequence.current)throw new Error('The production state changed. Retry sending this preset to modeling.');setState(previous=>previous?.session_id===latest.session_id&&previous.revision>latest.revision?previous:latest);await modelChange('/api/modeling/tasks',payload,latest);}}/><details ref={preparationPanel} className="preparation-tools"><summary>Model preparation &amp; support review</summary><ModelingBoard key={state.session_id} visualAssets={state.visual_assets ?? []} items={state.modeling_tasks ?? []} showTaskIntake={false} onCreate={payload=>modelChange('/api/modeling/tasks',payload)} onProduction={modelId=>{setSelectedModel(modelId);setTab('Orders');}} onMove={(id,action,assessment,color)=>modelChange('/api/modeling/actions',{task_id:id,action,...(assessment?{support_assessment:assessment}:{}),...(color?{color}:{})})} onRemove={id=>modelChange('/api/modeling/actions',{task_id:id,action:'remove'})} isArtifactInUse={id=>state.orders.some(order=>order.artifact_id===`model-${id}`)} onRetry={async()=>{if(pendingModel.current){const [path,payload]=JSON.parse(pendingModel.current.signature);await modelChange(path,payload);}else await load();}}/></details></div>}
     {state ? <>
 
       {tab==='Overview' && <PrintingGuidance state={state} onNewPrint={()=>setTab('Orders')} onSchedule={()=>setTab('Schedule')}/>}

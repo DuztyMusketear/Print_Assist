@@ -21,10 +21,10 @@ test('seeded production can pause, go offline, resume and complete before reset'
   await expect(page.getByRole('button',{name:'Resume Printer 1',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Take Printer 1 offline',exact:true}).click();
   await expect(page.getByRole('button',{name:'Bring Printer 1 online',exact:true})).toBeVisible();
-  const before=await (await page.request.get('http://127.0.0.1:8000/api/state')).json();
+  const before=await (await page.request.get(new URL('/api/state',page.url()).toString())).json();
   await openScheduleTools(page);
   await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/advance')),page.getByRole('button',{name:'Advance 1 hour',exact:true}).click()]);
-  const stopped=await (await page.request.get('http://127.0.0.1:8000/api/state')).json();
+  const stopped=await (await page.request.get(new URL('/api/state',page.url()).toString())).json();
   expect(stopped.jobs[0].elapsed_seconds).toBe(before.jobs[0].elapsed_seconds);
   expect(stopped.printers[0].material.grams).toBe(before.printers[0].material.grams);
   await page.getByRole('tab',{name:'Printers',exact:true}).click();
@@ -35,7 +35,7 @@ test('seeded production can pause, go offline, resume and complete before reset'
   for(let hour=0;hour<3;hour++) {
     await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/advance')),page.getByRole('button',{name:'Advance 1 hour',exact:true}).click()]);
   }
-  const completed=await (await page.request.get('http://127.0.0.1:8000/api/state')).json();
+  const completed=await (await page.request.get(new URL('/api/state',page.url()).toString())).json();
   expect(completed.orders.every((order:{quantity:number;successful_quantity:number})=>order.quantity===order.successful_quantity)).toBe(true);
   await expect(page.getByRole('heading',{name:'Production activity',exact:true})).toBeVisible();
   await page.getByRole('tab',{name:'Printers',exact:true}).click();
@@ -43,7 +43,7 @@ test('seeded production can pause, go offline, resume and complete before reset'
   await page.getByRole('checkbox',{name:/I understand/}).check();
   await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
   await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
-  const cleared=await (await page.request.get('http://127.0.0.1:8000/api/state')).json();
+  const cleared=await (await page.request.get(new URL('/api/state',page.url()).toString())).json();
   expect(cleared.orders).toEqual([]);expect(cleared.jobs).toEqual([]);
   expect(cleared.controls).toEqual({agents_enabled:false,automatic_triggers:false});
   expect(external).toEqual([]);

@@ -189,6 +189,34 @@ def test_modeling_task_can_be_removed_and_persists(tmp_path):
         assert client.get('/api/state').json()['modeling_tasks'] == []
 
 
+def test_modeling_task_color_can_be_changed_and_persists(tmp_path):
+    path = tmp_path / 'model-color.sqlite3'
+    with TestClient(create_app(path)) as client:
+        state = client.get('/api/state').json()
+        envelope = dict(session_id=state['session_id'], expected_revision=state['revision'], idempotency_key=str(uuid4()))
+        task = client.post('/api/modeling/tasks', json=dict(envelope, payload=dict(
+            title='Planter', modelReference='planter.stl', duration_seconds=3600, filament_grams=30,
+            filament_type='PLA', color='blue', required_capabilities=['FFF']))).json()['modeling_tasks'][0]
+        state = client.get('/api/state').json()
+        change = dict(session_id=state['session_id'], expected_revision=state['revision'], idempotency_key=str(uuid4()),
+                      payload=dict(task_id=task['id'], action='set-color', color='red'))
+        updated = client.post('/api/modeling/actions', json=change)
+        assert updated.status_code == 200, updated.text
+        assert updated.json()['modeling_tasks'][0]['color'] == 'red'
+        assert client.post('/api/modeling/actions', json=change).json() == updated.json()
+        invalid = dict(session_id=updated.json()['session_id'], expected_revision=updated.json()['revision'], idempotency_key=str(uuid4()),
+                       payload=dict(task_id=task['id'], action='set-color', color='chartreuse'))
+        assert client.post('/api/modeling/actions', json=invalid).status_code == 422
+        next_command = dict(session_id=updated.json()['session_id'], expected_revision=updated.json()['revision'], idempotency_key=str(uuid4()),
+                            payload=dict(task_id=task['id'], action='prepare-supports'))
+        progressed = client.post('/api/modeling/actions', json=next_command).json()
+        locked = dict(session_id=progressed['session_id'], expected_revision=progressed['revision'], idempotency_key=str(uuid4()),
+                      payload=dict(task_id=task['id'], action='set-color', color='black'))
+        assert client.post('/api/modeling/actions', json=locked).status_code == 409
+    with TestClient(create_app(path)) as client:
+        assert client.get('/api/state').json()['modeling_tasks'][0]['color'] == 'red'
+
+
 def test_removing_an_approved_task_removes_its_unused_artifact(tmp_path):
     with TestClient(create_app(tmp_path / 'approved-model.sqlite3')) as client:
         state = client.get('/api/state').json()

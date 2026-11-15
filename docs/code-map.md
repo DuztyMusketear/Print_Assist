@@ -7,8 +7,9 @@ virtual environment. `python scripts/check.py full` verifies the entire slice;
 ```mermaid
 graph LR
   UI["App / OrderForm / OrderQueue"] -->|HTTP via api.ts| API["api.py"]
-  UI -->|contains advanced model preparation| BOARD["ModelingBoard"]
-  BOARD -->|remove callback dispatched by App| API
+  UI -->|hosts preset model library and advanced workflow| BOARD["ModelingBoard"]
+  LIBRARY["ModelLibrary"] -->|creates preset modeling tasks| UI
+  BOARD -->|revisioned color and workflow actions via App| API
   BOARD -->|validates transitions| WORKFLOW["workflow.ts"]
   API -->|validated command| SERVICE["service.py"]
   API -->|schema| CONTRACTS["contracts.py"]
@@ -31,7 +32,7 @@ graph LR
 | File | Owned behavior / relationships | Verification |
 | --- | --- | --- |
 | [backend/print_assist/__init__.py](../backend/print_assist/__init__.py) | Package marker; no initialization side effects. | Backend suite/imports |
-| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, visual metadata, printer/reset commands and entity-linked activity schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration` |
+| [contracts.py](../backend/print_assist/contracts.py) | Strict quantity/priority, UTC deadlines, typed printer/material, five-choice modeling color updates, visual metadata, printer/reset commands and entity-linked activity schema. Used by API/service and generated frontend types. | `python -m pytest backend/tests/integration` |
 | [scenarios.py](../backend/print_assist/scenarios.py) | Deterministic seeded/empty-order baselines with three idle virtual printers, print-ready artifact and disabled controls. | Service/production-controls tests |
 | [store.py](../backend/print_assist/store.py) | SQLite transactions, snapshot storage, command-result table and connection lifetime. | Store/service tests |
 | [service.py](../backend/print_assist/service.py) | One-owner transactional intake/production, session/revision/replay checks, atomic reset and current-reset receipt lifetime. | Service and production-controls tests |
@@ -46,8 +47,8 @@ graph LR
 | [test_checks.py](../backend/tests/unit/test_checks.py) | Root runner executes subprocesses and propagates failure without continuing. | Backend unit suite |
 | [test_orders_api.py](../backend/tests/integration/test_orders_api.py) | Real app/SQLite HTTP behavior, response schema, offline operation with fake credentials. | Backend integration suite |
 | [frontend/src/main.tsx](../frontend/src/main.tsx) | DOM mounting and stylesheet import only. | Browser test/build |
-| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs, state loading, control/reset composition, retry ownership and late-response suppression across session replacement. Delegates 3D views to PrinterFloor. | Frontend App tests |
-| [api.ts](../frontend/src/api.ts) | HTTP transport and actionable save/load errors. | Frontend transport tests |
+| [App.tsx](../frontend/src/App.tsx) | Dashboard tabs, state loading, preset-to-modeling task creation, persisted modeling color updates, control/reset composition, retry ownership and late-response suppression across session replacement. The integrated modeling board does not show the standalone intake form. Delegates 3D views to PrinterFloor. | Frontend App tests |
+| [api.ts](../frontend/src/api.ts) | HTTP transport, backend validation detail, and actionable save/load errors. | Frontend transport tests |
 | [types.ts](../frontend/src/types.ts) | Generated OpenAPI types; do not hand-edit. | `python scripts/schema.py --check` |
 | [styles.css](../frontend/src/styles.css) | Responsive layout for intake, modeling, queue, support review, removal actions, enlarged model preview, and 3D printer/control panels. No business logic. | Build/browser review |
 | [OrderForm.tsx](../frontend/src/components/OrderForm.tsx) | Inputs with icon-triggered tooltips and examples, UTC command payload, busy/error states, preservation on failure. | Frontend OrderForm tests |
@@ -61,7 +62,7 @@ graph LR
 | [scripts/check.py](../scripts/check.py) | Portable unit/full/coverage orchestration; short-circuits on failure; per-run outputs. | Runner unit tests and all three check modes |
 | [scripts/schema.py](../scripts/schema.py) | Offline OpenAPI generation, TS generation and drift check in temporary storage. | Full/coverage modes |
 | [order-intake.spec.ts](../tests/e2e/order-intake.spec.ts) | Browser-to-real-backend creation and reload persistence; fails external requests. | `npm run e2e` |
-| [modeling-dashboard.spec.ts](../tests/e2e/modeling-dashboard.spec.ts) | Verifies NIST preview gestures, Snack Sticks page-reference intake, support assessment with removal notes, combined review, revision persistence, paired approval, removal confirmation, order selection, and zero external requests. | `npm run e2e` |
+| [modeling-dashboard.spec.ts](../tests/e2e/modeling-dashboard.spec.ts) | Verifies preset-to-modeling handoff, persistent five-color task selector, NIST preview gestures, support assessment/review/approval, removal, order selection, and zero external requests. | `npm run e2e` |
 
 ## Production controls and reset
 
@@ -112,10 +113,10 @@ graph LR
 
 | File | Responsibility | Verification |
 | --- | --- | --- |
-| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted board with distinct model and linked support-assessment tasks, optional support file/material/removal details, combined review and approval handoff, task removal, order-use checks, conditional NIST preview, and a linked Snack Sticks support demo page. Does not generate support geometry or slice files. | ModelingBoard tests, NistModelPreview, workflow module |
+| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted workflow board with distinct model and linked support-assessment tasks, five-choice themed color selector on modeling task cards, combined approval handoff, task removal, order-use checks, and conditional NIST preview. The integrated dashboard hides the standalone task-intake form; preset cards create modeling tasks directly. Does not generate support geometry or slice files. | ModelingBoard tests, App tests, ModelLibrary, workflow module, styles |
 | [NistModelPreview.tsx](../frontend/src/dashboard/NistModelPreview.tsx) | Loads and validates the bundled binary STL, renders shaded triangles, opens a high-resolution enlarged dialog on click, supports mouse-drag rotation and independent pinch zoom only in that dialog, preserves rotate/reset buttons, and explains NIST artifact features. | `ModelingBoard.test.tsx`, modeling dashboard browser workflow |
-| [workflow.ts](../frontend/src/dashboard/workflow.ts) | Validates model tasks, linked support assessments, required-support and no-support paths into combined review, approval, and revision return. Backend owns persistence in the integrated app. | `workflow.test.ts` |
-| [ModelingBoard.test.tsx](../frontend/src/dashboard/ModelingBoard.test.tsx) | Verifies support assessment and optional support details, combined review, paired approval, no-support path to review, revision return, removal guards, and NIST preview gestures. | `npm test` |
+| [workflow.ts](../frontend/src/dashboard/workflow.ts) | Shares the five-color palette and validates model color changes, support assessments, required/no-support paths into combined review, approval, and revision return. Backend owns persistence in the integrated app. | `workflow.test.ts` |
+| [ModelingBoard.test.tsx](../frontend/src/dashboard/ModelingBoard.test.tsx) | Verifies standalone/local form behavior and the five-color selector plus support assessment/details, combined review, paired approval, no-support path to review, revision return, removal guards, and NIST preview gestures. | `npm test` |
 | [public/demo-models/nist-test-artifact.stl](../frontend/public/demo-models/nist-test-artifact.stl) | Bundled NIST public-domain STL served as a modeling dashboard demo download. | ModelingBoard tests and browser workflow; verify checksum against asset record |
 | [public/demo-models/README.md](../frontend/public/demo-models/README.md) | NIST source, public-domain notice, checksum, local mesh check, and demo-estimate caveat. | Check source URL and checksum against bundled asset. |
 | [workflow.test.ts](../frontend/src/dashboard/workflow.test.ts) | Verifies required inputs, allowed transitions, and invalid action rejection. | `npm test` |
@@ -126,8 +127,8 @@ Return to the [repository map](knowledge-map.md) for requirements and research.
 
 | File | Responsibility | Verification |
 | --- | --- | --- |
-| [modeling.py](../backend/print_assist/modeling.py) | Validated linked support-task assessment, combined review, paired model/support artifact approval, task removal, and order-use protection. | `python -m pytest backend/tests/integration/test_modeling.py` |
-| [test_modeling.py](../backend/tests/integration/test_modeling.py) | Persists model and support task together, requires an assessment, sends no-support models to review, validates revisions/removal, and verifies order intake. | `python -m pytest backend/tests/integration/test_modeling.py` |
+| [modeling.py](../backend/print_assist/modeling.py) | Validated task color updates while in Modeling, linked support-task assessment, combined review, paired model/support artifact approval, task removal, and order-use protection. | `python -m pytest backend/tests/integration/test_modeling.py` |
+| [test_modeling.py](../backend/tests/integration/test_modeling.py) | Persists modeling color changes, paired model/support approval, required/no-support assessments, revisions/removal, and order intake. | `python -m pytest backend/tests/integration/test_modeling.py` |
 
 ```mermaid
 graph LR
@@ -233,7 +234,7 @@ component tests assert the new presentation and preserve command checks.
 | [scene.ts](../frontend/src/printers/scene.ts) | Incremental clipping/material/nozzle updates preserve renderer, mesh and camera; geometry is disposed only on scene replacement/unmount. Verify scene tests. |
 | [PrinterScene.test.tsx](../frontend/src/printers/PrinterScene.test.tsx) | Equal metadata snapshots reuse renderer/load and apply latest progress/color; existing stale/unmount/fallback cases. Frontend suite. |
 | [scene.test.ts](../frontend/src/printers/scene.test.ts) | Live clipping update preserves camera/canvas, plus empty/placeholder/disposed updates. Frontend suite. |
-| [printer-views.spec.ts](../tests/e2e/printer-views.spec.ts) | Real canvas identity and floor height survive refresh; existing WebGL/camera/asset workflows. Root full/coverage checks. |
+| [printer-views.spec.ts](../tests/e2e/printer-views.spec.ts) | Real canvas identity and floor height survive refresh; WebGL/camera/asset checks and upload-to-order visual model workflow. Root full/coverage checks. |
 
 ```mermaid
 graph LR
@@ -268,7 +269,7 @@ files cover selection, motion cancellation and profile/quantity navigation.
 | [profile.test.ts](../frontend/src/dashboard/profile.test.ts) | Complete/invalid metadata, positive estimates and compatibility/preview shape validation. | Frontend suite |
 | [test_quick_print.py](../backend/tests/integration/test_quick_print.py) | Atomic order planning, unknown-model rollback, replay, automatic clock and preservation of existing manual modes. | Backend integration suite |
 | [example-tower.profile.json](../frontend/public/models/example-tower.profile.json) | Downloadable example metadata with explicitly illustrative demo estimates and registered preview. | JSON validation and guided browser profile import |
-| [guided-printing.spec.ts](../tests/e2e/guided-printing.spec.ts) | Prepared decimal-weight profile approval, selected-model handoff, manual Overview start/pause/resume and automatic quantity navigation without external traffic. | Root full/coverage checks |
+| [guided-printing.spec.ts](../tests/e2e/guided-printing.spec.ts) | Upload profile intake, print-ready model handoff, manual Overview start/pause/resume and automatic quantity navigation without external traffic. | Root full/coverage checks |
 
 ```mermaid
 graph LR
@@ -443,7 +444,7 @@ estimates recompute remaining work after holds and queue it per printer.
 | [shop.py](../backend/print_assist/shop.py) | Deterministic local example feed, deduplicated loading, explicit acceptance/rejection and SKU/model mapping; accepted orders remain held. | Backend integration suite |
 | [order_review.py](../backend/print_assist/order_review.py) | Corrections to held orders with no successful/committed production; model validation and activity records. | Backend integration suite |
 | [test_library_shop.py](../backend/tests/integration/test_library_shop.py) | Upload bytes/profile validation, persistence/reset/replay, example-feed decisions and duplicate guards, held corrections and full/on-time confirmation. | Root backend coverage |
-| [ModelLibrary.tsx](../frontend/src/components/ModelLibrary.tsx) | Searchable approved model cards, profile-assisted local STL upload, support review, one-time estimates and quantity handoff. | ModelLibrary tests/browser |
+| [ModelLibrary.tsx](../frontend/src/components/ModelLibrary.tsx) | Searchable approved models, curated source/license/profile preset cards that create tasks directly in the modeling workflow and can safely retry uncertain sends, profile-assisted local STL upload with the five-color selector, support review, and quantity handoff. Preset print data are example profiles; uploaded geometry remains a separate step. | ModelLibrary and App tests/browser |
 | [ModelLibrary.test.tsx](../frontend/src/components/ModelLibrary.test.tsx) | Browse/filter/handoff, required preparation, import/read/upload failures, optional support metadata and safe success/navigation. | Frontend coverage |
 | [ModelPreview.tsx](../frontend/src/components/ModelPreview.tsx) | Bounded geometry loader to static isometric canvas thumbnails, stable asset identity, abort/disposal and readable fallback. | ModelPreview tests/browser |
 | [ModelPreview.test.tsx](../frontend/src/components/ModelPreview.test.tsx) | Real geometry drawing/disposal, retained polling metadata, absent/failed/canvas fallback and late navigation results. | Frontend coverage |

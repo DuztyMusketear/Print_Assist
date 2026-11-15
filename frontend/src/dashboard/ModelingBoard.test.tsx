@@ -1,4 +1,4 @@
-import {fireEvent,render,screen} from '@testing-library/react';
+import {fireEvent,render,screen,waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {expect,test,vi} from 'vitest';
 import {ModelingBoard} from './ModelingBoard';
@@ -26,6 +26,20 @@ test('selected catalog visual is passed to persisted modeling tasks',async()=>{
   fireEvent.submit(screen.getByRole('button',{name:'Add to modeling'}).closest('form')!);
   expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({visual_asset_id:'example-tower'}));
 });
+test('omits an unset visual asset instead of sending a null field',async()=>{
+ const onCreate=vi.fn().mockResolvedValue(undefined),user=userEvent.setup();
+ render(<ModelingBoard items={[]} onCreate={onCreate}/>);
+ await user.type(screen.getByLabelText('Model name'),'Part');
+ await user.type(screen.getByLabelText('Model file reference'),'part.stl');
+ await user.click(screen.getByText('Model preparation (team only)'));
+ await user.type(screen.getByLabelText('Estimated print minutes'),'10');
+ await user.type(screen.getByLabelText('Estimated filament grams'),'2');
+ await user.type(screen.getByLabelText('Filament type'),'PLA');
+  await user.selectOptions(screen.getByLabelText('Filament color'),'blue');
+ await user.click(screen.getByRole('button',{name:'Add to modeling'}));
+ expect(onCreate).toHaveBeenCalledOnce();
+ expect(onCreate.mock.calls[0][0]).not.toHaveProperty('visual_asset_id');
+});
 
 test('explains model inputs with examples and offers common filament choices',async()=>{
   render(<ModelingBoard items={[]} onCreate={vi.fn()}/>);
@@ -35,35 +49,38 @@ test('explains model inputs with examples and offers common filament choices',as
   expect(screen.getByLabelText('Estimated print minutes')).toHaveAccessibleDescription(/one item/);
   expect(screen.getByRole('combobox',{name:'Filament type'})).toHaveAttribute('list','filament-types');
   expect(document.querySelector('#filament-types option[value="PETG"]')).not.toBeNull();
-  expect(document.querySelector('#filament-colors option[value="blue"]')).not.toBeNull();
+  expect(Array.from(screen.getByLabelText('Filament color').querySelectorAll('option')).map(option=>option.value).filter(Boolean)).toEqual(['blue','black','white','gray','red']);
+  expect(screen.getByLabelText('Filament color')).toHaveClass('theme-color-select');
   const user=userEvent.setup();
   await user.type(screen.getByRole('combobox',{name:'Filament type'}),'Custom blend');
   expect(screen.getByRole('combobox',{name:'Filament type'})).toHaveValue('Custom blend');
 });
 
-test('loads the bundled NIST model and creates a clearly labeled demo task',async()=>{
-  const user=userEvent.setup();
-  const onCreate=vi.fn().mockResolvedValue(undefined);
-  render(<ModelingBoard items={[]} onCreate={onCreate}/>);
-  expect(screen.getByRole('link',{name:'Download NIST STL'})).toHaveAttribute('href','/demo-models/nist-test-artifact.stl');
-  await user.click(screen.getByRole('button',{name:'Use NIST demo model'}));
-  expect(screen.getByLabelText('Model file reference')).toHaveValue('/demo-models/nist-test-artifact.stl');
-  expect(screen.getByText(/presentation estimates, not NIST settings or slicer results/)).toBeInTheDocument();
-  await user.click(screen.getByRole('button',{name:'Add to modeling'}));
-  expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({
-    title:'NIST AM Test Artifact',modelReference:'/demo-models/nist-test-artifact.stl',
-    duration_seconds:7200,filament_grams:35,filament_type:'PLA',color:'blue',required_capabilities:['FFF'],visual_asset_id:'nist-test-artifact',
-  }));
+test('copies a preset draft into the model name and source reference fields',async()=>{
+  render(<ModelingBoard onCreate={vi.fn()} initialDraft={{title:'Honeycomb Phone Stand',modelReference:'https://www.printables.com/model/525164-honeycomb-phone-stand',duration_seconds:22380,filament_grams:33,filament_type:'PLA',color:'blue',required_capabilities:['FFF'],visual_asset_id:null}}/>);
+  expect(await screen.findByLabelText('Model name')).toHaveValue('Honeycomb Phone Stand');
+  expect(screen.getByLabelText('Model file reference')).toHaveValue('https://www.printables.com/model/525164-honeycomb-phone-stand');
+  expect(screen.getByLabelText('Estimated print minutes')).toHaveValue(373);
+  expect(screen.getByLabelText('Estimated filament grams')).toHaveValue(33);
+});
+test('shows print profile details on workflow cards without exposing the source reference',async()=>{
+ const user=userEvent.setup();
+ render(<ModelingBoard initialDraft={{title:'Honeycomb Phone Stand',modelReference:'https://example.test/private-source',duration_seconds:22380,filament_grams:33,filament_type:'PLA',color:'blue',required_capabilities:['FFF'],visual_asset_id:null}}/>);
+ await user.click(screen.getByRole('button',{name:'Add to modeling'}));
+ const card=screen.getByRole('region',{name:'Modeling stage'});
+ expect(card).toHaveTextContent('Honeycomb Phone Stand');
+ expect(card).toHaveTextContent('373 min');
+ expect(card).toHaveTextContent('33 g PLA');
+ expect(screen.getByRole('combobox',{name:'Color for Honeycomb Phone Stand'})).toHaveValue('blue');
+ expect(card).not.toHaveTextContent('private-source');
 });
 
-test('offers the support-requiring Snack Sticks model page as a modeling demo',async()=>{
-  const user=userEvent.setup();
-  render(<ModelingBoard items={[]}/>);
-  const source='https://pinshape.com/items/106174-3d-printed-snack-sticks';
-  expect(screen.getByRole('link',{name:'Open Snack Sticks model page'})).toHaveAttribute('href',source);
-  await user.click(screen.getByRole('button',{name:'Use Snack Sticks demo'}));
-  expect(screen.getByLabelText('Model name')).toHaveValue('Snack Sticks');
-  expect(screen.getByLabelText('Model file reference')).toHaveValue(source);
+test('modeling task color selector dispatches a color update',async()=>{
+ const task={id:'color-task',title:'Color sample',modelReference:'color.stl',stage:'modeling' as const,duration_seconds:600,filament_grams:2,filament_type:'PLA',color:'blue',required_capabilities:['FFF']};
+ const onMove=vi.fn().mockResolvedValue(undefined),user=userEvent.setup();
+ render(<ModelingBoard items={[task]} onMove={onMove}/>);
+ await user.selectOptions(screen.getByRole('combobox',{name:'Color for Color sample'}),'red');
+ await waitFor(()=>expect(onMove).toHaveBeenCalledWith('color-task','set-color',undefined,'red'));
 });
 
 test('shows the STL shape and the NIST features when the demo is added',async()=>{
@@ -72,8 +89,8 @@ test('shows the STL shape and the NIST features when the demo is added',async()=
   vi.spyOn(HTMLCanvasElement.prototype,'getContext').mockReturnValue(context);
   vi.spyOn(globalThis,'fetch').mockResolvedValue({ok:true,arrayBuffer:async()=>binaryStl()} as Response);
   const user=userEvent.setup();
-  render(<ModelingBoard/>);
-  await user.click(screen.getByRole('button',{name:'Use NIST demo model'}));
+  render(<ModelingBoard initialDraft={{title:'NIST AM Test Artifact',modelReference:'/demo-models/nist-test-artifact.stl',duration_seconds:7200,filament_grams:35,filament_type:'PLA',color:'blue',required_capabilities:['FFF'],visual_asset_id:'nist-test-artifact'}}/>);
+  await screen.findByDisplayValue('NIST AM Test Artifact');
   await user.click(screen.getByRole('button',{name:'Add to modeling'}));
   const preview=await screen.findByRole('img',{name:'NIST artifact 3D model preview'});
   expect(preview).toHaveAttribute('data-loaded','true');
@@ -199,11 +216,11 @@ test('moves a model task through supports and review to approval',async()=>{
   expect(screen.getByRole('region',{name:'Modeling stage'})).toHaveTextContent('Desk planter');
   expect(screen.getByRole('region',{name:'Modeling stage'})).toHaveTextContent('Dragon figurine');
   await user.click(screen.getAllByRole('button',{name:'Prepare supports'})[0]);
-  expect(screen.getByRole('region',{name:'Supports stage'})).toHaveTextContent('dragon-v2.stl');
+  expect(screen.getByRole('region',{name:'Supports stage'})).not.toHaveTextContent('dragon-v2.stl');
   expect(screen.getByRole('combobox',{name:'Support requirement'})).toHaveValue('');
   expect(screen.getByRole('button',{name:'Send model and support assessment to review'})).toBeDisabled();
   fireEvent.submit(screen.getByRole('form',{name:'Support task for Dragon figurine'}));
-  expect(screen.getByRole('region',{name:'Supports stage'})).toHaveTextContent('dragon-v2.stl');
+  expect(screen.getByRole('region',{name:'Supports stage'})).not.toHaveTextContent('dragon-v2.stl');
   await user.selectOptions(screen.getByRole('combobox',{name:'Support requirement'}),'required');
   await user.type(screen.getByLabelText('Support file or slicer project (optional)'),'dragon-supports.3mf');
   await user.type(screen.getByLabelText('Estimated support material grams (optional)'),'5');
@@ -211,7 +228,8 @@ test('moves a model task through supports and review to approval',async()=>{
   expect(screen.getByRole('form',{name:'Support task for Dragon figurine'})).toBeInTheDocument();
   await user.click(screen.getByRole('button',{name:'Send model and support assessment to review'}));
   const review=screen.getByRole('region',{name:'Review stage'});
-  expect(review).toHaveTextContent('Model: dragon-v2.stl');
+  expect(review).toHaveTextContent('Dragon figurine');
+  expect(review).not.toHaveTextContent('dragon-v2.stl');
   expect(review).toHaveTextContent('Supports required');
   expect(review).toHaveTextContent('dragon-supports.3mf');
   expect(review).toHaveTextContent('5 g');
@@ -230,7 +248,7 @@ test('sends an explicit no-support assessment directly to review before approval
   await user.selectOptions(screen.getByRole('combobox',{name:'Support requirement'}),'not-required');
   await user.click(screen.getByRole('button',{name:'Send model and support assessment to review'}));
   expect(screen.getByRole('region',{name:'Review stage'})).toHaveTextContent('No supports required');
-  expect(screen.getByRole('region',{name:'Review stage'})).toHaveTextContent('bracket.stl');
+  expect(screen.getByRole('region',{name:'Review stage'})).not.toHaveTextContent('bracket.stl');
   await user.click(screen.getByRole('button',{name:'Approve model and supports'}));
   expect(screen.getByRole('region',{name:'Approved stage'})).toHaveTextContent(/no supports required/i);
 });
@@ -318,6 +336,8 @@ test('explains when required task details are missing',()=>{
 test('prepared profile import supplies estimates and removes compatibility jargon',async()=>{
  const onCreate=vi.fn().mockResolvedValue(undefined);const user=userEvent.setup();
  render(<ModelingBoard onCreate={onCreate}/>);
+ expect(screen.queryByRole('heading',{name:'Add a prepared model'})).not.toBeInTheDocument();
+ expect(screen.getByRole('heading',{name:'Add a model task'})).toBeInTheDocument();
  const profile={title:'Tray',modelReference:'tray.stl',duration_seconds:600,filament_grams:25.125,filament_type:'PLA',color:'blue'};
  const file=new File([JSON.stringify(profile)],'tray.json',{type:'application/json'});
  Object.defineProperty(file,'text',{value:async()=>JSON.stringify(profile)});

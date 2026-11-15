@@ -10,6 +10,17 @@ test('state fetch failure is actionable',async()=>{
   vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('',{status:503}));
   await expect(readState()).rejects.toThrow('Check the local server');
 });
+test('modeling rejection includes safe server validation detail',async()=>{
+ const {modelingCommand}=await import('./api');
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify({detail:'Expected revision 4, received 2'}),{status:409}));
+ await expect(modelingCommand('/api/modeling/tasks',{session_id:state.session_id,expected_revision:2,idempotency_key:state.session_id,payload:{title:'Part',modelReference:'part.stl',duration_seconds:60,filament_grams:1,filament_type:'PLA',color:'blue',required_capabilities:['FFF'],visual_asset_id:null}})).rejects.toThrow('Modeling change rejected: Expected revision 4, received 2');
+});
+test('modeling validation rejection names the offending payload field',async()=>{
+ const {modelingCommand}=await import('./api');
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify({detail:[{loc:['body','payload','visual_asset_id'],msg:'Extra inputs are not permitted',type:'extra_forbidden'}]}),{status:422}));
+ const command={session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,payload:{title:'Part',modelReference:'part.stl',duration_seconds:60,filament_grams:1,filament_type:'PLA',color:'blue',required_capabilities:['FFF'],visual_asset_id:null}};
+ await expect(modelingCommand('/api/modeling/tasks',command)).rejects.toThrow('Modeling change rejected: payload.visual_asset_id: Extra inputs are not permitted');
+});
 const body = {session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,
   payload:{artifact_id:'figure-pla-blue',quantity:1,priority:0,production_due:'2026-11-15T00:00:00Z',ship_by:'2026-11-16T00:00:00Z'}};
 test('posts a typed command and returns the saved state',async()=>{

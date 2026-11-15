@@ -37,6 +37,9 @@ def move_task(state, payload):
         result['modeling_tasks'] = [item for item in result['modeling_tasks'] if item['id'] != task['id']]
         return result
     action = payload['action']
+    if action == 'set-color' and task['stage'] == 'modeling':
+        task['color'] = payload['color']
+        return result
     if action == 'prepare-supports' and task['stage'] == 'modeling':
         task['stage'] = 'supports'
         task['support_task'] = {

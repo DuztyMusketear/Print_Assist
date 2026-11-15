@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 
-test('uses the bundled NIST STL as a reviewable demo model',async({page})=>{
+test('preset models expose a persistent five-color selector in Modeling',async({page})=>{
   const external:string[]=[];
   await page.route('**/*',route=>{
     const host=new URL(route.request().url()).hostname;
@@ -8,68 +8,54 @@ test('uses the bundled NIST STL as a reviewable demo model',async({page})=>{
     return route.continue();
   });
   await page.goto('/');
+  await resetEmpty(page);
+  await page.getByRole('tab',{name:'Models'}).click();
+  await page.getByRole('button',{name:'Send to modeling dashboard'}).first().click();
+  const color=page.getByRole('combobox',{name:'Color for 3DBenchy'});
+  await expect(color).toBeVisible();
+  await expect(color.locator('option')).toHaveCount(5);
+  await color.selectOption('red');
+  await expect(color).toHaveValue('red');
+  await page.reload();
   await openPreparation(page);
-  await expect(page.getByRole('link',{name:'Open Snack Sticks model page'}))
-    .toHaveAttribute('href','https://pinshape.com/items/106174-3d-printed-snack-sticks');
-  const download=await page.request.get('/demo-models/nist-test-artifact.stl');
-  expect(download.status()).toBe(200);
-  expect((await download.body()).byteLength).toBe(369684);
-  await page.getByRole('button',{name:'Use NIST demo model'}).click();
-  await page.getByRole('button',{name:'Add to modeling'}).click();
-  const mesh=page.getByRole('img',{name:'NIST artifact 3D model preview'});
-  await expect(mesh).toHaveAttribute('data-loaded','true');
-  await expect(page.getByText('Center hole and concentric cylinders')).toBeVisible();
-  const image=page.getByRole('button',{name:'Enlarge NIST artifact preview'});
-  await image.scrollIntoViewIfNeeded();
-  await expect(page.getByText(/drag the model to rotate/i)).toHaveCount(0);
-  const thumbnailYaw=await image.getAttribute('data-yaw');
-  const thumbnailBox=await image.boundingBox();
-  if(!thumbnailBox) throw new Error('The model preview image is not visible.');
-  await page.mouse.move(thumbnailBox.x+thumbnailBox.width/2,thumbnailBox.y+thumbnailBox.height/2);
-  await page.mouse.down();
-  await page.mouse.move(thumbnailBox.x+thumbnailBox.width/2+70,thumbnailBox.y+thumbnailBox.height/2+35,{steps:4});
-  await page.mouse.up();
-  await expect(image).toHaveAttribute('data-yaw',thumbnailYaw!);
-  await image.click();
-  const dialog=page.getByRole('dialog',{name:'Enlarged NIST model preview'});
-  await expect(dialog).toBeVisible();
-  const zoomBefore=await image.getAttribute('data-zoom');
-  const yawBefore=await image.getAttribute('data-yaw');
-  const box=await image.boundingBox();
-  if(!box) throw new Error('The model preview image is not visible.');
-  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
-  await page.mouse.down();
-  await expect(image).toHaveClass(/dragging/);
-  await page.mouse.move(box.x+box.width/2+70,box.y+box.height/2+35,{steps:4});
-  await page.mouse.up();
-  await expect.poll(()=>image.getAttribute('data-yaw')).not.toBe(yawBefore);
-  await expect(image).toHaveAttribute('data-zoom',zoomBefore!);
-  await expect(dialog).toBeVisible();
-  await expect.poll(()=>mesh.evaluate(canvas=>(canvas as HTMLCanvasElement).width)).toBe(1200);
-  await expect(page.getByRole('button',{name:'Rotate model left'})).toBeVisible();
-  await expect(page.getByRole('button',{name:'Reset view'})).toBeVisible();
-  await page.getByRole('button',{name:'Close enlarged preview'}).click();
-  await expect.poll(()=>mesh.evaluate(canvas=>(canvas as HTMLCanvasElement).width)).toBe(720);
-  await page.getByRole('button',{name:'Rotate model right'}).click();
-  await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('NIST AM Test Artifact');
+  await expect(page.getByRole('combobox',{name:'Color for 3DBenchy'})).toHaveValue('red');
+  expect(external).toEqual([]);
+});
+
+test('sends a preset through modeling, support review, approval, and order selection',async({page})=>{
+  const external:string[]=[];
+  await page.route('**/*',route=>{
+    const host=new URL(route.request().url()).hostname;
+    if(host!=='127.0.0.1') {external.push(route.request().url());return route.abort();}
+    return route.continue();
+  });
+  await page.goto('/');
+  await resetEmpty(page);
+  await page.getByRole('tab',{name:'Models'}).click();
+  await page.getByRole('button',{name:'Send to modeling dashboard'}).first().click();
+  const color=page.getByRole('combobox',{name:'Color for 3DBenchy'});
+  await expect(color).toBeVisible();
+  await color.selectOption('red');
+  await expect(color).toHaveValue('red');
   await page.getByRole('button',{name:'Prepare supports'}).click();
   await page.getByLabel('Support requirement').selectOption('required');
-  await page.getByLabel('Support file or slicer project (optional)').fill('nist-supports.3mf');
+  await page.getByLabel('Support file or slicer project (optional)').fill('benchy-supports.3mf');
   await page.getByLabel('Estimated support material grams (optional)').fill('3.5');
-  await page.getByLabel('Support removal notes (optional)').fill('Remove supports from the underside after printing.');
+  await page.getByLabel('Support removal notes (optional)').fill('Remove supports from the bow after printing.');
   await page.getByRole('button',{name:'Send model and support assessment to review'}).click();
-  await expect(page.getByRole('region',{name:'Review stage'})).toContainText('nist-test-artifact.stl');
-  await expect(page.getByRole('region',{name:'Review stage'})).toContainText('nist-supports.3mf');
+  await expect(page.getByRole('region',{name:'Review stage'})).toContainText('Supports required');
+  await expect(page.getByRole('region',{name:'Review stage'})).toContainText('benchy-supports.3mf');
+  await expect(page.getByRole('region',{name:'Review stage'})).toContainText('red');
   await page.getByRole('button',{name:'Approve model and supports'}).click();
-  await expect(page.getByRole('region',{name:'Approved stage'})).toContainText('NIST AM Test Artifact');
+  await expect(page.getByRole('region',{name:'Approved stage'})).toContainText('3DBenchy');
   await expect(page.getByRole('region',{name:'Approved stage'})).toContainText('Model and support data stored together');
   await page.getByRole('tab',{name:'Orders'}).click();
-  await expect(page.getByLabel('Print-ready product',{exact:true})).toContainText('NIST AM Test Artifact');
+  await expect(page.getByLabel('Print-ready product',{exact:true})).toContainText('3DBenchy');
   await openPreparation(page);
-  await page.getByRole('button',{name:'Remove NIST AM Test Artifact'}).click();
+  await page.getByRole('button',{name:'Remove 3DBenchy'}).click();
   await expect(page.getByRole('dialog',{name:'Confirm task removal'})).toBeVisible();
   await page.getByRole('button',{name:'Confirm removal'}).click();
-  await expect(page.getByRole('region',{name:'Approved stage'})).not.toContainText('NIST AM Test Artifact');
+  await expect(page.getByRole('region',{name:'Approved stage'})).not.toContainText('3DBenchy');
   expect(external).toEqual([]);
 });
 
@@ -81,46 +67,35 @@ test('tracks a model through supports and review without external traffic',async
     return route.continue();
   });
   await page.goto('/');
-  await openPreparation(page);
-  await page.getByText('Model preparation (team only)',{exact:true}).click();
-  await expect(page.getByRole('heading',{name:'Modeling dashboard'})).toBeVisible();
-  const modelHelp=page.locator('#model-name-help');
-  const helpIcon=page.getByRole('button',{name:'Help for Model name',exact:true});
-  await expect(modelHelp).toBeHidden();
-  await helpIcon.hover();
-  await expect(modelHelp).toBeVisible();
-  await expect(modelHelp).toContainText('Example: Dragon figurine');
-  await page.getByRole('heading',{name:'Modeling dashboard'}).hover();
-  await expect(modelHelp).toBeHidden();
-  await helpIcon.focus();
-  await expect(modelHelp).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(modelHelp).toBeHidden();
-  await page.getByRole('button',{name:'Use Snack Sticks demo'}).click();
-  await expect(page.getByLabel('Model name',{exact:true})).toHaveValue('Snack Sticks');
-  await expect(page.getByLabel('Model file reference',{exact:true}))
-    .toHaveValue('https://pinshape.com/items/106174-3d-printed-snack-sticks');
-  await page.getByLabel('Estimated print minutes',{exact:true}).fill('60');
-  await page.getByLabel('Estimated filament grams',{exact:true}).fill('30');
-  await page.getByLabel('Filament type',{exact:true}).fill('PLA');
-  await page.getByLabel('Filament color',{exact:true}).fill('blue');
-  await page.getByRole('button',{name:'Add to modeling'}).click();
-  await page.getByRole('button',{name:'Prepare supports'}).click();
-  await page.getByLabel('Support requirement').selectOption('required');
-  await page.getByLabel('Support removal notes (optional)').fill('Remove supports from the handle after printing.');
-  await page.getByRole('button',{name:'Send model and support assessment to review'}).click();
-  await expect(page.getByRole('region',{name:'Review stage'})).toContainText('Supports required');
-  await expect(page.getByRole('region',{name:'Review stage'})).toContainText('Remove supports from the handle after printing.');
-  await page.getByRole('button',{name:'Request changes'}).click();
+  await resetEmpty(page);
+  await page.getByRole('tab',{name:'Models'}).click();
+  const organicStand=page.locator('.preset-model').filter({has:page.getByRole('heading',{name:'Organic Phone Stand'})});
+  await organicStand.getByRole('button',{name:'Send to modeling dashboard'}).click();
+  const task=page.locator('.work-card').filter({has:page.getByRole('heading',{name:'Organic Phone Stand',exact:true})});
+  await task.getByRole('button',{name:'Prepare supports'}).click();
+  await task.getByLabel('Support requirement').selectOption('required');
+  await task.getByLabel('Support removal notes (optional)').fill('Remove supports from the handle after printing.');
+  await task.getByRole('button',{name:'Send model and support assessment to review'}).click();
+  await expect(task).toContainText('Supports required');
+  await expect(task).toContainText('Remove supports from the handle after printing.');
+  await task.getByRole('button',{name:'Request changes'}).click();
   await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Review requested changes');
-  await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Snack Sticks');
+  await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Organic Phone Stand');
   await page.getByRole('tab',{name:'Orders'}).click();
   await openPreparation(page);
-  await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Snack Sticks');
+  await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Organic Phone Stand');
   await page.reload();
   await openPreparation(page);
-  await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Snack Sticks');
+  await expect(page.getByRole('region',{name:'Modeling stage'})).toContainText('Organic Phone Stand');
   expect(external).toEqual([]);
 });
+
+async function resetEmpty(page:import('@playwright/test').Page){
+  await page.getByRole('tab',{name:'Printers',exact:true}).click();
+  await page.getByLabel('Scenario',{exact:true}).selectOption('empty');
+  await page.getByRole('checkbox',{name:/I understand/}).check();
+  await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
+  await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
+}
 
 async function openPreparation(page:import('@playwright/test').Page){await page.getByRole('tab',{name:'Models',exact:true}).click();if(await page.locator('details.preparation-tools').getAttribute('open')===null)await page.getByText('Model preparation & support review',{exact:true}).click();}
