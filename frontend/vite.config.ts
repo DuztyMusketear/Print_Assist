@@ -6,7 +6,10 @@ const webPort = Number(process.env.PRINT_ASSIST_WEB_PORT ?? 5173);
 
 export default defineConfig({
   plugins: [react()],
-  server: { port: webPort, strictPort: true, proxy: { '/api': `http://127.0.0.1:${apiPort}` } },
+  server: { port: webPort, strictPort: true, proxy: {
+    '/api': `http://127.0.0.1:${apiPort}`,
+    '/mcp': `http://127.0.0.1:${apiPort}`,
+  } },
   test: {
     environment: 'jsdom', setupFiles: ['./src/test-setup.ts'],
     coverage: {

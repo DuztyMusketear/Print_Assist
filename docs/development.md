@@ -48,6 +48,31 @@ the local backend. Stop both servers with Ctrl+C. Use one backend worker and one
 application instance per database. Never expose this unauthenticated prototype
 on a public network. Production hosting/authentication are not implemented.
 
+### MCP connectors
+
+The API exposes a read-only Model Context Protocol Streamable HTTP endpoint at
+`http://127.0.0.1:8000/mcp`. The Vite preview proxies the same-origin URL
+`http://127.0.0.1:5173/mcp` to the API. It provides `get_workshop_overview`,
+`list_printers`, `list_orders`, `list_incidents`, `list_tasks`, and `list_supplies`; it has no write tools and
+does not invoke an agent. The signed-in Orchestrator chat uses the app's MCP
+client to call relevant printer, task/job, or supply tools only when the user
+asks about those topics, then includes the returned facts with the advice
+request. Unrelated questions do not trigger MCP lookups. The Orchestrator panel
+shows this URL and setup notes.
+
+ChatGPT can connect to a local MCP server through its custom MCP server setup and
+Secure MCP Tunnel. Claude can use the URL from Settings > Connectors when its
+client can reach the server. For either client, keep the unauthenticated endpoint
+on loopback or a private, access-controlled network. Do not expose it directly
+to the public internet. `PRINT_ASSIST_MCP_ALLOWED_HOSTS` can allow DNS-rebinding
+protection for explicit host patterns (comma separated, including ports such as
+`print.example.net:443`); it is a host check, not authentication. This prototype
+does not implement MCP OAuth or user-specific access controls.
+
+Client-specific connection flows can change; use the official guides for
+[ChatGPT custom MCP servers](https://developers.openai.com/api/docs/guides/custom-mcp-server)
+and [Claude remote MCP servers](https://support.anthropic.com/en/articles/11503834-building-custom-connectors-via-remote-mcp-servers).
+
 Data defaults to `factory.sqlite3` in the working directory. Set
 `PRINT_ASSIST_DB` to another writable file path if needed. Restart retains orders,
 starts a new session, pauses the clock, clears command replay history, and sets

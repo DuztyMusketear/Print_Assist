@@ -26,7 +26,7 @@ export function OrchestratorPanel({state,onConnectionChange}:{state:Snapshot;onC
  return <section className="orchestrator-panel" aria-label="Orchestrator chat">
   <header className="sidebar-panel-heading"><h2>Orchestrator</h2><span className="sidebar-badge">{connection?.connected?'Connected':'ChatGPT'}</span></header>
   <p className="orchestrator-description">Your manufacturing planning assistant</p>
-  {connection&&!connection.configured&&<aside aria-label="ChatGPT connection setup">
+  {connection&&!connection.configured&&<details className="orchestrator-setup"><summary>ChatGPT setup requirements</summary><aside aria-label="ChatGPT connection setup">
    <h3>ChatGPT setup required</h3>
    <p>This server has no valid registered ChatGPT client configuration. Sign-in stays unavailable until the app owner completes setup.</p>
    <ol>
@@ -35,7 +35,13 @@ export function OrchestratorPanel({state,onConnectionChange}:{state:Snapshot;onC
     <li>Set the issued public client ID in <code>PRINT_ASSIST_OPENAI_CLIENT_ID</code> and that callback in <code>PRINT_ASSIST_OPENAI_REDIRECT_URI</code> on the API server. Restart the API, then choose Refresh connection.</li>
    </ol>
    <p>Registration must also approve ChatGPT-plan inference access. The separate local open-source registration flow requires an eligible open-source app and is not enabled here.</p>
-  </aside>}
+  </aside></details>}
+  <details className="orchestrator-setup"><summary>Connect GPT or Claude (MCP)</summary><div>
+   <p>Read-only workshop tools use Streamable HTTP. Orchestrator chat also looks up current printer, task, and supply data through these tools when you ask about it. Local endpoint:</p>
+   <label>MCP server URL<input aria-label="MCP server URL" readOnly value={window.location.origin+'/mcp'}/></label>
+   <ul><li>ChatGPT: add a custom MCP server and use its Secure MCP Tunnel for a local app.</li><li>Claude: add a custom connector using this URL when the server is reachable through a trusted HTTPS network.</li></ul>
+   <p>The endpoint has no sign-in flow and exposes read-only production data. Keep it on loopback or behind a trusted, access-controlled network. Do not publish it to the open internet.</p>
+  </div></details>
   <div className="orchestrator-connection">{connection?<><p>{connection.connected?connection.account_label:connection.message}</p>{connection.connected?<button className="secondary" disabled={busy} onClick={()=>void logout()}>Sign out</button>:<button data-oai-siwc-button="true" disabled={busy||!connection.configured} onClick={()=>void authenticate()}>Continue with ChatGPT</button>}</>:<p>Checking ChatGPT connection...</p>}<button className="secondary" disabled={busy} onClick={()=>void refresh()}>Refresh connection</button></div>
   <div className="orchestrator-messages" role="log" aria-label="Orchestrator conversation"><p className="orchestrator-local-status">Local workshop status: {state.printers.length} printers, {state.orders.length} orders.</p>{messages.map((entry,index)=><div className={'orchestrator-message '+entry.role.toLowerCase()} key={index}><strong>{entry.role}</strong><p>{entry.text}</p></div>)}</div>
   <div className="orchestrator-suggestions">{['Factory status','Optimize schedule','Prioritize urgent orders'].map(suggestion=><button className="secondary" key={suggestion} disabled={busy||retry} onClick={()=>setMessage(suggestion)}>{suggestion}</button>)}</div>

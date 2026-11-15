@@ -21,24 +21,29 @@ from .contracts import DeleteOrderCommand, EstimateRequest, OrderEstimate, Simul
 
 def create_app(path=None):
     service = FactoryService(Path(path or os.environ.get("PRINT_ASSIST_DB", "factory.sqlite3")))
+    from .mcp_server import create_mcp_server
+    allowed_mcp_hosts = [host.strip() for host in os.environ.get("PRINT_ASSIST_MCP_ALLOWED_HOSTS", "").split(",") if host.strip()]
+    mcp_server = create_mcp_server(service, allowed_mcp_hosts)
+    mcp_app = mcp_server.streamable_http_app()
     @asynccontextmanager
     async def lifespan(app):
         async def run_clock():
             while True:
                 await asyncio.sleep(1)
                 service.tick()
-        task=asyncio.create_task(run_clock())
-        try:
-            yield
-        finally:
-            task.cancel()
+        async with mcp_server.session_manager.run():
+            task=asyncio.create_task(run_clock())
             try:
-                await task
-            except asyncio.CancelledError:
-                pass
+                yield
+            finally:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
     app = FastAPI(lifespan=lifespan,title="Print Assist", version="0.1.0")
     from .orchestrator import mount_orchestrator
-    mount_orchestrator(app, service)
+    mount_orchestrator(app, service, mcp_server=mcp_server)
 
     @app.post('/api/scenarios/events',response_model=FactorySnapshot)
     def scenario_event(command:ScenarioEventCommand):
@@ -253,4 +258,6 @@ def create_app(path=None):
         except ValueError as error:
             raise HTTPException(status_code=409,detail=str(error)) from error
 
+    # Mount last so normal API routes retain precedence while /mcp uses the SDK transport.
+    app.mount("", mcp_app)
     return app

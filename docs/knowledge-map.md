@@ -2,7 +2,7 @@
 
 Start here to find responsibilities and related files. The application implements
 offline order intake, persisted modeling, virtual production and interactive printer views. The [code map](code-map.md) indexes every current
-source/configuration/test file. Offline fault recovery and impact reports are implemented; live agent orchestration remains planned.
+source/configuration/test file. Offline fault recovery and impact reports are implemented; live agent orchestration remains planned. Read-only MCP tools serve external clients and provide on-demand printer, task, and supply facts to Orchestrator chat.
 
 ## Current graph
 
@@ -63,6 +63,9 @@ graph LR
     MAP -->|indexes refinement| TRANSFER
     DEMOEVENTS["Reusable demo event engine"] -->|exercises real scheduling and recovery| TRANSFER
     MAP -->|indexes| DEMOEVENTS
+    MCPDOC["MCP connector setup"] -->|documents safe local connection| DEV
+    MCPAPI["Read-only MCP tools"] -->|responsibilities indexed in| CODE
+    MAP -->|indexes implementation| CODE
 ```
 
 ## File index

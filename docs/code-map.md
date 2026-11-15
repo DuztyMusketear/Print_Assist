@@ -27,6 +27,10 @@ graph LR
   TRANSFER -->|before/after impact| IMPACT["schedule_impact.py"]
   STATUS["OperationalStatus.tsx"] -->|current part and order risk| UI
   SERVICE -->|transactions| STORE["store.py / SQLite"]
+  MCPAPI["mcp_server.py"] -->|read-only snapshot tools| SERVICE
+  API -->|mounts Streamable HTTP endpoint| MCPAPI
+  MCPTEST["test_mcp_api.py"] -->|verifies discovery, tools, and read-only behavior| API
+  MCPBROWSER["mcp-connector.spec.ts"] -->|checks same-origin MCP discovery through Vite proxy| MCPAPI
   SERVICE -->|new database seed| SEED["scenarios.py"]
   UNIT["Unit and component tests"] -->|verify behavior| SERVICE
   INTEGRATION["API integration tests"] -->|verify contracts and persistence| API
@@ -49,7 +53,9 @@ graph LR
 | [service.py](../backend/print_assist/service.py) | One-owner transactional intake/production, session/revision/replay checks, atomic reset and current-reset receipt lifetime. | Service and production-controls tests |
 | [scheduling.py](../backend/print_assist/scheduling.py) | Deterministic automatic/manual assignment, blocked explanations, assignment events and material-revalidated start/resume. | Scheduling and controls unit tests |
 | [simulation.py](../backend/print_assist/simulation.py) | Deterministic eligible-printer progression, completion events and bounded material consumption; paused/offline work is frozen. | Scheduling and controls unit tests |
-| [api.py](../backend/print_assist/api.py) | Offline app factory, typed intake/modeling/production/control/reset routes and conflict responses. | `python -m pytest backend/tests/integration` |
+| [api.py](../backend/print_assist/api.py) | Offline app factory, typed intake/modeling/production/control/reset routes, Streamable HTTP MCP mount and shared lifespan management. | `python -m pytest backend/tests/integration` |
+| [mcp_server.py](../backend/print_assist/mcp_server.py) | FastMCP Streamable HTTP server exposing read-only workshop overview, printers, orders, incidents, modeling/production tasks and available supplies; host allowlist protects against DNS rebinding. No mutation or inference tools. | `python -m pytest backend/tests/integration/test_mcp_api.py` |
+| [test_mcp_api.py](../backend/tests/integration/test_mcp_api.py) | MCP initialize/tool discovery/call protocol, read-only snapshot behavior and rejection of unknown write-tool names. | `python -m pytest backend/tests/integration/test_mcp_api.py` |
 | [backend/tests/conftest.py](../backend/tests/conftest.py) | Shared order fixture and outbound socket guard (numeric loopback allowed). | Backend suite |
 | [test_orders.py](../backend/tests/unit/test_orders.py) | Invalid inputs and normalized/equal-boundary deadlines. | Backend unit suite |
 | [test_scheduling.py](../backend/tests/unit/test_scheduling.py) | Initial scheduling priority and distinct-printer behavior. | `python -m pytest backend/tests/unit/test_scheduling.py` |
@@ -108,13 +114,13 @@ graph LR
 | [.gitignore](../.gitignore) | Exclude credentials, runtime data, tools, caches and generated outputs. | Git status/check-ignore |
 | [.node-version](../.node-version) | Reference Node version. | `node --version` |
 | [.python-version](../.python-version) | Reference Python version. | `python --version` |
-| [pyproject.toml](../pyproject.toml) | Runtime/test dependencies, pytest paths, application coverage gate. | Locked sync/backend checks |
+| [pyproject.toml](../pyproject.toml) | Runtime/test dependencies including the pinned MCP SDK, pytest paths, application coverage gate. | Locked sync/backend checks |
 | [uv.lock](../uv.lock) | Resolved Python versions/hashes. | `uv sync --locked --extra test` |
 | [package.json](../package.json) | npm workspace commands and browser/schema dependencies. | `npm ci`, full checks |
 | [package-lock.json](../package-lock.json) | Resolved JS versions/integrities. | `npm ci` |
 | [frontend/package.json](../frontend/package.json) | React/Vite/TypeScript and component testing dependencies/scripts. | npm tests/build |
 | [frontend/tsconfig.json](../frontend/tsconfig.json) | Strict TS/browser compilation. | `npm run build` |
-| [frontend/vite.config.ts](../frontend/vite.config.ts) | Loopback dev server/API proxy (ports can be overridden for parallel local runs), DOM tests and coverage inclusion/exclusion. | Full/coverage checks |
+| [frontend/vite.config.ts](../frontend/vite.config.ts) | Loopback dev server/API and MCP proxy (ports can be overridden for parallel local runs), DOM tests and coverage inclusion/exclusion. | Full/coverage checks |
 | [frontend/index.html](../frontend/index.html) | Browser title, responsive viewport and mount entry. | Browser test/build |
 | [playwright.config.ts](../playwright.config.ts) | Test-owned backend/frontend servers (ports can be overridden), separate DB/output per run. | Browser test and clean exit |
 | [development.md](development.md) | Setup, startup/restart, check commands, coverage scope and platform verification matrix. | Links and agreement with executed commands |
@@ -706,14 +712,15 @@ and [implementation plan](superpowers/plans/2026-11-14-demo-scenario-engine.md).
 
 | File | Owned behavior / relationships | Verification |
 | --- | --- | --- |
-| [orchestrator.py](../backend/print_assist/orchestrator.py) | Optional registered-client PKCE/OIDC login, JWT/granted-scope validation, private in-memory browser sessions, logout, bounded official model/Responses transport and read-only factory advice. Shared-state session guards and replay prevent duplicate inference. Callback query redaction prevents authorization-code access logging. Mounted by api.py; no automatic factory inference. | `python -m pytest backend/tests/unit/test_orchestrator.py backend/tests/integration/test_orchestrator_api.py` |
+| [orchestrator.py](../backend/print_assist/orchestrator.py) | Optional registered-client PKCE/OIDC login, JWT/granted-scope validation, private browser sessions, bounded Responses transport and read-only advice. Relevant printer, task/job and supply questions query the app's MCP tools through an in-process MCP client before inference. | `python -m pytest backend/tests/unit/test_orchestrator.py backend/tests/integration/test_orchestrator_api.py` |
 | [test_orchestrator.py](../backend/tests/unit/test_orchestrator.py) | Configuration, redirect/size boundaries and fake transport failures. | Backend coverage suite |
 | [test_orchestrator_api.py](../backend/tests/integration/test_orchestrator_api.py) | Fake signed identities, PKCE/state/nonce/browser binding, scopes, expiry/logout/CSRF, model and completed-stream checks, concurrent/exact replay, clock/reset boundaries and access-log redaction. No live provider calls. | Backend coverage suite |
-| [OrchestratorPanel.tsx](../frontend/src/components/OrchestratorPanel.tsx) | Account connection/sign-in/model selection, explicit read-only message transport, stable ambiguous retries, rejected-state correction, discard/new-message flow and unmount guards. App receives truthful connection status. | Frontend coverage suite |
-| [OrchestratorPanel.test.tsx](../frontend/src/components/OrchestratorPanel.test.tsx) | No fabricated advice, auth and logout, models, completed messages, failed/late requests and exact retry versus explicit new intent. | Frontend coverage suite |
+| [OrchestratorPanel.tsx](../frontend/src/components/OrchestratorPanel.tsx) | Account connection/sign-in/model selection, explicit read-only chat, stable retry flow, collapsible ChatGPT registration requirements and MCP endpoint connection guidance. | Frontend coverage suite |
+| [OrchestratorPanel.test.tsx](../frontend/src/components/OrchestratorPanel.test.tsx) | No fabricated advice, auth/logout, models, retry flow, collapsed setup requirements, and local MCP URL/safety guidance. | Frontend coverage suite |
 | [AgentNetwork.tsx](../frontend/src/components/AgentNetwork.tsx) | Connected assistant, unavailable specialists and deterministic capability status. | Frontend coverage suite |
 | [AgentNetwork.test.tsx](../frontend/src/components/AgentNetwork.test.tsx) | Truthful connection/default and autonomous-trigger status. | Frontend coverage suite |
 | [orchestrator-sidebar.spec.ts](../tests/e2e/orchestrator-sidebar.spec.ts) | Reference panel order, one visible scenario/reset surface, real unconfigured prompt, dark desktop/mobile layout and fake-provider read-only chat/retry without production mutation. | `npm run e2e` |
+| [mcp-connector.spec.ts](../tests/e2e/mcp-connector.spec.ts) | Real browser initialization and tool discovery through the same-origin Vite MCP proxy; verifies only read-only tools appear. | `npm run e2e` |
 
 App composes Orchestrator, unified DemoScenarios/ScenarioReset and AgentNetwork in
 reference order. Manual workflow links remain under the floor. Distinct component
@@ -725,6 +732,9 @@ api.py mounts the isolated provider routes; generated types include their contra
 pyproject.toml pins maintained PyJWT crypto verification. Playwright clears public
 OAuth registration settings for deterministic offline tests. [Setup](openai-assistant-setup.md)
 documents registration/callback, granted inference and ephemeral-session limits.
+The read-only MCP server is mounted separately by api.py and exports snapshot
+tools from FactoryService; [development setup](development.md) documents the
+endpoint, client options and local/private-network boundary.
 
 ```mermaid
 graph LR
@@ -734,6 +744,10 @@ graph LR
   AssistantAPI -->|read-only captured state| Factory[FactoryService]
   AssistantAPI -->|explicit user authorization and inference| OpenAI[Registered OpenAI OAuth / Responses]
   AssistantTests[Offline auth and browser fakes] -->|verify identity, replay and no mutations| AssistantAPI
+  AssistantUI -->|shows the MCP endpoint and connection boundary| MCPSetup[Collapsible MCP setup]
+  MCPAPI[MCP Streamable HTTP] -->|read-only snapshot tools| Factory
+  AssistantAPI -->|selects requested read tools with MCP client session| MCPAPI
+  MCPTests[test_mcp_api.py] -->|verify discovery, read tools and no mutation| MCPAPI
 ```
 
 

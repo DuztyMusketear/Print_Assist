@@ -16,12 +16,22 @@ test('reads connection without sending a prompt and sends only explicit user mes
 test('displays configuration requirements and no fabricated conversation',async()=>{
  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(response({...connection,configured:false,connected:false,message:'Client registration needed.'})));
  render(<OrchestratorPanel state={state}/>);await screen.findByText('Client registration needed.');expect(screen.getByRole('button',{name:'Send message'})).toBeDisabled();
- expect(screen.getByRole('heading',{name:'ChatGPT setup required'})).toBeVisible();
+ const setup=screen.getByText('ChatGPT setup requirements');expect(setup).toBeVisible();expect(screen.queryByRole('heading',{name:'ChatGPT setup required'})).not.toBeVisible();
+ fireEvent.click(setup);expect(screen.getByRole('heading',{name:'ChatGPT setup required'})).toBeVisible();
  expect(screen.getByRole('link',{name:'OpenAI website registration guide'})).toHaveAttribute('href','https://developers.openai.com/siwc/website');
  expect(screen.getByLabelText('Callback URL to register')).toHaveValue(window.location.origin+'/api/orchestrator/auth/callback');
  expect(screen.getByText('PRINT_ASSIST_OPENAI_CLIENT_ID')).toBeVisible();
  expect(screen.getByText('PRINT_ASSIST_OPENAI_REDIRECT_URI')).toBeVisible();
  expect(screen.getByRole('button',{name:'Continue with ChatGPT'})).toBeDisabled();
+});
+test('shows the local MCP URL and read-only connection guidance on demand',async()=>{
+ vi.stubGlobal('fetch',vi.fn().mockResolvedValue(response(connection)));
+ render(<OrchestratorPanel state={state}/>);await screen.findByText('Workshop owner');
+ const summary=screen.getByText('Connect GPT or Claude (MCP)');expect(summary).toBeVisible();
+ expect(screen.queryByLabelText('MCP server URL')).not.toBeVisible();fireEvent.click(summary);
+ expect(screen.getByLabelText('MCP server URL')).toHaveValue(window.location.origin+'/mcp');
+ expect(screen.getByText('Read-only workshop tools use Streamable HTTP. Orchestrator chat also looks up current printer, task, and supply data through these tools when you ask about it. Local endpoint:')).toBeVisible();
+ expect(screen.getByText('The endpoint has no sign-in flow and exposes read-only production data. Keep it on loopback or behind a trusted, access-controlled network. Do not publish it to the open internet.')).toBeVisible();
 });
 test('retains failed message and retries the exact request',async()=>{
  const request=vi.fn().mockResolvedValueOnce(response(connection)).mockResolvedValueOnce(response({detail:'Try again'},false)).mockResolvedValueOnce(response({reply:'Done',model:'test-model',read_only:true}));vi.stubGlobal('fetch',request);

@@ -2,18 +2,23 @@ import json
 from urllib.parse import parse_qs, urlparse
 import time
 import jwt
+import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from print_assist import orchestrator as m
+from print_assist.mcp_server import create_mcp_server
 
 
 class Service:
+    def __init__(self, snapshot=None):
+        self.value = snapshot or dict(session_id='factory', revision=3, printers=[], orders=[], jobs=[], incidents=[])
+
     def snapshot(self):
-        return dict(session_id='factory', revision=3, printers=[], orders=[], jobs=[], incidents=[])
+        return self.value
 
 
-def fixture(override=None, claims_override=None, config=None):
+def fixture(override=None, claims_override=None, config=None, snapshot=None, mcp_server=None):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     calls = []
     nonce = ['']
@@ -38,7 +43,7 @@ def fixture(override=None, claims_override=None, config=None):
         assert data['model']=='account-model' and 'Read-only' in data['instructions']
         return b'data: {"type":"response.output_text.delta","delta":"Inspect printer one."}\n\ndata: {"type":"response.completed"}\n\n'
     app=FastAPI()
-    m.mount_orchestrator(app,Service(),config or m.OpenAIConfig('client','https://testserver/api/orchestrator/auth/callback'),transport)
+    m.mount_orchestrator(app,Service(snapshot),config or m.OpenAIConfig('client','https://testserver/api/orchestrator/auth/callback'),transport,mcp_server=mcp_server)
     return TestClient(app), calls, nonce
 
 
@@ -67,12 +72,50 @@ def test_connection_chat_replay_logout_and_csrf():
     assert result.json()==dict(reply='Inspect printer one.',model='account-model',read_only=True)
     assert client.post('/api/orchestrator/chat',json=payload).json()==result.json()
     assert len([c for c in calls if c[1].endswith('/responses')])==1
+    assert 'mcp_tool_results' not in json.loads(next(c[3].decode() for c in calls if c[1].endswith('/responses')))['input']
     assert client.post('/api/orchestrator/chat',json={**payload,'message':'different'}).status_code==409
     assert client.post('/api/orchestrator/chat',json={**payload,'idempotency_key':'two','model':'hidden'}).status_code==422
     assert client.post('/api/orchestrator/chat',json={**payload,'idempotency_key':'three','expected_revision':2}).status_code==409
     assert client.post('/api/orchestrator/logout',headers={'Origin':'https://evil.example'}).status_code==403
     assert client.post('/api/orchestrator/logout').json()['connected'] is False
     assert client.post('/api/orchestrator/chat',json=payload).status_code==401
+
+
+@pytest.mark.parametrize('message,tool_name', [
+    ('What is printer p1 doing?', 'list_printers'),
+    ('Which tasks are still in progress?', 'list_tasks'),
+    ('How much filament supply is available?', 'list_supplies'),
+])
+def test_chat_reads_relevant_workshop_facts_through_mcp(message, tool_name):
+    snapshot=dict(session_id='factory',revision=3,
+        printers=[dict(id='p1',status='idle',capabilities=['FFF'],material=dict(type='PLA',color='blue',grams=900))],
+        orders=[],jobs=[],incidents=[],artifacts=[],
+        modeling_tasks=[dict(id='task-1',title='Small figure',stage='review',modelReference='small.gcode',
+            duration_seconds=600,filament_grams=20,filament_type='PLA',color='blue',required_capabilities=['FFF'])])
+    client,calls,nonce=fixture(snapshot=snapshot);connect(client,nonce)
+    response=client.post('/api/orchestrator/chat',json=dict(message=message,session_id='factory',expected_revision=3,idempotency_key='mcp-'+tool_name))
+    assert response.status_code==200
+    request=json.loads(next(call[3].decode() for call in calls if call[1].endswith('/responses')))
+    assert f'"{tool_name}"' in request['input']
+    used=json.loads(request['input'].split('\nOperator:')[0])['mcp_tool_results'][tool_name]
+    if tool_name=='list_printers':
+        assert used[0]['material']['grams']==900
+    elif tool_name=='list_tasks':
+        assert used['modeling_tasks'][0]['title']=='Small figure'
+    else:
+        assert used['by_printer'][0]['available_grams']==900
+
+
+def test_relevant_mcp_failure_is_replayed_without_calling_the_model():
+    server=create_mcp_server(Service())
+    server.remove_tool('list_printers')
+    client,calls,nonce=fixture(mcp_server=server);connect(client,nonce)
+    payload=dict(message='What is printer p1 doing?',session_id='factory',expected_revision=3,idempotency_key='mcp-failure')
+    first=client.post('/api/orchestrator/chat',json=payload)
+    replay=client.post('/api/orchestrator/chat',json=payload)
+    assert first.status_code==replay.status_code==502
+    assert first.json()==replay.json()
+    assert not any(call[1].endswith('/responses') for call in calls)
 
 
 def test_browser_bound_callback_rejects_missing_and_reused_transactions():

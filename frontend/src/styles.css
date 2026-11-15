@@ -136,6 +136,7 @@ header{height:76px;padding:0;gap:18px;flex-direction:row;align-items:center}
 .sidebar-panel-heading{height:auto;min-height:30px;flex-direction:row;padding:0;margin-bottom:10px;gap:8px}
 .sidebar-panel-heading h2{color:var(--text,#e7edf4)}.sidebar-badge{border:1px solid #334957;background:#101b25;color:#a6c4d1;white-space:nowrap}
 .orchestrator-panel form{padding:0;border:0;background:transparent}.orchestrator-panel form label{margin:0}.orchestrator-panel p{overflow-wrap:anywhere}
+.orchestrator-setup{margin:9px 0;border-top:1px solid var(--line);padding-top:8px;font-size:11px}.orchestrator-setup summary{cursor:pointer;font-weight:650}.orchestrator-setup>aside,.orchestrator-setup>div{padding:8px 0}.orchestrator-setup p{font-size:11px;line-height:1.4;margin:5px 0}.orchestrator-setup li{font-size:11px;line-height:1.4;margin:5px 0}.orchestrator-setup label{display:block;font-size:10px;margin:7px 0}.orchestrator-setup input{margin-top:4px;padding:6px;font-size:10px}
 .orchestrator-local-status,.orchestrator-message{background:#172733;color:#d9e8f0;border:1px solid #2c4352}.orchestrator-message.you{background:#173936}.orchestrator-message strong{color:#47d9c4}
 .orchestrator-compose textarea{background:#0d1720;border-color:#334957;color:var(--text,#e7edf4)}
 .agent-network ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.agent-network li{display:grid;grid-template-columns:7px minmax(0,1fr);gap:4px 6px;padding:8px;border:1px solid #2a404f;border-radius:5px;background:#16222c;min-width:0}
