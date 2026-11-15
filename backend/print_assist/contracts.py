@@ -69,6 +69,13 @@ class ReviseOrderPayload(BaseModel):
 class ReviseOrderCommand(ScheduleCommand):
     payload: ReviseOrderPayload
 
+class DeleteOrderPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    order_ids: list[str] = Field(min_length=1, max_length=100)
+
+class DeleteOrderCommand(ScheduleCommand):
+    payload: DeleteOrderPayload
+
 
 class ApplySchedulePayload(BaseModel):
     model_config=ConfigDict(extra='forbid')

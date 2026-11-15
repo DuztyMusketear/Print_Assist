@@ -1,4 +1,4 @@
-import {fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {fireEvent,render,screen,waitFor,within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {test,expect,vi} from 'vitest';
 import {ModelLibrary} from './ModelLibrary';
@@ -8,7 +8,34 @@ test('browse saved estimates, search and choose a model without reentering its s
  const choose=vi.fn(),user=userEvent.setup();render(<ModelLibrary state={{...state,visual_assets:[{id:'unrelated',name:'Other preview',path:'/models/other.stl',units:'mm',rotation_degrees:[0,0,0]}]}} onChoose={choose} onUpload={vi.fn()}/>);
  expect(screen.getByText(/120 min/)).toBeInTheDocument();expect(screen.getByText(/25 g/)).toBeInTheDocument();
  await user.click(screen.getByRole('button',{name:'Print Blue PLA figure'}));expect(choose).toHaveBeenCalledWith('figure-pla-blue');
- await user.type(screen.getByLabelText('Search saved models'),'missing');expect(screen.getByText(/No saved models match/)).toBeInTheDocument();
+ await user.type(screen.getByRole('combobox',{name:'Search models'}),'missing');expect(screen.getByText(/No saved models match/)).toBeInTheDocument();
+});
+
+test('model search suggestions keep the name separate from right-side metadata',async()=>{
+ const user=userEvent.setup();render(<ModelLibrary state={state} onChoose={vi.fn()} onUpload={vi.fn()}/>);
+ const search=screen.getByRole('combobox',{name:'Search models'});await user.type(search,'PLA');
+ const suggestion=screen.getByRole('option',{name:/3DBenchy Preset · PLA/});
+ expect(suggestion.querySelector('button')).toHaveTextContent('3DBenchy');
+ expect(suggestion.querySelector('span')).toHaveTextContent('Preset · PLA · blue');
+ expect(suggestion.querySelector('span')).not.toHaveTextContent('demo color');
+});
+
+test('approved model suggestions replace matching preset suggestions but keep unmatched presets',async()=>{
+ const user=userEvent.setup(),approved={...state.artifacts[0],id:'approved-benchy',name:'3DBenchy',filament_type:'PETG',color:'red'};
+ render(<ModelLibrary state={{...state,artifacts:[...state.artifacts,approved]}} onChoose={vi.fn()} onUpload={vi.fn()}/>);
+ await user.type(screen.getByRole('combobox',{name:'Search models'}),'PLA');
+ const rows=screen.getAllByRole('option');
+ expect(rows.filter(row=>row.textContent?.includes('3DBenchy'))).toHaveLength(1);
+ expect(rows.find(row=>row.textContent?.includes('3DBenchy'))).toHaveTextContent('Approved · PETG · red');
+ expect(rows.some(row=>row.textContent?.includes('Calibration Cube'))).toBe(true);
+});
+
+test('choosing a preset search suggestion sends it directly to modeling',async()=>{
+ const send=vi.fn().mockResolvedValue(undefined),user=userEvent.setup();
+ render(<ModelLibrary state={state} onChoose={vi.fn()} onUpload={vi.fn()} onSendToModeling={send}/>);
+ await user.type(screen.getByRole('combobox',{name:'Search models'}),'3DBenchy');
+ await user.click(within(screen.getByRole('option',{name:/3DBenchy Preset/})).getByRole('button',{name:'3DBenchy'}));
+ await waitFor(()=>expect(send).toHaveBeenCalledWith(expect.objectContaining({title:'3DBenchy',color:'blue'})));
 });
 
 test('sends a preset profile into modeling review',async()=>{

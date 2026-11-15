@@ -1,6 +1,15 @@
 import {useEffect,useRef,useState} from 'react';
 import {loadPart,type VisualAsset} from '../printers/assets';
 
+const modelImages:Record<string,string>={
+ '3dbenchy':'/demo-models/benchy.png',
+ 'calibration cube':'/demo-models/calibration-cube.png',
+ 'honeycomb phone stand':'/demo-models/honeycomb-phone-stand.png',
+ 'curved phone stand':'/demo-models/curved-phone-stand.png',
+ 'organic phone stand':'/demo-models/organic-phone-stand.png',
+ 'foldable phone stand keychain':'/demo-models/foldable-phone-stand.png',
+};
+
 export function ModelPreview({asset,name}:{asset?:VisualAsset;name:string}) {
  const canvas=useRef<HTMLCanvasElement>(null),[error,setError]=useState('');
  const key=JSON.stringify(asset);
@@ -34,5 +43,6 @@ export function ModelPreview({asset,name}:{asset?:VisualAsset;name:string}) {
   }).catch(reason=>{if(live)setError((reason as Error).message);});
   return ()=>{live=false;controller.abort();};
  },[key]);
- return <div className="model-thumbnail">{asset&&!error?<canvas ref={canvas} width={240} height={150} role="img" aria-label={`3D preview of ${name}`}/>:<span>{error||'Preview not supplied'}</span>}</div>;
+ const image=modelImages[name.trim().toLowerCase()];
+ return <div className="model-thumbnail">{asset&&!error?<canvas ref={canvas} width={240} height={150} role="img" aria-label={`3D preview of ${name}`}/>:image?<img className="preset-model-image" src={image} alt={`${name} model preview`}/>:<span>{error||'Preview not supplied'}</span>}</div>;
 }

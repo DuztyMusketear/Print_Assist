@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orders/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Order */
+        post: operations["delete_order_api_orders_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -491,6 +508,27 @@ export interface components {
             agents_enabled: boolean;
             /** Automatic Triggers */
             automatic_triggers: boolean;
+        };
+        /** DeleteOrderCommand */
+        DeleteOrderCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["DeleteOrderPayload"];
+        };
+        /** DeleteOrderPayload */
+        DeleteOrderPayload: {
+            /** Order Ids */
+            order_ids: string[];
         };
         /** ExampleFeedCommand */
         ExampleFeedCommand: {
@@ -1287,6 +1325,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReviseOrderCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_order_api_orders_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteOrderCommand"];
             };
         };
         responses: {

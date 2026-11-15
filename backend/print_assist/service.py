@@ -76,6 +76,10 @@ class FactoryService:
         from .order_review import revise
         return self._transition(command,'order-revise',lambda state:revise(state,command.payload.model_dump(mode='json')))
 
+    def delete_order(self,command):
+        from .order_review import delete
+        return self._transition(command,'order-delete',lambda state:delete(state,command.payload.model_dump(mode='json')))
+
     def schedule(self, command: ScheduleCommand) -> dict:
         return self._transition(command, "schedule", lambda state: schedule(state, command.payload.mode))
 

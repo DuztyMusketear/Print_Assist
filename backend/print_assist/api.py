@@ -12,7 +12,7 @@ from .contracts import ScheduleProposal, ApplyScheduleCommand
 
 from .contracts import AdvanceCommand, CommandEnvelope, FactorySnapshot, ScheduleCommand, StartCommand
 from .service import FactoryService
-from .contracts import ModelTaskCommand, ModelActionCommand
+from .contracts import ModelTaskCommand, ModelActionCommand, DeleteOrderCommand
 from .contracts import PrinterControlCommand, ResetCommand
 from .contracts import LibraryUploadCommand, ExampleFeedCommand, ShopDecisionCommand, ReviseOrderCommand
 from fastapi.responses import Response
@@ -70,6 +70,13 @@ def create_app(path=None):
     def revise_order(command:ReviseOrderCommand):
         try:
             return project(service.revise_order(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
+
+    @app.post('/api/orders/delete',response_model=FactorySnapshot)
+    def delete_order(command:DeleteOrderCommand):
+        try:
+            return project(service.delete_order(command))
         except ValueError as error:
             raise HTTPException(status_code=409,detail=str(error)) from error
 
