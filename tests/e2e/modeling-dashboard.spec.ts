@@ -1,5 +1,15 @@
 import {test,expect} from '@playwright/test';
 
+test.beforeEach(async({page})=>{
+  // Each modeling workflow owns a new session rather than inheriting prior jobs/commands.
+  await page.goto('/');
+  await page.getByRole('tab',{name:'Printers',exact:true}).click();
+  await page.getByLabel('Scenario',{exact:true}).selectOption('empty');
+  await page.getByRole('checkbox',{name:/I understand/}).check();
+  await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
+  await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
+});
+
 test('uses the bundled NIST STL as a reviewable demo model',async({page})=>{
   const external:string[]=[];
   await page.route('**/*',route=>{

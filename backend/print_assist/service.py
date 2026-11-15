@@ -67,6 +67,10 @@ class FactoryService:
         from .recovery import set_recovery_policy
         return self._transition(command,'recovery-policy',lambda state:set_recovery_policy(state,command.payload.model_dump(mode='json')))
 
+    def incident_telemetry(self,command):
+        from .recovery import update_incident_telemetry
+        return self._transition(command,'incident-telemetry',lambda state:update_incident_telemetry(state,command.payload.model_dump(mode='json')))
+
     def apply_schedule(self,command):
         from .proposals import apply_proposal
         return self._transition(command,'apply-schedule',lambda state:apply_proposal(state,command.payload.proposal_id,command.payload.mode,command.payload.clock_speed,command.payload.require_on_time))

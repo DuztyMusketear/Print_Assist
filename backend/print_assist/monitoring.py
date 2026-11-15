@@ -55,6 +55,8 @@ def project(state):
             risk='unavailable' if reason else 'late' if finish>due else 'on_time',reason=reason))
     result['material_reservations']=ledger(state)
     result['forecasts']=forecasts
+    connections={i['printer_id']:i.get('telemetry',{}).get('connected',
+        i['fault_type']!='network_disconnect' or i.get('equipment_cleared',False)) for i in state.get('incidents',[])}
     result['telemetry']=[dict(printer_id=p['id'],nozzle_c=210 if p['status']=='running' else 25,
-        bed_c=60 if p['status']=='running' else 25,simulated=True) for p in state['printers']]
+        bed_c=60 if p['status']=='running' else 25,simulated=True,connected=connections.get(p['id'],True)) for p in state['printers']]
     return result

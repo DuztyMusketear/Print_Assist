@@ -337,6 +337,11 @@ applied automatically.
 - A separate opt-in simulation policy may apply only complete, compatible, on-time
   recovery plans. Review remains the startup/reset default; faulted equipment always
   needs explicit simulated clearance. Agent controls never authorize safety bypasses.
+- Physical fault clearance requires operator acknowledgement and refill details where
+  applicable. Monitored network faults may clear on a current, validated printer signal
+  confirming both connectivity and safe state. Clearance does not approve held parts.
+  Present incidents as compact type/status flags with inspectable details. Completed
+  recovery applications show progress/history instead of an invalid repeat preview.
 - Overview includes Incidents & Schedule Impact, history, risks, progress and a
   concise summary explicitly labeled as deterministic when no agent is invoked.
 

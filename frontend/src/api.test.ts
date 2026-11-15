@@ -31,3 +31,9 @@ test.each([
  const command={session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,payload:{name:'Part',filename:'part.stl',stl_base64:'mesh',duration_seconds:60,filament_grams:1,filament_type:'PLA',color:'blue',support_assessment:{supports_required:false}}};
  await expect(productionCommand('/api/library/models',command)).rejects.toThrow(message);
 });
+
+
+test.each([JSON.stringify({detail:'Incident recovery has already been applied'}),JSON.stringify({detail:[]}), 'invalid'])('incident conflicts retain actionable details with fallback: %s',async(response)=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(response,{status:409}));
+ await expect(productionCommand('/api/incidents/reject',{session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,payload:{incident_id:'incident-a',confirmed:true}})).rejects.toThrow(response.includes('already been applied')?'Incident recovery has already been applied':'Production command failed');
+});

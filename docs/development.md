@@ -487,3 +487,53 @@ Actual desktop and 375px expanded-evidence previews had no page errors or page
 overflow. A separate ignored fault-demo database runs on ports 8000/5173 with agents
 and clock off; the previous preview database is preserved. The demo has one thermal
 incident awaiting review and two healthy active jobs with the clock paused.
+
+
+## Compact incident panel refinement - 2026-11-14
+
+Policy/injection controls share a compact responsive row. Recommended actions and
+proposed assignments start collapsed; policy and recovery explanations are expandable.
+Existing confirmation, risk tables, repair acknowledgement and history remain available.
+A new regression first failed while recommendations were always visible, then passed
+with native keyboard-accessible disclosures. Desktop and 375px expanded-evidence
+preview inspection found no page errors or horizontal overflow.
+
+Root `.venv\Scripts\python.exe scripts/check.py coverage` passed: 149 backend,
+249 frontend and 20 browser tests (418 total), 100% application coverage, schema,
+TypeScript and build checks. Existing Vite bundle-size advisory remains.
+
+GPT diagnosis is discussed, not connected. Recommendation: an explicit in-dashboard
+API diagnosis request using the saved incident report, independent of deterministic
+safety/recovery validation. MCP is an optional tool exposure for compatible clients;
+no provider credentials, enabled agent controls or live model calls were added.
+
+
+## Incident flags, applied previews and resolution - 2026-11-14
+
+Reproduced the user's generic preview error against the existing demo: the API
+returned 409 because recovery was already applied. The UI now shows saved impacts
+and progress instead of an invalid repeat preview; held partial work still permits
+follow-up review. Unknown conflict details use the existing safe fallback.
+
+Default presentation is a compact printer/type/status row with Inspect incident.
+Settings, recommendations and reports stay closed until requested. Physical issues
+use acknowledged Mark resolved, with positive refill where needed. Current network
+faults can clear from an explicit simulated signal confirming both connected and
+safe_to_resume; stale/unsafe/physical-fault signals are rejected. Neither clearance
+path releases manufacturing holds or restarts failed output. Reports record operator
+versus printer_telemetry resolution and preserve evidence/action history.
+
+Root `.venv\Scripts\python.exe scripts/check.py coverage` passed: **167 backend +
+262 frontend + 21 browser tests (450 total)**; 100% application statement/branch
+coverage, schema drift, TypeScript and build pass. Existing Vite bundle advisory
+remains. Independent review found no concrete P1/P2 defect. A first full run caught
+an inherited-modeling-session stale revision (8 submitted against server 9); modeling
+browser tests now reset into a fresh empty session before each workflow. The full
+rerun passes, including the exact applied-preview and compact/manual/network cases.
+
+Actual existing-demo inspection measured the one-incident collapsed section at 120px
+on desktop, with applied status visible after inspection and no invalid Preview
+recovery action. Desktop and 375px inspection had no page errors or horizontal
+overflow. Original incident and resolution data were retained; only printers that
+were running before verification were resumed after the required server restart.
+No physical hardware, remote models or agent controls were enabled.

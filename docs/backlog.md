@@ -64,6 +64,13 @@ See the [code map](code-map.md) for inspected implementation and test relationsh
 
 ## Next development order and traceability
 
+Diagnosis integration discussion (2026-11-14): recommend an explicit in-dashboard
+diagnosis request using a server-side model API and existing incident reports for
+the MVP, rather than a continuously running orchestrator. MCP would separately
+expose reports/tools to a compatible client such as ChatGPT; it does not itself
+invoke GPT inside the dashboard. This is a recommendation, not an implemented
+provider, enabled agent control, configured connection or authorized live model call.
+
 1. Operator-check the new saved-model/upload -> quantity/deadline -> timeline ->
    confirmation journey (PA-303/304/307), including example-feed matching. Maintain
    the delivered clock, forecasting, proposals and material commitments.
@@ -277,6 +284,13 @@ MVP plan; record its approved design/plan and any required spec amendment before
 implementation instead of silently treating it as an existing requirement.
 
 ## Phase 4 — Faults and recovery
+
+Compact/resolution follow-up: the dashboard must default to incident type/status
+flags and explicit inspection, not a permanently expanded report. Applied recovery
+shows progress/history instead of an invalid repeat preview. Physical faults need
+acknowledged Mark resolved (and positive refill when required); network faults can
+clear from a current signal confirming both connection and safe state. Equipment
+clearance and manufacturing hold approval remain separate.
 
 Branch: `feat/fault-recovery`. Epic outcome: a disruption is contained and a
 reviewed recovery can restore production without corrupting fulfillment.

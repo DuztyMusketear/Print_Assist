@@ -7,9 +7,9 @@ vi.mock('./PrinterScene',()=>({PrinterScene:({label,printing}:{label:string;prin
 const printers=[1,2,3].map(number=>({id:`printer-${number}`,status:'idle',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:1000}}));
 const asset={id:'example-tower',name:'Example tower',path:'/models/example-tower.stl',units:'mm' as const,rotation_degrees:[0,0,0] as [number,number,number]};
 
-test('isolated floor cards retain a visible fault cause and repair warning',()=>{
- render(<PrinterFloor state={{...state,printers:[{...printers[0],status:'faulted',fault:{type:'thermal'}}]}} detailed={false}/>);
- expect(screen.getByText('Isolated: thermal. Simulated repair required.')).toBeInTheDocument();
+test.each([['thermal','Physical intervention required.'],['network_disconnect','Awaiting printer confirmation.']])('isolated floor cards retain a visible %s cause and resolution warning', (type,warning)=>{
+ render(<PrinterFloor state={{...state,printers:[{...printers[0],status:'faulted',fault:{type}}]}} detailed={false}/>);
+ expect(screen.getByText(`Isolated: ${type.replaceAll('_',' ')}. ${warning}`)).toBeInTheDocument();
 });
 test('overview shows three views; detail selection and example preview remain local',async()=>{
   const user=userEvent.setup();const snapshot={...state,printers,visual_assets:[asset]};
@@ -30,7 +30,7 @@ test('overview shows three views; detail selection and example preview remain lo
   expect(screen.getByText('No virtual printers available')).toBeInTheDocument();
 });
 test('resolves visual association and displays job status and progress',()=>{
-  render(<PrinterFloor state={{...orderedState,printers,telemetry:[{printer_id:'printer-1',nozzle_c:210,bed_c:60,simulated:true}],visual_assets:[asset],artifacts:[{...state.artifacts[0],visual_asset_id:asset.id}],jobs:[{id:'job-1',printer_id:'printer-1',order_id:orderedState.orders[0].id,status:'running',elapsed_seconds:3600,duration_seconds:7200}]}} detailed={false}/>);
+  render(<PrinterFloor state={{...orderedState,printers,telemetry:[{printer_id:'printer-1',nozzle_c:210,bed_c:60,simulated:true,connected:true}],visual_assets:[asset],artifacts:[{...state.artifacts[0],visual_asset_id:asset.id}],jobs:[{id:'job-1',printer_id:'printer-1',order_id:orderedState.orders[0].id,status:'running',elapsed_seconds:3600,duration_seconds:7200}]}} detailed={false}/>);
   expect(screen.getByText(/Part 1.*50%/)).toBeInTheDocument();
   expect(screen.getByRole('region',{name:'Selected printer details'})).toHaveTextContent('210 C / 60 C');
 });

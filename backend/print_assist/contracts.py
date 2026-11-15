@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StrictBool, field_validator, model_validator
 from .visual_assets import ASSETS, known_visual_asset
 
 
@@ -365,6 +365,7 @@ class Telemetry(BaseModel):
     nozzle_c: int
     bed_c: int
     simulated: bool
+    connected: bool = True
 
 
 class FactorySnapshot(BaseModel):
@@ -433,6 +434,17 @@ class RejectRecoveryCommand(ScheduleCommand):
 
 class ClearFaultCommand(ScheduleCommand):
     payload: ClearFaultPayload
+
+
+class IncidentTelemetryPayload(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    incident_id: str
+    connected: StrictBool
+    safe_to_resume: StrictBool
+
+
+class IncidentTelemetryCommand(ScheduleCommand):
+    payload: IncidentTelemetryPayload
 
 
 class RecoveryPolicyCommand(ScheduleCommand):

@@ -39,7 +39,14 @@ def create_app(path=None):
     app = FastAPI(lifespan=lifespan,title="Print Assist", version="0.1.0")
 
     from .contracts import FaultCommand
-    from .contracts import RecoverCommand, RejectRecoveryCommand, ClearFaultCommand, RecoveryPolicyCommand
+    from .contracts import RecoverCommand, RejectRecoveryCommand, ClearFaultCommand, RecoveryPolicyCommand, IncidentTelemetryCommand
+
+    @app.post('/api/incidents/telemetry',response_model=FactorySnapshot)
+    def incident_telemetry(command:IncidentTelemetryCommand):
+        try:
+            return project(service.incident_telemetry(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
 
     @app.get('/api/incidents/{incident_id}/proposal')
     def recovery_proposal(incident_id:str):

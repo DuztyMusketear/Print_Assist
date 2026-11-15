@@ -154,7 +154,31 @@ def clear_fault(state,payload):
         printer['material']['grams']+=refill
     printer['status']='idle'; printer.pop('fault',None)
     incident['equipment_cleared']=True
+    incident['resolution_source']='operator'
+    if incident['fault_type']=='network_disconnect':
+        incident.setdefault('telemetry',{}).update(connected=True,safe_to_resume=True,simulated=True)
     incident['actions'].append(dict(timestamp=state['simulation_time'],action='equipment_cleared',outcome='Simulated inspection acknowledged',refill_grams=refill))
+    return refresh_incidents(result)
+
+
+def update_incident_telemetry(state, payload):
+    """Apply an explicit simulated signal; never dispatch work or release holds."""
+    result=deepcopy(state); incident=_incident(result,payload['incident_id'])
+    printer=next(p for p in result['printers'] if p['id']==incident['printer_id'])
+    if printer.get('fault',{}).get('incident_id')!=incident['id']:
+        raise ValueError('Incident is not the current equipment fault')
+    if incident['fault_type']!='network_disconnect':
+        raise ValueError('Physical faults require confirmed operator inspection or refill')
+    incident['telemetry'].update(connected=payload['connected'],safe_to_resume=payload['safe_to_resume'],simulated=True)
+    if payload['connected'] and payload['safe_to_resume']:
+        printer['status']='idle'; printer.pop('fault',None)
+        incident['equipment_cleared']=True
+        incident['resolution_source']='printer_telemetry'
+        outcome='Simulated printer connection restored and safe signal received; held work still requires recovery'
+    else:
+        outcome='Simulated printer signal does not confirm a safe connection; equipment remains isolated and work held'
+    incident['actions'].append(dict(timestamp=state['simulation_time'],action='printer_telemetry',outcome=outcome))
+    record(result,'printer_telemetry',outcome,source='simulation',printer_id=printer['id'])
     return refresh_incidents(result)
 
 

@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/incidents/telemetry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Incident Telemetry */
+        post: operations["incident_telemetry_api_incidents_telemetry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/incidents/{incident_id}/proposal": {
         parameters: {
             query?: never;
@@ -843,6 +860,31 @@ export interface components {
              */
             confirmed: boolean;
         };
+        /** IncidentTelemetryCommand */
+        IncidentTelemetryCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["IncidentTelemetryPayload"];
+        };
+        /** IncidentTelemetryPayload */
+        IncidentTelemetryPayload: {
+            /** Incident Id */
+            incident_id: string;
+            /** Connected */
+            connected: boolean;
+            /** Safe To Resume */
+            safe_to_resume: boolean;
+        };
         /** LibraryUpload */
         LibraryUpload: {
             /** Name */
@@ -1501,6 +1543,11 @@ export interface components {
             bed_c: number;
             /** Simulated */
             simulated: boolean;
+            /**
+             * Connected
+             * @default true
+             */
+            connected: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -1544,6 +1591,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    incident_telemetry_api_incidents_telemetry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncidentTelemetryCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     recovery_proposal_api_incidents__incident_id__proposal_get: {
         parameters: {
             query?: never;

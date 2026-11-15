@@ -61,7 +61,7 @@ graph LR
 | [scripts/check.py](../scripts/check.py) | Portable unit/full/coverage orchestration; short-circuits on failure; per-run outputs. | Runner unit tests and all three check modes |
 | [scripts/schema.py](../scripts/schema.py) | Offline OpenAPI generation, TS generation and drift check in temporary storage. | Full/coverage modes |
 | [order-intake.spec.ts](../tests/e2e/order-intake.spec.ts) | Browser-to-real-backend creation and reload persistence; fails external requests. | `npm run e2e` |
-| [modeling-dashboard.spec.ts](../tests/e2e/modeling-dashboard.spec.ts) | Verifies NIST preview gestures, Snack Sticks page-reference intake, support assessment with removal notes, combined review, revision persistence, paired approval, removal confirmation, order selection, and zero external requests. | `npm run e2e` |
+| [modeling-dashboard.spec.ts](../tests/e2e/modeling-dashboard.spec.ts) | Starts each workflow in a fresh empty session; verifies NIST preview gestures, Snack Sticks page-reference intake, support assessment/removal notes, combined review, revision persistence, approval/removal, order selection and zero external requests. | `npm run e2e` |
 
 ## Production controls and reset
 
@@ -570,6 +570,26 @@ graph LR
 | [IncidentPanel.test.tsx](../frontend/src/components/IncidentPanel.test.tsx) | Fault/decision payloads, stale/reset previews, risk/unknown impacts, clearance acknowledgement and failure feedback. | Frontend coverage |
 | [fault-recovery.spec.ts](../tests/e2e/fault-recovery.spec.ts) | Offline fault isolation, reviewed/automatic recovery, exact quantities, repeat/reset and stale/rejected workflows. | Root full/coverage |
 
+IncidentPanel defaults to compact printer/type/resolution flags; explicit inspection
+opens reports and actions. Settings, recommendations and assignments stay collapsed.
+Applied recovery uses saved impacts/progress and hides invalid repeat previews while
+partial held work can still be reviewed. Physical issues use acknowledged Mark resolved;
+network faults wait for a safe connected signal, with a clearly labeled simulator.
+IncidentPanel tests cover these states and useful conflict details. styles.css owns
+flag rows, reduced spacing and responsive disclosures.
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [test_incident_telemetry.py](../backend/tests/unit/test_incident_telemetry.py) | Safe/unsafe network signals, physical-fault rejection, legacy reports, manual connection projection and held-work invariants. | Backend unit/coverage |
+| [test_incident_telemetry_api.py](../backend/tests/integration/test_incident_telemetry_api.py) | Typed telemetry command validation, stale/replayed/reset signals and durable resolution sources. | Backend integration/coverage |
+
+recovery.py validates current network-fault signals and records telemetry/operator
+resolution sources without releasing holds or starting work. contracts.py/API/service
+own the strict boolean telemetry envelope and serialized transition. monitoring.py
+projects connection state with conservative legacy defaults. PrinterFloor distinguishes
+physical intervention from awaited printer confirmation. api.ts surfaces useful
+incident conflict details rather than replacing every rejection with a refresh error.
+
 ```mermaid
 graph LR
     FaultAPI[api.py fault command] -->|transactional mutation| FaultService[FactoryService]
@@ -580,6 +600,8 @@ graph LR
     Recovery -->|safe queued dispatch| Scheduler[scheduling.py]
     Recovery -->|part and order comparisons| Impact
     Panel[IncidentPanel] -->|guarded source revisions| FaultAPI
+    PrinterSignal[simulated connection confirmation] -->|strict boolean command| FaultAPI
+    Recovery -->|connection evidence for projection| FaultMonitoring[monitoring.py]
     App -->|snapshot and selected printer| Panel
     RecoveryTests[test_recovery.py] -->|validates quantity and safety invariants| Recovery
     IncidentTests[test_incidents.py] -->|verifies isolation and holds| Incidents

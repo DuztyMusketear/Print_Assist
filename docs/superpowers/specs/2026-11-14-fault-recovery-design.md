@@ -16,7 +16,7 @@ clog and insufficient material; include all five with explicit simulated effects
 Website/model import integration remains partner work. No hardware adapter, remote
 shop, continuous inference, live agent invocation or physical safety claim is added.
 
-## Inspected foundation
+## Foundation inspected before implementation
 
 - `FactoryService._transition` already serializes changes using a lock, SQLite
   transaction, source session/revision checks and idempotency receipts.
@@ -49,8 +49,10 @@ Implementation choices retained from the reviewed plan:
 - Offer a separate opt-in simulation recovery policy for complete, compatible,
   on-time plans. Default it back to review on startup/reset, independently of the
   Agents Enabled and automatic-agent-trigger switches.
-- Never clear or restart a faulted printer automatically. Recover production onto
-  healthy equipment; explicit simulated repair/refill clearance is a separate action.
+- Physical thermal, clog and material faults require explicit simulated repair/refill
+  clearance. A network fault may clear from a current printer confirmation only when
+  both connectivity and safe-to-resume are explicitly true. Fault clearance never
+  releases incident-owned manufacturing holds or starts interrupted parts.
 - Automatically escalate incomplete, late, manual-start or otherwise uncertain plans.
   An operator may explicitly accept a feasible late/partial plan with its risks shown;
   no-feasible-assignment plans remain blocked with mitigation options.
@@ -209,3 +211,20 @@ Restart preserves history and waste while stopping the clock and disabling agent
 Full root verification remains `.venv\Scripts\python.exe scripts/check.py coverage`.
 Maintain 100% application statement/branch coverage, schema drift checks, build and
 offline browser coverage; no new runtime dependencies are planned.
+
+## Compact flags and resolution follow-up
+
+The user reported an applied incident still offering Preview recovery. The server
+correctly rejects a second application; the dashboard must present applied progress
+and saved impacts instead of offering an invalid preview. Partial incidents with
+outstanding held parts still permit a new preview. Surface useful conflict details
+instead of hiding every server rejection behind a generic refresh message.
+
+Default incident presentation is a compact printer/type/status flag. Policy controls,
+injection, comparisons, recommendations and evidence stay behind explicit inspection.
+Physical fault resolution is labeled Mark resolved with inspection acknowledgement
+and known refill stock when required. Network resolution is printer-monitored: the
+simulated telemetry command must confirm both connected and safe-to-resume, match the
+current incident and pass normal revision/session guards. Merely cooling a thermal
+fault or reconnecting without a safe-state confirmation cannot clear physical faults.
+The UI reconnect action is explicitly a simulator; no hardware adapter is claimed.
