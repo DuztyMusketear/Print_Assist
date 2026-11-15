@@ -51,14 +51,15 @@ def _materialize(state, proposal):
     return result
 
 
-def propose_recovery(state, incident_id, include_movable=True):
+def propose_recovery(state, incident_id, include_movable=True, automatic_only=False):
     incident=_incident(state,incident_id)
+    orders={o['id']:o for o in state['orders']}
     addressed={j.get('replaces_job_id') for j in state['jobs']}
-    owned=[j for j in state['jobs'] if j.get('incident_id')==incident_id and j['status'] in {'failed','recovery_pending'} and j['id'] not in addressed]
+    owned=[j for j in state['jobs'] if j.get('incident_id')==incident_id and j['status'] in {'failed','recovery_pending'} and j['id'] not in addressed and (not automatic_only or orders[j['order_id']].get('schedule_mode')=='automatic')]
     if incident.get('applied') and not owned:
         raise ValueError('Incident recovery has already been applied')
     draft=deepcopy(state)
-    movable=[j for j in draft['jobs'] if include_movable and j['status'] in {'pending','planned'} and not j.get('elapsed_seconds',0)]
+    movable=[j for j in draft['jobs'] if include_movable and j['status'] in {'pending','planned'} and not j.get('elapsed_seconds',0) and (not automatic_only or j.get('schedule_mode',orders[j['order_id']].get('schedule_mode'))=='automatic')]
     moving={j['id'] for j in movable}
     draft['jobs']=[j for j in draft['jobs'] if j['id'] not in moving]
     for printer in draft['printers']:
@@ -71,7 +72,8 @@ def propose_recovery(state, incident_id, include_movable=True):
             capacity[printer['id']]=job['duration_seconds']-job.get('elapsed_seconds',0)
     for job in draft['jobs']:
         if job['status']=='planned' and capacity[job['printer_id']] is not None:
-            capacity[job['printer_id']]+=job['duration_seconds']
+            if automatic_only and job.get('schedule_mode')=='manual':capacity[job['printer_id']]=None
+            else:capacity[job['printer_id']]+=job['duration_seconds']
     stock={p['id']:free_grams(draft,p) for p in draft['printers']}
     orders={o['id']:o for o in state['orders']}
     now=datetime.fromisoformat(state['simulation_time'].replace('Z','+00:00'))
@@ -96,7 +98,7 @@ def propose_recovery(state, incident_id, include_movable=True):
     blocked_movable={j['id'] for j in movable}-{a['job_id'] for a in assignments}
     if blocked_movable:
         # Preserve stock and capacity by replanning without moving healthy queues.
-        return propose_recovery(state,incident_id,include_movable=False)
+        return propose_recovery(state,incident_id,include_movable=False,automatic_only=automatic_only)
     proposal=dict(incident_id=incident_id,session_id=state['session_id'],revision=state['revision'],assignments=assignments,blocked=blocked)
     revised=capture_schedule(_materialize(state,proposal))
     proposal['impacts']=compare_schedules(incident['before'],revised,state,incident)
@@ -110,9 +112,9 @@ def propose_recovery(state, incident_id, include_movable=True):
     return proposal
 
 
-def apply_recovery(state,payload):
+def apply_recovery(state,payload,automatic_only=False):
     _require_confirmation(payload)
-    proposal=propose_recovery(state,payload['incident_id'])
+    proposal=propose_recovery(state,payload['incident_id'],automatic_only=automatic_only)
     if proposal['id']!=payload['proposal_id']:
         raise ValueError('Recovery proposal is stale; preview again')
     if not proposal['assignments']:
@@ -146,7 +148,8 @@ def clear_fault(state,payload):
     if printer.get('fault',{}).get('incident_id')!=incident['id']:
         raise ValueError('Incident is not the current equipment fault')
     refill=payload.get('refill_grams')
-    if incident['fault_type'] in {'filament_runout','insufficient_material'} and (refill is None or refill<=0):
+    recorded_refill=incident.get('refilled_grams',0)>0 and printer['material']['grams']>0
+    if incident['fault_type'] in {'filament_runout','insufficient_material'} and (refill is None or refill<=0) and not recorded_refill:
         raise ValueError('Positive known refill stock is required')
     if refill is not None:
         if refill<=0:
@@ -158,7 +161,8 @@ def clear_fault(state,payload):
     if incident['fault_type']=='network_disconnect':
         incident.setdefault('telemetry',{}).update(connected=True,safe_to_resume=True,simulated=True)
     incident['actions'].append(dict(timestamp=state['simulation_time'],action='equipment_cleared',outcome='Simulated inspection acknowledged',refill_grams=refill))
-    return refresh_incidents(result)
+    result=automatic_recovery(result,incident['id'])
+    return refresh_incidents(schedule(result,'automatic',preserve_mode=True))
 
 
 def update_incident_telemetry(state, payload):
@@ -192,12 +196,14 @@ def set_recovery_policy(state,payload):
 def automatic_recovery(state,incident_id):
     if state.get('recovery_policy','review')!='automatic':
         return state
-    proposal=propose_recovery(state,incident_id)
+    addressed={j.get('replaces_job_id') for j in state['jobs']}
+    if not any(j.get('incident_id')==incident_id and j['status'] in {'failed','recovery_pending'} and j['id'] not in addressed and next(o for o in state['orders'] if o['id']==j['order_id']).get('schedule_mode')=='automatic' for j in state['jobs']):return state
+    proposal=propose_recovery(state,incident_id,automatic_only=True)
     orders={o['id']:o for o in state['orders']}
-    eligible=proposal['assignments'] and not proposal['blocked'] and all(
-        orders[a['order_id']].get('schedule_mode')=='automatic' for a in proposal['assignments']) and all(i['risk']=='on_time' for i in proposal['impacts'])
+    eligible=proposal['assignments'] and all(
+        orders[a['order_id']].get('schedule_mode')=='automatic' for a in proposal['assignments'])
     if eligible:
-        return apply_recovery(state,dict(incident_id=incident_id,proposal_id=proposal['id'],confirmed=True))
+        return apply_recovery(state,dict(incident_id=incident_id,proposal_id=proposal['id'],confirmed=True),automatic_only=True)
     return state
 
 

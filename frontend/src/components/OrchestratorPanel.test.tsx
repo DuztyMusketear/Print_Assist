@@ -8,6 +8,7 @@ test('reads connection without sending a prompt and sends only explicit user mes
  const request=vi.fn().mockResolvedValueOnce(response(connection)).mockResolvedValueOnce(response({reply:'Review your queue.',model:'test-model',read_only:true}));vi.stubGlobal('fetch',request);
  render(<OrchestratorPanel state={state}/>);
  await screen.findByText('Workshop owner');expect(request).toHaveBeenCalledTimes(1);
+ expect(screen.queryByRole('heading',{name:'ChatGPT setup required'})).not.toBeInTheDocument();
  fireEvent.change(screen.getByLabelText('Message orchestrator'),{target:{value:'Factory status'}});
  fireEvent.click(screen.getByRole('button',{name:'Send message'}));await screen.findByText('Review your queue.');
  expect(JSON.parse(request.mock.calls[1][1].body)).toMatchObject({message:'Factory status',session_id:state.session_id,expected_revision:0});
@@ -15,6 +16,12 @@ test('reads connection without sending a prompt and sends only explicit user mes
 test('displays configuration requirements and no fabricated conversation',async()=>{
  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(response({...connection,configured:false,connected:false,message:'Client registration needed.'})));
  render(<OrchestratorPanel state={state}/>);await screen.findByText('Client registration needed.');expect(screen.getByRole('button',{name:'Send message'})).toBeDisabled();
+ expect(screen.getByRole('heading',{name:'ChatGPT setup required'})).toBeVisible();
+ expect(screen.getByRole('link',{name:'OpenAI website registration guide'})).toHaveAttribute('href','https://developers.openai.com/siwc/website');
+ expect(screen.getByLabelText('Callback URL to register')).toHaveValue(window.location.origin+'/api/orchestrator/auth/callback');
+ expect(screen.getByText('PRINT_ASSIST_OPENAI_CLIENT_ID')).toBeVisible();
+ expect(screen.getByText('PRINT_ASSIST_OPENAI_REDIRECT_URI')).toBeVisible();
+ expect(screen.getByRole('button',{name:'Continue with ChatGPT'})).toBeDisabled();
 });
 test('retains failed message and retries the exact request',async()=>{
  const request=vi.fn().mockResolvedValueOnce(response(connection)).mockResolvedValueOnce(response({detail:'Try again'},false)).mockResolvedValueOnce(response({reply:'Done',model:'test-model',read_only:true}));vi.stubGlobal('fetch',request);

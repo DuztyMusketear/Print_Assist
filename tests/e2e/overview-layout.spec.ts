@@ -21,7 +21,7 @@ test('compact overview keeps desktop panels aligned and stacks without mobile ov
  await expect(firstScene.getByRole('button',{name:'Rotate left',exact:true})).toBeHidden();
  await firstScene.getByText('Camera controls',{exact:true}).click();
  await expect(firstScene.getByRole('button',{name:'Rotate left',exact:true})).toBeVisible();
- await Promise.all([page.waitForResponse(response=>response.url().endsWith('/api/state')),page.getByRole('button',{name:'Refresh queue',exact:true}).click()]);
+ await page.waitForResponse(response=>response.url().endsWith('/api/state'));
  await expect(firstScene.getByRole('button',{name:'Rotate left',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Inspect Printer 2',exact:true}).click();
  await page.getByRole('tab',{name:'Printers',exact:true}).click();

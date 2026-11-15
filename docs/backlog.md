@@ -747,3 +747,27 @@ An owner must supply approved client/callback registration and perform real acco
 acceptance; development made no live inference calls. Account sessions are in memory.
 Autonomous specialist agents, model-driven manufacturing mutations and persistent
 multi-account/refresh support remain future work. See [setup](openai-assistant-setup.md).
+
+
+### Fault/filament/shipping usability fixes (local branch)
+
+`fix/fault-recovery-guidance` permits feasible late/partial automatic recovery and
+retries remaining automatic work after acknowledged repair, with manual/review holds
+preserved. Shipping deadlines are distinct red warnings while healthy printing
+continues. Required-versus-loaded filament is visible, with a safe simulated spool
+loading workflow for uncommitted printers. Ship-by is directly visible and manual
+Refresh queue is removed in favor of live updates. OpenAI registration remains an
+external prerequisite; the connection panel now links registration and exact setup.
+
+
+Refill/demo refinement on the local fault-guidance branch: additive matching-material
+refill is available in all equipment states, with incident evidence preventing double
+stock accounting at repair. Acknowledged active-fleet fault preparation creates real
+approved sample queues, paused clock and explicit automatic recovery for repeatable
+presentations. Existing normal reset modes and guarded spool replacement remain.
+
+
+Material-fault refill refinement: confirmed matching Add filament now automatically
+clears current filament-runout or insufficient-material equipment faults and
+reevaluates work without a second Mark resolved action. Stock is added once;
+thermal/clog/connection faults and manual/review production approvals remain guarded.

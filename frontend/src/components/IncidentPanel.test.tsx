@@ -18,6 +18,7 @@ test('reviews durable incident impacts and forwards the reviewed revision',async
  expect(screen.getByText(/3.0 g/)).toBeInTheDocument();
  await user.click(screen.getByRole('button',{name:'Preview recovery'}));
  await screen.findByText('Move the interrupted work.');
+ await user.click(screen.getByText('Order schedule impact (1)'));
  expect(screen.getByRole('table',{name:'Order schedule impact'})).toHaveTextContent('before');
  await user.click(screen.getByRole('checkbox',{name:/I reviewed/}));
  await user.click(screen.getByRole('button',{name:'Apply recovery'}));
@@ -62,7 +63,7 @@ test('blocked and unknown impacts preserve uncertainty; rejected reviews retain 
 });
 test.each(['filament_runout','thermal'])('clearance requires acknowledged %s repair and positive refill where applicable',async(fault_type)=>{
  const command=vi.fn().mockResolvedValue(undefined),user=userEvent.setup();render(<IncidentPanel state={{...snapshot,incidents:[{...incident,fault_type}]}} onCommand={command}/>);await inspectIncident();
- await user.click(screen.getByText('Resolve physical issue'));
+
  expect(screen.getByRole('button',{name:'Mark resolved'})).toBeDisabled();
  await user.click(screen.getByRole('checkbox',{name:/I acknowledge/}));
  if(fault_type==='filament_runout') {expect(screen.getByRole('button',{name:'Mark resolved'})).toBeDisabled();await user.type(screen.getByLabelText('Refill stock (grams)'),'100');}
@@ -87,13 +88,15 @@ test('keyboard confirmation uses reviewed revision and zero or faster schedule c
  expect(screen.getByText('0 s')).toBeInTheDocument();expect(screen.getByText('-60 s')).toBeInTheDocument();
  screen.getByRole('checkbox',{name:/I reviewed/}).focus();await user.keyboard(' ');await user.tab();expect(screen.getByRole('button',{name:'Apply recovery'})).toHaveFocus();
 });
-test('repair acknowledgement cannot survive a revised manufacturing state',async()=>{
+test('repair acknowledgement survives clock revisions and submits the current revision',async()=>{
  const user=userEvent.setup(),command=vi.fn();const view=render(<IncidentPanel state={snapshot} onCommand={command}/>);await inspectIncident();
- await user.click(screen.getByText('Resolve physical issue'));await user.click(screen.getByRole('checkbox',{name:/I acknowledge/}));
+await user.click(screen.getByRole('checkbox',{name:/I acknowledge/}));
  expect(screen.getByRole('button',{name:'Mark resolved'})).toBeEnabled();
  await user.click(screen.getByRole('checkbox',{name:/I acknowledge/}));expect(screen.getByRole('button',{name:'Mark resolved'})).toBeDisabled();await user.click(screen.getByRole('checkbox',{name:/I acknowledge/}));
- view.rerender(<IncidentPanel state={{...snapshot,revision:1}} onCommand={command}/>);
- expect(screen.getByRole('button',{name:'Mark resolved'})).toBeDisabled();
+ view.rerender(<IncidentPanel state={{...snapshot,running:true,revision:1}} onCommand={command}/>);
+ expect(screen.getByRole('button',{name:'Mark resolved'})).toBeEnabled();
+ await user.click(screen.getByRole('button',{name:'Mark resolved'}));
+ expect(command).toHaveBeenCalledWith('/api/incidents/clear',{incident_id:incident.id,confirmed:true},1);
 });
 test('part lineage compares preserved, blocked and restarted equipment and timing',async()=>{
  const parts=[{part_key:'part-old',order_id:'order-a',original_job_id:'failed-job',revised_job_id:'replacement-job',original_printer:'press-west',revised_printer:'press-east',original_start:'old-start',original_finish:'old-finish',revised_start:'new-start',revised_finish:'new-finish',action:'restarted'},{part_key:'part-blocked',order_id:'order-b',original_job_id:null,revised_job_id:null,original_printer:null,revised_printer:null,original_start:null,original_finish:null,revised_start:null,revised_finish:null,action:'blocked'}];
@@ -129,7 +132,7 @@ test('compact flags keep detail and simulator settings closed until inspected',a
  expect(screen.queryByRole('button',{name:'Preview recovery'})).not.toBeInTheDocument();
  expect(screen.getByLabelText('Simulation recovery policy')).not.toBeVisible();
  await user.click(screen.getByRole('button',{name:'Inspect incident'}));
- expect(screen.getByText('Printing stopped safely.')).toBeVisible();
+ expect(screen.getByText('Printing stopped safely.')).not.toBeVisible();await user.click(screen.getByText('Incident summary and waste'));expect(screen.getByText('Printing stopped safely.')).toBeVisible();
  await user.click(screen.getByRole('button',{name:'Close incident details'}));
  expect(screen.queryByText('Printing stopped safely.')).not.toBeInTheDocument();
 });
@@ -179,3 +182,40 @@ test('resolved idle faults have no outstanding work without claiming a recovery 
  expect(screen.getByText('No outstanding recovery work')).toBeVisible();expect(screen.queryByText('Recovery already applied')).not.toBeInTheDocument();
  expect(screen.queryByRole('button',{name:'Preview recovery'})).not.toBeInTheDocument();
 });
+
+ test.each([{session_id:'new-session'},{incidents:[{...incident,fault_type:'nozzle_clog'}]}])('repair acknowledgement clears for replacement session or fault %j',async(change)=>{
+ const user=userEvent.setup();const view=render(<IncidentPanel state={snapshot} onCommand={vi.fn()}/>);await inspectIncident();await user.click(screen.getByRole('checkbox',{name:/I acknowledge/}));
+ view.rerender(<IncidentPanel state={{...snapshot,...change}} onCommand={vi.fn()}/>);expect(screen.getByRole('button',{name:'Mark resolved'})).toBeDisabled();
+ });
+ test('shipping impact warns visibly while distinguishing production deadlines',async()=>{
+ const user=userEvent.setup();render(<IncidentPanel state={{...snapshot,incidents:[{...incident,impacts:[{...proposal.impacts[0],ship_by:'2026-11-17T12:00:00Z',shipping_risk:'late'}]}]}} onCommand={vi.fn()}/>);await inspectIncident();await user.click(screen.getByText('Order schedule impact (1)'));
+ expect(screen.getByRole('table',{name:'Order schedule impact'})).toHaveTextContent('2026-11-17T12:00:00Z / late');expect(screen.getByText(/Printing continues/)).toBeVisible();
+ });
+
+
+test('an unavailable shipping estimate stays red and does not promise a ship date',async()=>{
+ render(<IncidentPanel state={{...snapshot,incidents:[{...incident,impacts:[{...proposal.impacts[0],risk:'unavailable',shipping_risk:'unavailable',ship_by:'2026-11-17T12:00:00Z'}]}]}} onCommand={vi.fn()}/>);await inspectIncident();
+ expect(screen.getByText('2026-11-17T12:00:00Z / unavailable')).toHaveClass('deadline-risk');
+});
+
+
+test('on-time recovery estimates remain ordinary text instead of red alerts',async()=>{
+ render(<IncidentPanel state={{...snapshot,incidents:[{...incident,impacts:[{...proposal.impacts[0],risk:'on_time',shipping_risk:'on_time',ship_by:'2026-11-17T12:00:00Z'}]}]}} onCommand={vi.fn()}/>);await inspectIncident();
+ expect(screen.getByText('2026-11-17T12:00:00Z / on_time')).not.toHaveClass('deadline-risk');
+});
+
+
+test.each(['filament_runout','nozzle_clog'])('inspection immediately exposes guarded %s resolution before collapsed reports',async(fault_type)=>{
+ render(<IncidentPanel state={{...snapshot,incidents:[{...incident,fault_type,impacts:proposal.impacts}]}} onCommand={vi.fn()}/>);await inspectIncident();
+ expect(screen.getByRole('button',{name:'Mark resolved'})).toBeVisible();
+ expect(screen.getByRole('button',{name:'Mark resolved'})).toBeDisabled();
+ if(fault_type==='filament_runout')expect(screen.getByLabelText('Refill stock (grams)')).toBeVisible();
+ else expect(screen.getByText(/Clear the nozzle clog, inspect the hotend/)).toBeVisible();
+ expect(screen.getByText('Order schedule impact (1)').closest('details')).not.toHaveAttribute('open');
+ expect(screen.getByText('Production deadlines at risk: 1.')).toBeVisible();
+ expect(screen.getByRole('table',{name:'Order schedule impact'})).not.toBeVisible();
+});
+
+test('acknowledges filament already added without adding it twice',async()=>{const user=userEvent.setup(),command=vi.fn().mockResolvedValue(undefined);render(<IncidentPanel state={{...snapshot,printers:[{id:'press-west',status:'faulted',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams:120}}],incidents:[{...incident,fault_type:'filament_runout',refilled_grams:120}]}} onCommand={command}/>);await inspectIncident();expect(screen.getByText(/Filament added/)).toBeInTheDocument();expect(screen.getByText(/Leave the refill field blank/)).toBeVisible();await user.click(screen.getByRole('checkbox',{name:/I acknowledge/}));expect(screen.getByRole('button',{name:'Mark resolved'})).toBeEnabled();await user.click(screen.getByRole('button',{name:'Mark resolved'}));expect(command).toHaveBeenCalledWith('/api/incidents/clear',{incident_id:incident.id,confirmed:true},0);});
+
+test.each([[0,120],[120,0]])('requires a positive refill when existing evidence or stock is absent (%s, %s)',async(refilled_grams,grams)=>{const user=userEvent.setup(),command=vi.fn();render(<IncidentPanel state={{...snapshot,printers:[{id:'press-west',status:'faulted',capabilities:['FFF'],material:{type:'PLA',color:'blue',grams}}],incidents:[{...incident,fault_type:'filament_runout',refilled_grams}]}} onCommand={command}/>);await inspectIncident();await user.click(screen.getByRole('checkbox',{name:/I acknowledge/}));expect(screen.getByRole('button',{name:'Mark resolved'})).toBeDisabled();expect(screen.queryByText(/Filament added/)).not.toBeInTheDocument();});

@@ -13,7 +13,7 @@ from .contracts import ScheduleProposal, ApplyScheduleCommand
 from .contracts import AdvanceCommand, CommandEnvelope, FactorySnapshot, ScheduleCommand, StartCommand
 from .service import FactoryService
 from .contracts import ModelTaskCommand, ModelActionCommand
-from .contracts import PrinterControlCommand, ResetCommand, ScenarioEventCommand
+from .contracts import PrinterControlCommand, ResetCommand, ScenarioEventCommand, LoadFilamentCommand
 from .contracts import LibraryUploadCommand, ExampleFeedCommand, ShopDecisionCommand, ReviseOrderCommand
 from fastapi.responses import Response
 from .contracts import DeleteOrderCommand, EstimateRequest, OrderEstimate, SimulateOrderCommand
@@ -206,6 +206,13 @@ def create_app(path=None):
             return project(service.advance(command))
         except ValueError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @app.post('/api/printers/material',response_model=FactorySnapshot)
+    def load_filament(command:LoadFilamentCommand):
+        try:
+            return project(service.load_filament(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
 
     @app.post('/api/printers/control',response_model=FactorySnapshot)
     def printer_control(command:PrinterControlCommand):

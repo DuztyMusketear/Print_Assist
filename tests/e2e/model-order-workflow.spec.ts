@@ -5,7 +5,7 @@ test('upload and browse a saved model, review a visual deadline plan, confirm an
  await page.route('**/*',route=>{if(new URL(route.request().url()).hostname!=='127.0.0.1'){external.push(route.request().url());return route.abort();}return route.continue();});
  await page.goto('/');
  await page.getByLabel('Scenario',{exact:true}).selectOption('empty');await page.getByRole('checkbox',{name:/I understand/}).check();await page.getByRole('button',{name:'Reset scenario',exact:true}).click();await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
- expect(await page.getByRole('tab').allTextContents()).toEqual(['Models','Orders','Schedule','Overview','Printers']);
+ expect(await page.getByRole('tab').allTextContents()).toEqual(['Overview','Models','Orders','Schedule','Printers']);
  await page.getByRole('tab',{name:'Models',exact:true}).click();await page.getByRole('button',{name:'Upload a model',exact:true}).click();
  await page.getByLabel('STL model file',{exact:true}).setInputFiles('frontend/public/models/example-tower.stl');
  await page.getByLabel('Saved model name',{exact:true}).fill('Shop display tower');await page.getByLabel('Print time per item (minutes)',{exact:true}).fill('120');await page.getByLabel('Filament per item (grams)',{exact:true}).fill('25');
@@ -26,7 +26,9 @@ test('upload and browse a saved model, review a visual deadline plan, confirm an
  await page.getByRole('button',{name:'Pause clock',exact:true}).click();await expect(page.getByRole('button',{name:'Run clock',exact:true})).toBeVisible();
  let state=await (await page.request.get('/api/state')).json();expect(state.jobs.filter((job:{status:string})=>job.status==='running')).toHaveLength(3);expect(state.jobs.filter((job:{status:string})=>job.status==='planned')).toHaveLength(1);
  const response=await page.request.post('/api/advance',{data:{session_id:state.session_id,expected_revision:state.revision,idempotency_key:crypto.randomUUID(),payload:{seconds:3600}}});expect(response.ok()).toBe(true);
- await page.getByRole('button',{name:'Refresh queue',exact:true}).click();await expect(page.locator('.printer-card').first().getByText(/50%|51%/)).toBeVisible();
+ const advanced=await response.json(),activeJob=advanced.jobs.find((job:{printer_id:string;status:string})=>job.printer_id===advanced.printers[0].id&&job.status==='running');
+ const progress=Math.round(activeJob.elapsed_seconds/activeJob.duration_seconds*100);
+ await page.waitForResponse(response=>response.url().endsWith('/api/state'));await expect(page.locator('.printer-card').first().getByText(String(progress)+'%',{exact:false})).toBeVisible();
  await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  expect(external).toEqual([]);
 });

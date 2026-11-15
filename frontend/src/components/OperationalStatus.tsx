@@ -24,6 +24,7 @@ export function OperationalStatus({state}:{state:Snapshot}) {
    const order=state.orders.find(order=>order.id===row.order_id)!,model=state.artifacts.find(model=>model.id===order.artifact_id);
    const jobs=active.filter(job=>job.order_id===order.id);
    return <li key={order.id}><p className="deadline-risk"><strong>{orderLabel(order.id)} / {model?.name??order.artifact_id}</strong> / {String(row.risk)}: {String(row.reason)}. Production due: {formatScheduleTime(order.production_due)}. ETA: {row.completion?formatScheduleTime(String(row.completion)):'unavailable'}.</p>
+    {row.shipping_risk==='late'&&<p className="deadline-risk">Ship-by deadline at risk: {formatScheduleTime(order.ship_by)}. Printing continues on compatible healthy printers; review packing time and notify the customer.</p>}
     <ul>{jobs.map(job=>{
      const slot=slots.find(slot=>slot.job_id===String(job.id)),unavailable=unavailableJobs.has(job.id)||!slot;
      if(!unavailable&&!slot!.late)return null;

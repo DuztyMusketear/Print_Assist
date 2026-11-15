@@ -74,6 +74,7 @@ def compare_schedules(before, after, state, incident):
         delta = (datetime.fromisoformat(new.replace('Z','+00:00')) - datetime.fromisoformat(old.replace('Z','+00:00'))).total_seconds() if old and new else None
         impacts.append(dict(order_id=oid, original_completion=old, revised_completion=new,
             delta_seconds=delta, production_due=order['production_due'], risk=revised['risk'],
+            ship_by=order.get('ship_by',order['production_due']),shipping_risk=revised['shipping_risk'],
             original_printers=original.get('printers',[]), revised_printers=revised['printers'],
             outstanding_quantity=max(0,order['quantity']-order['successful_quantity']),
             change='direct' if oid in incident['order_ids'] else 'indirect' if old != new else 'unchanged',

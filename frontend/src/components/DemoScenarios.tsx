@@ -66,8 +66,8 @@ export function DemoScenarios({state,onTrigger,onReset}:{state:Snapshot;onTrigge
       <label className="example-toggle"><input type="checkbox" checked={confirmed} onChange={change=>setConfirmed(change.target.checked)}/>I inspected the simulated printer and confirm it is safe to restore.</label>
       <p>Restoration clears simulated equipment faults after acknowledgement. Held work still follows the recovery policy.</p>
      </>}
-     <label>Recovery mode<select value={recovery} onChange={change=>setRecoveryOverride(change.target.value as typeof recovery)}><option value="review">Review recovery plans</option><option value="automatic">Automatically apply complete safe recovery plans</option></select></label>
-     <p>Automatic recovery authorizes only validated, compatible, on-time plans. Equipment clearance still requires inspection acknowledgement.</p>
+     <label>Recovery mode<select value={recovery} onChange={change=>setRecoveryOverride(change.target.value as typeof recovery)}><option value="review">Review recovery plans</option><option value="automatic">Automatically apply feasible recovery work</option></select></label>
+     <p>Automatic recovery redistributes compatible parts even when deadlines are at risk; blocked parts stay held. Shipping warnings do not stop healthy printing. Equipment clearance still requires inspection acknowledgement.</p>
     </fieldset>
     {uncertain&&<p>The outcome is unconfirmed. Retry this same event before changing its settings.</p>}
     <button type="submit" disabled={busy||(!uncertain&&((!isOrder&&!selectedPrinter)||(event==='printer_restored'&&!confirmed)))}>{busy?'Sending simulated event...':uncertain?'Retry simulated event':'Trigger simulated event'}</button>

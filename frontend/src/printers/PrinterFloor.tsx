@@ -1,3 +1,4 @@
+import {FilamentSetup,type FilamentPayload} from '../components/FilamentSetup';
 import {printerLabel,partLabel} from '../display';
 import {useState} from 'react';
 import type {Snapshot} from '../api';
@@ -5,7 +6,7 @@ import {printerView} from './model';
 import {PrinterScene} from './PrinterScene';
 import {PrinterControls,type ControlHandler} from '../components/ProductionControls';
 
-export function PrinterFloor({state,detailed,onControl,onStart,selectedId,onSelect,onNewPrint}:{state:Snapshot;detailed:boolean;onControl?:ControlHandler;onStart?:(id:string)=>Promise<void>;selectedId?:string;onSelect?:(id:string)=>void;onNewPrint?:()=>void}) {
+export function PrinterFloor({state,detailed,onControl,onStart,selectedId,onSelect,onNewPrint,onMaterial}:{state:Snapshot;detailed:boolean;onControl?:ControlHandler;onStart?:(id:string)=>Promise<void>;selectedId?:string;onSelect?:(id:string)=>void;onNewPrint?:()=>void;onMaterial?:(payload:FilamentPayload)=>Promise<void>}) {
   const [selection,setSelection]=useState('');
   const [example,setExample]=useState(false);
   const [exampleProgress,setExampleProgress]=useState(50);
@@ -46,8 +47,9 @@ export function PrinterFloor({state,detailed,onControl,onStart,selectedId,onSele
       <div><dt>Model</dt><dd>{selectedView.artifact?.name ?? 'No model assigned'}</dd></div>
       <div><dt>Print time remaining</dt><dd>{selectedView.job?`${Math.ceil(Math.max(0,Number(selectedView.job.duration_seconds ?? 0)-Number(selectedView.job.elapsed_seconds ?? 0))/60)} min`:'No active print'}</dd></div></dl>
       {selectedView.job?.status==='pending' && onStart && <button onClick={()=>void onStart(String(selectedView.job!.id))}>Start print on {printerLabel(selected.id)}</button>}
-      {onControl && <PrinterControls key={selected.id} id={selected.id} status={selected.status} onControl={onControl}/>}
+      {onControl && <PrinterControls key={'controls-'+selected.id} id={selected.id} status={selected.status} onControl={onControl}/>}
       {selected.status==='idle' && onNewPrint && <button className="new-printer-print" onClick={onNewPrint}>Choose a model for {printerLabel(selected.id)}</button>}
+      {onMaterial&&<FilamentSetup key={'filament-'+selected.id} state={state} printer={selected} onLoad={onMaterial}/>}
       <details className="inspection-help"><summary>Control help</summary><p className="muted">Pause stops this printer and holds the part for resuming. Run the simulation clock to see printing advance.</p></details>
     </section>
     <p className="scene-caption">Progress reveal is simulated geometry, not a sliced toolpath or print certification. Drag to orbit; use the buttons for keyboard controls.</p>
