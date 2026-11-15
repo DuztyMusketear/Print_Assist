@@ -11,7 +11,7 @@ test('upload and browse a saved model, review a visual deadline plan, confirm an
  await page.getByLabel('Saved model name',{exact:true}).fill('Shop display tower');await page.getByLabel('Print time per item (minutes)',{exact:true}).fill('120');await page.getByLabel('Filament per item (grams)',{exact:true}).fill('25');
  await page.getByLabel('Support assessment',{exact:true}).selectOption('not-required');await page.getByRole('checkbox',{name:'I have reviewed the model and its print settings'}).check();
  await page.getByRole('button',{name:'Save print-ready model',exact:true}).click();await expect(page.getByRole('status')).toContainText('Model saved');
- await page.reload();await page.getByRole('tab',{name:'Models',exact:true}).click();await page.getByLabel('Search saved models',{exact:true}).fill('display');
+ await page.reload();await page.getByRole('tab',{name:'Models',exact:true}).click();await page.getByRole('combobox',{name:'Search models',exact:true}).fill('display');
  await expect(page.getByRole('img',{name:'3D preview of Shop display tower',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Print Shop display tower',exact:true}).click();await expect(page.getByRole('tab',{name:'Orders',exact:true})).toHaveAttribute('aria-selected','true');
  await page.getByLabel('Number of copies',{exact:true}).fill('4');

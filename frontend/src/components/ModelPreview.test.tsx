@@ -32,3 +32,10 @@ test.each([false,true])('late loading after navigation is ignored and mesh memor
  await act(async()=>{if(fails)reject(new Error('Late error'));else resolve(mesh);});
  expect(dispose).toHaveBeenCalledTimes(fails?0:1);
 });
+
+
+test('known preset models use local preview images when no mesh is supplied',()=>{
+ render(<ModelPreview name="  3DBenchy  "/>);
+ expect(screen.getByRole('img')).toHaveAttribute('src','/demo-models/benchy.png');
+ expect(loadPart).not.toHaveBeenCalled();
+});

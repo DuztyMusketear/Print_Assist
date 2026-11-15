@@ -34,7 +34,16 @@ def revise(state,payload):
 
 
 def delete(state,payload):
-    result=deepcopy(state);order=mutable_order(result,payload)
+    result=deepcopy(state)
+    if payload.get('order_ids') is not None:
+        ids=payload['order_ids']
+        orders=[mutable_order(result,dict(order_id=oid,confirmed=payload.get('confirmed'))) for oid in ids]
+        if any(not order.get('requires_schedule_review') or any(j['order_id']==order['id'] and j['status'] in ACTIVE for j in result['jobs']) for order in orders):
+            raise ValueError('Only uncommitted orders awaiting review can be bulk deleted')
+        for order in orders:
+            result=delete(result,dict(order_id=order['id'],confirmed=True))
+        return result
+    order=mutable_order(result,payload)
     release(result,order)
     order.update(status='cancelled',requires_schedule_review=False)
     for request in result.get('shop_requests',[]):

@@ -61,3 +61,47 @@ test('cards distinguish blocked, overlapping, active and queued work and guard e
  view.rerender(<OrderDrafts state={{...orderedState,jobs:[{order_id:order.id,printer_id:'printer-1',status:'running',duration_seconds:7200}]}} onRevise={vi.fn()}/>);expect(screen.getByText('Printing')).toBeInTheDocument();
  view.rerender(<OrderDrafts state={{...orderedState,running:true,jobs:[{order_id:order.id,printer_id:'printer-1',status:'planned',duration_seconds:7200}]}} onRevise={vi.fn()} onDelete={vi.fn()}/>);expect(screen.getByText('Scheduled')).toBeInTheDocument();await user.click(screen.getByRole('button',{name:/Inspect order/}));expect(screen.getByText(/Pause the simulation before editing/)).toBeVisible();expect(screen.getByRole('button',{name:'Delete scheduled order'})).toBeDisabled();await user.click(screen.getByRole('button',{name:'Close order details'}));expect(screen.queryByRole('region',{name:'Selected order details'})).not.toBeInTheDocument();
 });
+
+
+test('bulk selection confirms current held orders without replacing compact scheduled cards',async()=>{
+ const first={...orderedState.orders[0],requires_schedule_review:true},second={...first,id:'second'};
+ const remove=vi.fn().mockResolvedValue(undefined),user=userEvent.setup();
+ render(<OrderDrafts state={{...orderedState,orders:[first,second]}} onRevise={vi.fn()} onDelete={remove}/>);
+ await user.click(screen.getByRole('checkbox',{name:'Select all awaiting confirmation orders'}));
+ await user.click(screen.getByRole('button',{name:'Delete selected (2)'}));
+ expect(remove).not.toHaveBeenCalled();await user.click(screen.getByRole('button',{name:'Confirm bulk deletion'}));
+ expect(remove).toHaveBeenCalledWith({order_ids:[first.id,second.id],confirmed:true},orderedState.revision);
+ expect(screen.getAllByRole('button',{name:/Inspect order/})).toHaveLength(2);
+});
+
+test('bulk confirmation rejects a changed revision and excludes active commitments',async()=>{
+ const first={...orderedState.orders[0],requires_schedule_review:true},second={...first,id:'second'};
+ const remove=vi.fn(),user=userEvent.setup();const original={...orderedState,orders:[first,second],jobs:[{id:'active',order_id:second.id,status:'planned'}]};
+ const view=render(<OrderDrafts state={original} onRevise={vi.fn()} onDelete={remove}/>);
+ expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+ await user.click(screen.getByRole('checkbox',{name:'Select all awaiting confirmation orders'}));await user.click(screen.getByRole('button',{name:'Delete selected (1)'}));
+ view.rerender(<OrderDrafts state={{...original,revision:original.revision+1}} onRevise={vi.fn()} onDelete={remove}/>);
+ await user.click(screen.getByRole('button',{name:'Confirm bulk deletion'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('State changed');expect(remove).not.toHaveBeenCalled();
+});
+
+
+test('bulk checkbox changes, cancellation and rejection preserve editable selection',async()=>{
+ const first={...orderedState.orders[0],requires_schedule_review:true},second={...first,id:'second'};
+ const remove=vi.fn().mockRejectedValueOnce(new Error('Refresh production first')).mockResolvedValue(undefined),user=userEvent.setup();
+ render(<OrderDrafts state={{...orderedState,orders:[first,second]}} onRevise={vi.fn()} onDelete={remove}/>);
+ const all=screen.getByRole('checkbox',{name:'Select all awaiting confirmation orders'});
+ await user.click(all);await user.click(all);expect(screen.queryByRole('button',{name:/Delete selected/})).not.toBeInTheDocument();
+ const boxes=screen.getAllByRole('checkbox');await user.click(boxes[1]);await user.click(boxes[2]);await user.click(boxes[1]);
+ await user.click(screen.getByRole('button',{name:'Delete selected (1)'}));await user.click(screen.getByRole('button',{name:'Cancel'}));expect(remove).not.toHaveBeenCalled();
+ await user.click(screen.getByRole('button',{name:'Delete selected (1)'}));await user.click(screen.getByRole('button',{name:'Confirm bulk deletion'}));expect(await screen.findByRole('alert')).toHaveTextContent('Refresh production first');
+ await user.click(screen.getByRole('button',{name:'Delete selected (1)'}));await user.click(screen.getByRole('button',{name:'Confirm bulk deletion'}));expect(remove).toHaveBeenCalledTimes(2);
+});
+
+test.each(['session','eligibility'])('bulk confirmation protects a changed %s even if revisions match',async change=>{
+ const first={...orderedState.orders[0],requires_schedule_review:true};const remove=vi.fn(),user=userEvent.setup();const original={...orderedState,orders:[first]};
+ const view=render(<OrderDrafts state={original} onRevise={vi.fn()} onDelete={remove}/>);
+ await user.click(screen.getByRole('checkbox',{name:'Select all awaiting confirmation orders'}));await user.click(screen.getByRole('button',{name:'Delete selected (1)'}));
+ view.rerender(<OrderDrafts state={change==='session'?{...original,session_id:'another-session'}:{...original,orders:[{...first,requires_schedule_review:false}]}} onRevise={vi.fn()} onDelete={remove}/>);
+ await user.click(screen.getByRole('button',{name:'Confirm bulk deletion'}));expect(await screen.findByRole('alert')).toHaveTextContent('State changed');expect(remove).not.toHaveBeenCalled();
+});

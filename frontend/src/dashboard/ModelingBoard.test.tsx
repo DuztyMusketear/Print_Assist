@@ -380,3 +380,9 @@ test('legacy approved models do not invent a no-support assessment',()=>{
  render(<ModelingBoard items={[{id:'legacy',title:'Legacy part',modelReference:'old.stl',stage:'approved'}]}/>);
  expect(screen.getByText(/support assessment not recorded/i)).toBeInTheDocument();
 });
+
+
+test('preset modeling cards show local source previews when no registered mesh matches',()=>{
+ render(<ModelingBoard items={[{id:'preset',title:'3DBenchy',modelReference:'benchy.stl',stage:'modeling',visual_asset_id:'missing'}]} visualAssets={[{id:'other',name:'Other',path:'/models/example-tower.stl',units:'mm',rotation_degrees:[0,0,0]}]}/>);
+ expect(screen.getByRole('img',{name:'3DBenchy model preview'})).toHaveAttribute('src','/demo-models/benchy.png');
+});

@@ -855,7 +855,9 @@ export interface components {
         /** DeleteOrderPayload */
         DeleteOrderPayload: {
             /** Order Id */
-            order_id: string;
+            order_id?: string | null;
+            /** Order Ids */
+            order_ids?: string[] | null;
             /** Confirmed */
             confirmed?: boolean;
         };

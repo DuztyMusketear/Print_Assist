@@ -124,7 +124,7 @@ graph LR
 
 | File | Responsibility | Verification |
 | --- | --- | --- |
-| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted workflow board with distinct model and linked support-assessment tasks, five-choice themed color selector on modeling task cards, combined approval handoff, task removal, order-use checks, and conditional NIST preview. The integrated dashboard hides the standalone task-intake form; preset cards create modeling tasks directly. Does not generate support geometry or slice files. | ModelingBoard tests, App tests, ModelLibrary, workflow module, styles |
+| [ModelingBoard.tsx](../frontend/src/dashboard/ModelingBoard.tsx) | Operator-facing persisted workflow board with distinct model and linked support-assessment tasks, five-choice themed color selector, model image previews, combined approval handoff, task removal, order-use checks, and conditional NIST preview. The integrated dashboard hides the standalone task-intake form; preset cards create modeling tasks directly. Does not generate support geometry or slice files. | ModelingBoard tests, App tests, ModelLibrary, ModelPreview, workflow module, styles |
 | [NistModelPreview.tsx](../frontend/src/dashboard/NistModelPreview.tsx) | Loads and validates the bundled binary STL, renders shaded triangles, opens a high-resolution enlarged dialog on click, supports mouse-drag rotation and independent pinch zoom only in that dialog, preserves rotate/reset buttons, and explains NIST artifact features. | `ModelingBoard.test.tsx`, modeling dashboard browser workflow |
 | [workflow.ts](../frontend/src/dashboard/workflow.ts) | Shares the five-color palette and validates model color changes, support assessments, required/no-support paths into combined review, approval, and revision return. Backend owns persistence in the integrated app. | `workflow.test.ts` |
 | [ModelingBoard.test.tsx](../frontend/src/dashboard/ModelingBoard.test.tsx) | Verifies standalone/local form behavior and the five-color selector plus support assessment/details, combined review, paired approval, no-support path to review, revision return, removal guards, and NIST preview gestures. | `npm test` |
@@ -455,9 +455,9 @@ estimates recompute remaining work after holds and queue it per printer.
 | [shop.py](../backend/print_assist/shop.py) | Deterministic local example feed, deduplicated loading, explicit acceptance/rejection and SKU/model mapping; accepted orders remain held. | Backend integration suite |
 | [order_review.py](../backend/print_assist/order_review.py) | Corrections to held orders with no successful/committed production; model validation and activity records. | Backend integration suite |
 | [test_library_shop.py](../backend/tests/integration/test_library_shop.py) | Upload bytes/profile validation, persistence/reset/replay, example-feed decisions and duplicate guards, held corrections and full/on-time confirmation. | Root backend coverage |
-| [ModelLibrary.tsx](../frontend/src/components/ModelLibrary.tsx) | Searchable approved models, curated source/license/profile preset cards that create tasks directly in the modeling workflow and can safely retry uncertain sends, profile-assisted local STL upload with the five-color selector, support review, and quantity handoff. Preset print data are example profiles; uploaded geometry remains a separate step. | ModelLibrary and App tests/browser |
+| [ModelLibrary.tsx](../frontend/src/components/ModelLibrary.tsx) | Search suggestions across approved and preset models by name/material/color, de-duplicated approved matches, direct preset-to-modeling handoff, local preset image cards, profile-assisted STL upload with five-color selector, support review, and quantity handoff. Preset print data are examples; uploaded geometry remains separate. | ModelLibrary and App tests/browser, ModelPreview |
 | [ModelLibrary.test.tsx](../frontend/src/components/ModelLibrary.test.tsx) | Browse/filter/handoff, required preparation, import/read/upload failures, optional support metadata and safe success/navigation. | Frontend coverage |
-| [ModelPreview.tsx](../frontend/src/components/ModelPreview.tsx) | Bounded geometry loader to static isometric canvas thumbnails, stable asset identity, abort/disposal and readable fallback. | ModelPreview tests/browser |
+| [ModelPreview.tsx](../frontend/src/components/ModelPreview.tsx) | Bounded geometry loader to static isometric canvas thumbnails with name-matched bundled model-image fallbacks, stable asset identity, abort/disposal and readable fallback. | ModelPreview tests/browser, ModelLibrary, ModelingBoard, PrintTimeline |
 | [ModelPreview.test.tsx](../frontend/src/components/ModelPreview.test.tsx) | Real geometry drawing/disposal, retained polling metadata, absent/failed/canvas fallback and late navigation results. | Frontend coverage |
 | [ShopInbox.tsx](../frontend/src/components/ShopInbox.tsx) | Explicit example import, pending model matches, accept/reject actions, preserved request history, review navigation and expandable manual/automatic intake-to-printer walkthrough. | ShopInbox tests/browser |
 | [ShopInbox.test.tsx](../frontend/src/components/ShopInbox.test.tsx) | Unmatched/mapped choices, request statuses, callbacks, empty feed, load/decision failures and readable demo directions. | Frontend coverage |
@@ -734,4 +734,45 @@ graph LR
   AssistantAPI -->|read-only captured state| Factory[FactoryService]
   AssistantAPI -->|explicit user authorization and inference| OpenAI[Registered OpenAI OAuth / Responses]
   AssistantTests[Offline auth and browser fakes] -->|verify identity, replay and no mutations| AssistantAPI
+```
+
+
+## Modeling preset-card integration
+
+Partner commits 68ea602/39c009f are combined with the current production/assistant
+runtime. ModelLibrary filters and suggests saved or preset profiles; approved names
+replace matching presets, and selection opens production or modeling appropriately.
+ModelPreview and ModelingBoard render bundled preset reference images without
+external image requests. WorkItem carries optional visual_asset_id metadata for
+registered geometry while source-image fallback remains available.
+
+OrderDrafts retains compact conflict/ETA cards and guarded single-order edits and
+cancellation. It adds held-order checkboxes and confirmed bulk cancellation using
+the existing DeleteOrderCommand endpoint. Single and unique bulk targets share a
+strict contract; bulk prevalidates every uncommitted reviewed target atomically,
+retains orders/request history as cancelled, and keeps completed/active work safe.
+The UI freezes revision/session and selected IDs at confirmation, rechecks current
+eligibility, handles server failures, and retains existing confirmation/busy behavior.
+
+| File | Purpose / related behavior | Verification |
+| --- | --- | --- |
+| [test_bulk_order_review.py](../backend/tests/unit/test_bulk_order_review.py) | Atomic bulk cancellation, history retention, confirmation/activity/missing/held guards and mutually exclusive unique target contract. Related: contracts.py/order_review.py/service.py/api.py. | Backend unit coverage |
+| [preset-integration.spec.ts](../tests/e2e/preset-integration.spec.ts) | Real saved/preset search, bundled image load in modeling, assistant sidebar retention, confirmed multi-order cancellation, audit history and mobile/offline checks. | `npm run e2e` |
+| [benchy.png](../frontend/public/demo-models/benchy.png) | Bundled preset preview used by ModelLibrary and ModelPreview. Source copy: [3DBenchy.png](../images/3DBenchy.png). | Browser image-load regression |
+| [calibration-cube.png](../frontend/public/demo-models/calibration-cube.png) | Bundled Calibration Cube preview. Source copy: [Calibration Cube.png](../images/Calibration%20Cube.png). | ModelLibrary/ModelPreview tests and build |
+| [curved-phone-stand.png](../frontend/public/demo-models/curved-phone-stand.png) | Bundled curved stand preview. Source copy: [Curved Phonestand.png](../images/Curved%20Phonestand.png). | ModelLibrary/ModelPreview tests and build |
+| [foldable-phone-stand.png](../frontend/public/demo-models/foldable-phone-stand.png) | Bundled foldable stand preview. Source copy: [Foldable phone stand.png](../images/Foldable%20phone%20stand.png). | ModelLibrary/ModelPreview tests and build |
+| [honeycomb-phone-stand.png](../frontend/public/demo-models/honeycomb-phone-stand.png) | Bundled honeycomb stand preview. Source copy: [Honeycomb.png](../images/Honeycomb.png). | ModelLibrary/ModelPreview tests and build |
+| [organic-phone-stand.png](../frontend/public/demo-models/organic-phone-stand.png) | Bundled organic stand preview. Source copy: [Organic phone stand.png](../images/Organic%20phone%20stand.png). | ModelLibrary/ModelPreview tests and build |
+
+```mermaid
+graph LR
+  PresetSearch[ModelLibrary suggestions] -->|select approved profile| Orders[Existing guided order intake]
+  PresetSearch -->|select preset profile| Modeling[ModelingBoard]
+  Preview[ModelPreview] -->|local source-image fallback| PresetAssets[Bundled preset PNGs]
+  Modeling -->|registered geometry or image fallback| Preview
+  BulkUI[OrderDrafts selection] -->|confirmed session and revision| DeleteAPI[Existing delete-order endpoint]
+  DeleteAPI -->|prevalidate all targets| Cancel[History-preserving cancellation]
+  BulkTests[test_bulk_order_review.py] -->|atomic safety guards| Cancel
+  CombinedBrowser[preset-integration.spec.ts] -->|offline combined workflow| BulkUI
 ```

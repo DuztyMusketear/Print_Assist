@@ -70,11 +70,17 @@ class ReviseOrderPayload(BaseModel):
 class ReviseOrderCommand(ScheduleCommand):
     payload: ReviseOrderPayload
 
-
 class DeleteOrderPayload(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    order_id: str
+    order_id: str | None = None
+    order_ids: list[str] | None = Field(default=None,min_length=1,max_length=100)
     confirmed: bool = Field(default_factory=bool)
+
+    @model_validator(mode='after')
+    def unique_targets(self):
+        if (self.order_id is None)==(self.order_ids is None) or (self.order_ids is not None and len(set(self.order_ids))!=len(self.order_ids)):
+            raise ValueError('Choose one order or a unique selection of orders')
+        return self
 
 
 class DeleteOrderCommand(ScheduleCommand):

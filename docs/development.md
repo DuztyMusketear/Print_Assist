@@ -691,3 +691,41 @@ and mobile 390px were inspected: no page errors or horizontal overflow. The actu
 connection remains configured=false/connected=false until the owner supplies registered
 OpenAI client/callback settings and approved inference access. Work remains local;
 no commit, merge, push or deployment was performed.
+
+
+## Partner preset integration - 2026-11-14
+
+Integration branch `fix/integrate-modeling-preset-cards` combines partner
+`origin/feat/modeling-preset-cards` at 39c009f (68ea602 + local source-image assets)
+with current main at 52b6dd7. Nine textual conflicts were resolved by combining
+contracts/behavior rather than selecting an entire side. Duplicate DeleteOrder
+classes and duplicate API route introduced by automatic merging were consolidated;
+TypeScript was regenerated from the combined OpenAPI contract.
+
+Main's compact schedule cards, revision/session confirmation, histories, incident
+recovery, deadline-first backlog scheduling, scenario engine and assistant sidebar
+are retained. Partner saved/preset search, source image previews and bulk selection
+are integrated. Bulk removal uses guarded atomic cancellation with retained history,
+rather than physically dropping orders from manufacturing state. The build also
+caught partner WorkItem visual_asset_id metadata missing from its TypeScript type.
+
+Regression-first checks cover bulk confirmation/eligibility/session/revision and
+history, approved/preset suggestion paths and local modeling previews. The combined
+browser scenario passes without external requests and verifies mobile overflow,
+real image loading and persistent cancelled-order/request history.
+
+
+Fresh upstream check during integration confirmed origin/main unchanged at 52b6dd7.
+The combined regression suite includes the existing assistant, scenarios, recovery,
+manual/automatic production and modeling workflows. No live model/provider/hardware
+calls were used, and no remote branch was rewritten or pushed by this merge task.
+
+
+Final combined-tree command `.venv\Scripts\python.exe scripts/check.py coverage`
+(on isolated API/web ports 8002/5175) passed **298 backend + 368 frontend + 29 browser
+tests (695 total)**, 100% application coverage, schema drift, TypeScript and build.
+A legacy browser selector was updated from Search saved models to the partner's
+new Search models combobox. Code-map links, conflict-marker and whitespace checks
+pass. Independent review found no remaining P1/P2 issue in the combined bulk guards.
+Existing Vite bundle advisory remains; WebGL-failure logs are intentional fallback
+coverage. The merge is authorized locally; no push is included in this integration.

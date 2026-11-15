@@ -25,6 +25,7 @@ export interface WorkItem {
   filament_type?:string;
   color?:string;
   required_capabilities?:string[];
+  visual_asset_id?:string|null;
   stage:WorkStage;
   reviewOutcome?:ReviewOutcome|null;
   support_task?:SupportTask|null;

@@ -40,18 +40,25 @@ function Details({state,order,onRevise,onDelete,onClose}:Props&{order:Order;onCl
 
 export function OrderDrafts(props:Props){
  const {state}=props,[selected,setSelected]=useState<string>();
+ const [checked,setChecked]=useState<string[]>([]),[bulk,setBulk]=useState<{ids:string[];revision:number;session:string}>(),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const eligible=state.orders.filter(order=>order.requires_schedule_review&&editableOrder(state,order)&&!state.jobs.some(job=>job.order_id===order.id&&['planned','pending','paused','running'].includes(String(job.status))));
+ const selectedIds=eligible.filter(order=>checked.includes(order.id)).map(order=>order.id);
+ async function removeSelected(){setBusy(true);setError('');try{
+  if(bulk!.revision!==state.revision||bulk!.session!==state.session_id||bulk!.ids.some(id=>!eligible.some(order=>order.id===id)))throw new Error('State changed. Select orders again before confirming.');
+  await props.onDelete!({order_ids:bulk!.ids,confirmed:true},bulk!.revision);setChecked([]);
+ }catch(reason){setError((reason as Error).message);}finally{setBulk(undefined);setBusy(false);}}
  const proposal=props.proposal?.session_id===state.session_id&&props.proposal.revision===state.revision?props.proposal:undefined;
  const slots=timelineSlots(state,proposal),orders=state.orders.filter(order=>!['cancelled','completed'].includes(order.status)&&order.successful_quantity<order.quantity);
  const selectedOrder=orders.find(order=>order.id===selected);
- return orders.length?<section className="order-drafts"><h2>{orders.some(order=>order.requires_schedule_review)?'Orders awaiting confirmation':'Scheduled orders'}</h2><div className="order-card-grid">{orders.map(order=>{
+ return orders.length?<section className="order-drafts"><h2>{orders.some(order=>order.requires_schedule_review)?'Orders awaiting confirmation':'Scheduled orders'}</h2>{props.onDelete&&eligible.length>0&&<label className="check-label"><input type="checkbox" aria-label="Select all awaiting confirmation orders" checked={selectedIds.length===eligible.length} disabled={busy||state.running} onChange={event=>setChecked(event.target.checked?eligible.map(order=>order.id):[])}/>Select all awaiting confirmation</label>}<div className="order-card-grid">{orders.map(order=>{
   const model=state.artifacts.find(model=>model.id===order.artifact_id)!,forecast=state.forecasts?.find(item=>item.order_id===order.id),allocated=slots.filter(slot=>slot.order_id===order.id);
   const blocked=proposal?.blocked.some(row=>row.order_id===order.id),late=allocated.some(slot=>slot.late)||forecast?.risk==='late',overlap=allocated.some(slot=>slot.overlap);
   const unavailable=forecast?.risk==='unavailable'&&!order.requires_schedule_review;
   const conflict=blocked?'Capacity conflict':overlap?'Printer overlap':late?'Deadline conflict':unavailable?'Needs attention':'';
   const ends=allocated.map(slot=>Date.parse(slot.finish));if(forecast?.completion)ends.push(Date.parse(forecast.completion));
   const finish=blocked||unavailable?'Unavailable':ends.length?formatScheduleTime(new Date(Math.max(...ends)).toISOString()):'Preview needed';
-  return <button type="button" className={'order-summary-card '+(conflict?'conflict ':'')+(selected===order.id?'selected':'')} key={order.id} aria-label={`Inspect order ${orderLabel(order.id)}`} aria-expanded={selected===order.id} onClick={()=>setSelected(order.id)}>
+  return <div className="draft-select-row" key={order.id}>{props.onDelete&&eligible.some(item=>item.id===order.id)&&<label className="check-label"><input type="checkbox" aria-label={`Select ${orderLabel(order.id)}`} checked={checked.includes(order.id)} disabled={busy||state.running} onChange={event=>setChecked(current=>event.target.checked?[...current,order.id]:current.filter(id=>id!==order.id))}/></label>}<button type="button" className={'order-summary-card '+(conflict?'conflict ':'')+(selected===order.id?'selected':'')} key={order.id} aria-label={`Inspect order ${orderLabel(order.id)}`} aria-expanded={selected===order.id} onClick={()=>setSelected(order.id)}>
    <ModelPreview name={model.name} asset={state.visual_assets?.find(asset=>asset.id===model.visual_asset_id)}/><span><strong>{model.name} ×{order.quantity}</strong><small>Est. printer time: {printDuration(model.duration_seconds*order.quantity)}</small><small>Est. filament: {(model.filament_grams*order.quantity).toFixed(1)} g / {model.color} {model.filament_type}</small><small>Est. finish: {finish}</small><small>{conflict|| (order.requires_schedule_review?'Awaiting confirmation':state.jobs.some(job=>job.order_id===order.id&&job.status==='running')?'Printing':allocated.some(slot=>slot.status!=='proposed')?'Scheduled':allocated.length?'Proposed':'Awaiting schedule')}</small>{unavailable&&<small>{forecast.reason}</small>}</span>
-  </button>;
- })}</div>{selectedOrder&&<Details key={selectedOrder.id} {...props} order={selectedOrder} onClose={()=>setSelected(undefined)}/>}</section>:null;
+  </button></div>;
+ })}</div>{props.onDelete&&selectedIds.length>0&&<button type="button" className="danger-button" disabled={busy||state.running} onClick={()=>{setError('');setBulk({ids:selectedIds,revision:state.revision,session:state.session_id});}}>Delete selected ({selectedIds.length})</button>}{error&&<p role="alert">{error}</p>}{bulk&&<ConfirmDialog title="Delete selected orders?" confirmLabel="Confirm bulk deletion" onConfirm={()=>void removeSelected()} onCancel={()=>setBulk(undefined)} busy={busy}><p>Cancel {bulk.ids.length} unstarted orders awaiting confirmation. Their history will be retained.</p></ConfirmDialog>}{selectedOrder&&<Details key={selectedOrder.id} {...props} order={selectedOrder} onClose={()=>setSelected(undefined)}/>}</section>:null;
 }

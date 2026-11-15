@@ -4,6 +4,7 @@ import {advanceWorkItem,createWorkItem,FILAMENT_COLOR_CHOICES,type FilamentColor
 import type {components} from '../types';
 import {EntryField} from '../components/EntryField';
 import {NistModelPreview} from './NistModelPreview';
+import {ModelPreview} from '../components/ModelPreview';
 
 const stages=['modeling','supports','review','approved'] as const;
 const labels:Record<WorkItem['stage'],string>={modeling:'Modeling',supports:'Supports',review:'Review',approved:'Approved'};
@@ -143,7 +144,7 @@ export function ModelingBoard(props:Props) {
         return <section className="workflow-lane" key={stage} aria-label={`${labels[stage]} stage`}>
           <div className="lane-heading"><h3>{labels[stage]}</h3><span>{laneItems.length}</span></div>
           {laneItems.length===0?<p className="muted lane-empty">Nothing here yet</p>:laneItems.map(item=><article className="work-card" key={item.id}>
-            <h4>{item.title}</h4><ModelPrintDetails item={item} busy={busy} onColorChange={stage==='modeling'?color=>move(item,'set-color',undefined,color):undefined}/>
+            <ModelPreview name={item.title} asset={props.visualAssets?.find(asset=>asset.id===item.visual_asset_id)}/><h4>{item.title}</h4><ModelPrintDetails item={item} busy={busy} onColorChange={stage==='modeling'?color=>move(item,'set-color',undefined,color):undefined}/>
             {item.modelReference==='/demo-models/nist-test-artifact.stl'&&<NistModelPreview/>}
             {item.reviewOutcome && <p className="review-note">Review requested changes · returned to modeling</p>}
             {stage==='modeling' && <button className="secondary" onClick={()=>move(item,'prepare-supports')}>Prepare supports</button>}
