@@ -14,7 +14,7 @@ def capture_schedule(state):
     now=datetime.fromisoformat(state['simulation_time'].replace('Z','+00:00'))
     available={p['id']:0 if p['status']=='idle' else None for p in state['printers']}
     jobs=deepcopy(state['jobs'])
-    ordered=sorted(jobs,key=lambda j:(j['status']!='running',j.get('estimated_start',''),j['id']))
+    ordered=sorted(jobs,key=lambda j:(j['status']!='running',next(o['production_due'] for o in state['orders'] if o['id']==j['order_id']),-next(o['priority'] for o in state['orders'] if o['id']==j['order_id']),j.get('estimated_start',''),j['id']))
     for job in ordered:
         pid=job['printer_id']; elapsed=job.get('elapsed_seconds',0)
         duration=job['duration_seconds']; start=finish=None

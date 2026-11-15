@@ -18,15 +18,18 @@ def blocked_reason(printers,artifact):
 
 
 def schedule(state: dict, mode: str = "automatic", preserve_mode: bool = False) -> dict:
-    result = deepcopy(state)
-    planned=sorted((j for j in result['jobs'] if j['status']=='planned'),key=lambda j:(j.get('estimated_start',''),j['id']))
+    from .redistribution import redistribute
+    from .queue_rebalancing import rebalance_queues
+    result = rebalance_queues(redistribute(state))
+    order_lookup={o['id']:o for o in result['orders']}
+    planned=sorted((j for j in result['jobs'] if j['status']=='planned'),key=lambda j:(order_lookup[j['order_id']]['production_due'],-order_lookup[j['order_id']]['priority'],j.get('estimated_start',''),j['id']))
     for job_id in [j['id'] for j in planned]:
         job=next(j for j in result['jobs'] if j['id']==job_id)
         printer=next(p for p in result['printers'] if p['id']==job['printer_id'])
         if printer['status']=='idle':
             printer['status']='reserved';job['status']='pending'
             if job['schedule_mode']=='automatic': result=start_job(result,job['id'])
-    orders = sorted(result["orders"], key=lambda order: (-order["priority"], order["production_due"], order["id"]))
+    orders = sorted(result["orders"], key=lambda order: (order["production_due"], -order["priority"], order["id"]))
     for order in orders:
         if order.get('recovery_holds') or order.get('requires_schedule_review') or order['status']=='cancelled':
             continue

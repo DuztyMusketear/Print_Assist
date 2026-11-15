@@ -707,3 +707,43 @@ Deadline advice uses supplied model estimates/current capacity, not accelerated
 playback. A faster prepared profile can be chosen explicitly. Active print scrap,
 recovery, guarded AI runtime, real model import connectors and broader packaging
 remain outstanding under their respective owners/stories.
+
+
+### Local refinement on `feat/automatic-workload-transfer`
+
+- Implemented healthy capacity transfer for pause/offline with interrupted-part waste,
+  persistent before/after impact and red current job/order deadline warnings.
+- Added explicit local fully automated incoming order through printing/completion;
+  unmatched/infeasible requests retain operator attention and existing orders' holds.
+- Fault-free fresh baseline; existing persisted incident history remains available.
+- Real shop integration and physical printer control remain outside this simulation.
+- Review fixes preserve incident authorization and active ETAs, and replan around
+  manual queues using available healthy alternatives. Not merged or pushed by this task.
+
+
+Follow-up on the same local branch: returning healthy idle capacity takes approved
+queued automatic parts from busy printers, preserving active work and manual or
+incident holds. Production deadline now precedes priority in allocation and queue
+projections; rebalance reports explain improved ETAs and current deadline risks.
+
+
+### Demo scenario engine refinement (local feature branch)
+
+Implemented configurable sequential marketplace/urgent/thermal/low-stock/restoration
+events, shared product ingestion and artifact mapping, persistent impact/tool history
+and a collapsed panel. Restored printers receive future backlogs; urgent intake may
+replan approved future parts with protected filament and unchanged job identities.
+The [runbook](demo-runbook.md) supports repeatable manual/automatic and recovery demos.
+Live agent orchestration, actual Etsy transport and physical hardware remain planned;
+current deterministic tool operations make no model calls or fabricated agent replies.
+
+
+### Sidebar and advisory assistant refinement (local feature branch)
+
+Implemented one Scenario controls section for events/reset, reference-style Orchestrator
+chat and truthful Agent network. Registered-client OpenAI OAuth and read-only Responses
+advice are locally implemented and fake-tested, including scope and replay safety.
+An owner must supply approved client/callback registration and perform real account
+acceptance; development made no live inference calls. Account sessions are in memory.
+Autonomous specialist agents, model-driven manufacturing mutations and persistent
+multi-account/refresh support remain future work. See [setup](openai-assistant-setup.md).

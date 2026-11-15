@@ -2,8 +2,8 @@ import type { components } from './types';
 export type Snapshot = components['schemas']['FactorySnapshot'];
 export type OrderInput = components['schemas']['OrderCreate'];
 export type IncidentCommand=components['schemas']['IncidentTelemetryCommand']|components['schemas']['FaultCommand']|components['schemas']['RecoverCommand']|components['schemas']['RejectRecoveryCommand']|components['schemas']['ClearFaultCommand']|components['schemas']['RecoveryPolicyCommand'];
-export type ProductionPath='/api/incidents/telemetry'|'/api/incidents/inject'|'/api/incidents/recover'|'/api/incidents/reject'|'/api/incidents/clear'|'/api/incidents/policy'|'/api/orders/delete'|'/api/shop/simulate'|'/api/orders/revise'|'/api/library/models'|'/api/shop/example'|'/api/shop/decisions'|'/api/schedule/apply'|'/api/orders/plan'|'/api/clock'|'/api/start'|'/api/advance'|'/api/printers/control'|'/api/scenarios/reset';
-export type ProductionBody=IncidentCommand|components['schemas']['DeleteOrderCommand']|components['schemas']['SimulateOrderCommand']|components['schemas']['ReviseOrderCommand']|components['schemas']['LibraryUploadCommand']|components['schemas']['ExampleFeedCommand']|components['schemas']['ShopDecisionCommand']|components['schemas']['ApplyScheduleCommand']|components['schemas']['PlanOrderCommand']|components['schemas']['ClockCommand']|components['schemas']['StartCommand']|components['schemas']['AdvanceCommand']|components['schemas']['PrinterControlCommand']|components['schemas']['ResetCommand'];
+export type ProductionPath='/api/scenarios/events'|'/api/incidents/telemetry'|'/api/incidents/inject'|'/api/incidents/recover'|'/api/incidents/reject'|'/api/incidents/clear'|'/api/incidents/policy'|'/api/orders/delete'|'/api/shop/simulate'|'/api/orders/revise'|'/api/library/models'|'/api/shop/example'|'/api/shop/decisions'|'/api/schedule/apply'|'/api/orders/plan'|'/api/clock'|'/api/start'|'/api/advance'|'/api/printers/control'|'/api/scenarios/reset';
+export type ProductionBody=components['schemas']['ScenarioEventCommand']|IncidentCommand|components['schemas']['DeleteOrderCommand']|components['schemas']['SimulateOrderCommand']|components['schemas']['ReviseOrderCommand']|components['schemas']['LibraryUploadCommand']|components['schemas']['ExampleFeedCommand']|components['schemas']['ShopDecisionCommand']|components['schemas']['ApplyScheduleCommand']|components['schemas']['PlanOrderCommand']|components['schemas']['ClockCommand']|components['schemas']['StartCommand']|components['schemas']['AdvanceCommand']|components['schemas']['PrinterControlCommand']|components['schemas']['ResetCommand'];
 export type ProductionPayload=ProductionBody['payload'];
 export class RejectedCommand extends Error {constructor(message:string,public status=409){super(message);}}
 export async function modelingCommand(path:'/api/modeling/tasks'|'/api/modeling/actions',body:components['schemas']['ModelTaskCommand']|components['schemas']['ModelActionCommand']):Promise<Snapshot> {
@@ -23,7 +23,7 @@ export async function productionCommand(path:ProductionPath,body:ProductionBody)
       const message=typeof result?.detail==='string'?result.detail:'Check the STL file and print settings. Uploads require a valid model and positive print estimates.';
       throw new RejectedCommand(message,response.status);
     }
-    if(response.status===409&&path.startsWith('/api/incidents/')) {
+    if(response.status===409&&(path.startsWith('/api/incidents/')||path==='/api/scenarios/events')) {
       const result=await response.json().catch(()=>null);
       throw new RejectedCommand(typeof result?.detail==='string'?result.detail:'Production command failed. Refresh the queue and try again.',response.status);
     }

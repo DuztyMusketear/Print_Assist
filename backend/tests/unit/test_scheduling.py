@@ -4,7 +4,7 @@ import pytest
 from print_assist.scenarios import initial_state
 
 
-def test_schedule_starts_compatible_orders_by_priority_and_due_date():
+def test_schedule_starts_compatible_orders_by_deadline_then_priority():
     from print_assist.scheduling import schedule
 
     state = initial_state()
@@ -19,7 +19,7 @@ def test_schedule_starts_compatible_orders_by_priority_and_due_date():
     original = copy.deepcopy(state)
     result = schedule(state)
     assert state == original
-    assert [job["order_id"] for job in result["jobs"]] == ["urgent", "later"]
+    assert [job["order_id"] for job in result["jobs"]] == ["later", "urgent"]
     assert all(job["status"] == "running" for job in result["jobs"])
     assert len({job["printer_id"] for job in result["jobs"]}) == 2
 

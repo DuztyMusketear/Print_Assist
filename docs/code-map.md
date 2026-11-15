@@ -15,6 +15,17 @@ graph LR
   API -->|schema| CONTRACTS["contracts.py"]
   CONTRACTS -->|generates via schema.py| TYPES["types.ts"]
   TYPES -->|compile-time contracts| UI
+  SERVICE -->|explicit automatic intake| DEMO["order_demo.py"]
+  DEMO -->|targeted validated plan| PROPOSALS["proposals.py"]
+  CONTROLS["controls.py"] -->|approved work transfer| TRANSFER["redistribution.py"]
+  SCHEDULER["scheduling.py"] -->|fills healthy idle capacity| REBALANCE["queue_rebalancing.py"]
+  SCENARIOS["demo_scenarios.py"] -->|real order-to-production workflow| DEMO
+  SCENARIOS -->|fault/restore actions| CONTROLS
+  SCENARIOS -->|before/after evidence| IMPACT
+  SCENARIOUI["DemoScenarios.tsx"] -->|revisioned configurable events| API
+  REBALANCE -->|preserves running work and records impact| IMPACT["schedule_impact.py"]
+  TRANSFER -->|before/after impact| IMPACT["schedule_impact.py"]
+  STATUS["OperationalStatus.tsx"] -->|current part and order risk| UI
   SERVICE -->|transactions| STORE["store.py / SQLite"]
   SERVICE -->|new database seed| SEED["scenarios.py"]
   UNIT["Unit and component tests"] -->|verify behavior| SERVICE
@@ -69,12 +80,12 @@ graph LR
 | File | Owned behavior / relationships | Verification |
 | --- | --- | --- |
 | [activity.py](../backend/print_assist/activity.py) | Entity-linked production events and repeated blocked-reason suppression, shared by controls/scheduling/simulation/reset. | Controls unit tests |
-| [controls.py](../backend/print_assist/controls.py) | Pure pause/resume/offline/online transitions; preserves held attempts and requires explicit resume after coming online. | `python -m pytest backend/tests/unit/test_controls.py` |
-| [test_controls.py](../backend/tests/unit/test_controls.py) | Frozen progress/stock, pending manual work, valid and rejected transitions, resume validation, material accounting and assignment explanations. | Backend unit suite |
+| [controls.py](../backend/print_assist/controls.py) | Pure printer controls; pause/offline transfers approved unfinished work, online rejoins capacity, legacy startup pauses support explicit same-printer resume. | `python -m pytest backend/tests/unit/test_controls.py` |
+| [test_controls.py](../backend/tests/unit/test_controls.py) | Transfer/restart stock accounting, pending manual work, valid/rejected transitions, manual start safety and assignment explanations. | Backend unit suite |
 | [test_production_controls.py](../backend/tests/integration/test_production_controls.py) | Typed API/replay/atomicity, concurrent reset and assignment, receipt retirement, fresh inventory/custom data and disabled flags. | Backend integration suite |
 | [ProductionControls.tsx](../frontend/src/components/ProductionControls.tsx) | State-specific printer actions, acknowledged scenario replacement, newest-first activity and legacy event compatibility. | ProductionControls component tests |
 | [ProductionControls.test.tsx](../frontend/src/components/ProductionControls.test.tsx) | Allowed actions, busy/failure states, reset acknowledgment and readable old/new events. | `npm test --workspace frontend -- src/components/ProductionControls.test.tsx` |
-| [production-controls.spec.ts](../tests/e2e/production-controls.spec.ts) | Real seeded/manual workflow, paused/offline stock preservation, explicit resume, full requested quantity completion and empty reset without external requests. | Root full/coverage checks |
+| [production-controls.spec.ts](../tests/e2e/production-controls.spec.ts) | Seeded transferred-work workflow, stopped source stock preservation, healthy capacity rejoining, full quantity completion and empty reset without external requests. | Root full/coverage checks |
 
 ```mermaid
 graph LR
@@ -269,7 +280,7 @@ files cover selection, motion cancellation and profile/quantity navigation.
 | [profile.test.ts](../frontend/src/dashboard/profile.test.ts) | Complete/invalid metadata, positive estimates and compatibility/preview shape validation. | Frontend suite |
 | [test_quick_print.py](../backend/tests/integration/test_quick_print.py) | Atomic order planning, unknown-model rollback, replay, automatic clock and preservation of existing manual modes. | Backend integration suite |
 | [example-tower.profile.json](../frontend/public/models/example-tower.profile.json) | Downloadable example metadata with explicitly illustrative demo estimates and registered preview. | JSON validation and guided browser profile import |
-| [guided-printing.spec.ts](../tests/e2e/guided-printing.spec.ts) | Upload profile intake, print-ready model handoff, manual Overview start/pause/resume and automatic quantity navigation without external traffic. | Root full/coverage checks |
+| [guided-printing.spec.ts](../tests/e2e/guided-printing.spec.ts) | Upload profile intake, print-ready model handoff, manual Overview start/pause/transfer/restart and automatic quantity navigation without external traffic. | Root full/coverage checks |
 
 ```mermaid
 graph LR
@@ -354,7 +365,7 @@ integration tests cover navigation and inherited-fast-clock behavior.
 | [PrintingGuidance.test.tsx](../frontend/src/components/PrintingGuidance.test.tsx) | Real work/clock state messaging and navigation callbacks. | Frontend suite |
 | [ScheduleProposal.tsx](../frontend/src/components/ScheduleProposal.tsx) | Preview/apply UI, future slots/material/blocked work, assumptions, stale guards, mode locking during requests, error feedback and commitment display. | ScheduleProposal/App tests |
 | [ScheduleProposal.test.tsx](../frontend/src/components/ScheduleProposal.test.tsx) | Preview/apply, stale/read failures, blocked/empty/manual plans, ledger and mode lock. | Frontend suite |
-| [schedule-proposals.spec.ts](../tests/e2e/schedule-proposals.spec.ts) | Idle new-print journey, real animated pixel change, pause/resume, read-only future proposal, apply/stock commitments and completion with released reservations. | Root full/coverage suite |
+| [schedule-proposals.spec.ts](../tests/e2e/schedule-proposals.spec.ts) | Idle new-print journey, real animated pixel change, paused work transfer, idle-source resume, read-only future proposal, apply/stock commitments and completion with released reservations. | Root full/coverage suite |
 
 ```mermaid
 graph LR
@@ -616,3 +627,111 @@ retry envelopes, changed server sessions and invalid responses. ModelLibrary and
 ModelingBoard tests cover unsupported imported colors without losing existing input;
 api tests cover structured validation failures. Unused App intake callbacks and
 unreachable guarded-preset branches were removed; disabled-send behavior is verified.
+
+
+## Automatic capacity transfer and incoming-order demonstration
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [redistribution.py](../backend/print_assist/redistribution.py) | Transfers approved unfinished parts to compatible healthy idle/running capacity; preserves healthy/completed work and incident holds, records waste and before/after impact, retries blocked work. Called by controls and scheduling. | `python -m pytest backend/tests/unit/test_redistribution.py` |
+| [order_demo.py](../backend/print_assist/order_demo.py) | Explicit local end-to-end intake: targeted model matching, feasible on-time automatic approval, clock start, persistent progress and attention states. Excludes unknown manual queue starts. | `python -m pytest backend/tests/unit/test_order_demo.py` |
+| [test_redistribution.py](../backend/tests/unit/test_redistribution.py) | Quantity/lineage, healthy busy destinations, material compatibility, manual queues, incident authorization and deferred retry regressions. | Backend unit suite |
+| [test_order_demo.py](../backend/tests/unit/test_order_demo.py) | Target-only approval, completion, blocked/unmatched outcomes and feasible alternatives to manual queues. | Backend unit suite |
+| [test_workload_transfer_api.py](../backend/tests/integration/test_workload_transfer_api.py) | Transactional transfer command, persistence, replay and schedule impact. | Backend integration suite |
+| [test_order_demo_workflow.py](../backend/tests/integration/test_order_demo_workflow.py) | Persistent simulated automatic intake and completion workflow. | Backend integration suite |
+| [test_automatic_order_command.py](../backend/tests/integration/test_automatic_order_command.py) | Typed API end-to-end command, idempotency and progress through completion without live agents. | Backend integration suite |
+| [OperationalStatus.tsx](../frontend/src/components/OperationalStatus.tsx) | Compact automatic progress, transfer report, red current order/part risks with ETA; running-first queue projection preserves valid active estimates before manual holds. | Frontend component suite |
+| [OperationalStatus.test.tsx](../frontend/src/components/OperationalStatus.test.tsx) | Progress, nullable unmatched request, labels, exact part risks and manual queue ETA regressions. | Frontend coverage |
+| [automatic-transfer.spec.ts](../tests/e2e/automatic-transfer.spec.ts) | Real-browser automatic order completion, healthy baseline, pause/offline transfer excluding unhealthy destinations, red late-part warnings and mobile overflow. | `npm run e2e` |
+
+Changed existing responsibilities: contracts/types include `end_to_end`, playback speed,
+transfer reports and demonstration progress; service refreshes progress transactionally.
+Proposals support targeted orders and exclusion of unknown manual queues. Controls
+transfer approved work on pause/offline; scheduling retries deferred transfers.
+App, OrderSimulation and ShopInbox expose explicit automatic consent and Overview
+handoff. OrderQueue, scheduleView and styles present current red risks. Their existing
+unit/component tests cover these responsibilities; production-controls E2E verifies
+online capacity rejoining after transfer rather than resuming an abandoned part.
+
+The guided-printing E2E now explicitly starts a transferred manual retry; the
+schedule-proposals E2E verifies a resumed empty source remains idle while its
+transferred automatic part runs on healthy capacity. Both remain in the full
+`npm run e2e` workflow suite.
+
+
+### Returning capacity and earliest production deadlines
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [queue_rebalancing.py](../backend/print_assist/queue_rebalancing.py) | Scheduler fills healthy idle printers from already-approved unstarted automatic queues. Preserves identities, healthy active prints, manual/incident ownership and filament reservations; records zero-waste transfer impacts and compacts remaining queue estimates. | `python -m pytest backend/tests/unit/test_queue_rebalancing.py backend/tests/integration/test_workload_transfer_api.py` |
+| [test_queue_rebalancing.py](../backend/tests/unit/test_queue_rebalancing.py) | Pause/resume, offline/online, exact completion without duplicates, earliest deadline before priority, estimates/impact ordering, unhealthy/incompatible/material rejection, manual/incident holds and approved recovery attempts. | Backend coverage suite |
+
+Scheduling now rebalances before dispatch and sorts deadline before priority.
+Proposals, redistribution and recovery use the same deadline rule. Monitoring and
+schedule_impact project running work first, followed by deadline/priority/start/id
+queue order; scheduleView and OperationalStatus use matching deadline ordering.
+Their unit/component regressions verify forecast/timeline and manual-hold alignment.
+The transfer API test verifies atomic returning capacity, stable replay, and partially
+unassigned order quantities in reports. automatic-transfer E2E verifies both return
+paths start queued work and improve red deadline warnings without touching active
+healthy parts. Existing source/test rows above remain the navigation entry points.
+
+
+## Reusable scenario event engine
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [demo_scenarios.py](../backend/print_assist/demo_scenarios.py) | Configurable marketplace/urgent/fault/low-stock/restore events through shop intake, ordinary automatic orders, fault management and controls. Normalized event identity dedup/conflict, real impacts, notifications/tool history and explicit no-inference execution mode. | `python -m pytest backend/tests/unit/test_demo_scenarios.py backend/tests/integration/test_demo_scenario_api.py` |
+| [test_demo_scenarios.py](../backend/tests/unit/test_demo_scenarios.py) | Sequential safe events, arbitrary printer IDs, cached product mapping, material mismatch, policy/inspection/refill guards, duplicate identity and existing approved work. | Backend coverage suite |
+| [test_demo_scenario_api.py](../backend/tests/integration/test_demo_scenario_api.py) | Strict event boundary, shared persistence, idempotent replay/dedup/conflict, typed shop metadata and reset. | Backend integration suite |
+| [DemoScenarios.tsx](../frontend/src/components/DemoScenarios.tsx) | Collapsed event controls, configurable order/equipment settings, explicit simulation/agent limits, guarded retry identity, authoritative recovery policy unless overridden, notification/history and impact/tool details. Composed in App Overview beside existing reset. | Frontend coverage suite |
+| [DemoScenarios.test.tsx](../frontend/src/components/DemoScenarios.test.tsx) | Five events, payload/configuration, uncertain retries, policy changes, missing models/printers, acknowledgement and actual history rendering. | Frontend coverage suite |
+| [demo-scenarios.spec.ts](../tests/e2e/demo-scenarios.spec.ts) | Sequential manual/automatic marketplace intake, urgent replanning, thermal recovery, restored future backlog, insufficient stock/refill, mobile width, exact completion and reset. | `npm run e2e` |
+
+Existing shop.py now exports reusable ingest_request; simulate delegates event intake,
+checks requested material and reuses product_mappings/artifacts. ShopRequest contracts
+include simulated Etsy metadata. ScenarioEventCommand uses the existing service
+transaction/API revision guard; Snapshot exposes persisted scenario_events. api.ts and
+App dispatch via the ordinary guarded command path. proposals/order_demo optionally
+replan existing approved automatic queues while preserving IDs/holds and reserving
+remaining original stock; new orders cannot displace an existing commitment.
+queue_rebalancing now balances the full future pool when idle capacity returns,
+retaining remaining original filament commitments to protect restricted parts.
+
+See [demo runbook](demo-runbook.md), [scenario design](superpowers/specs/2026-11-14-demo-scenario-engine-design.md)
+and [implementation plan](superpowers/plans/2026-11-14-demo-scenario-engine.md).
+
+
+## Unified scenario sidebar and signed-in read-only assistant
+
+| File | Owned behavior / relationships | Verification |
+| --- | --- | --- |
+| [orchestrator.py](../backend/print_assist/orchestrator.py) | Optional registered-client PKCE/OIDC login, JWT/granted-scope validation, private in-memory browser sessions, logout, bounded official model/Responses transport and read-only factory advice. Shared-state session guards and replay prevent duplicate inference. Callback query redaction prevents authorization-code access logging. Mounted by api.py; no automatic factory inference. | `python -m pytest backend/tests/unit/test_orchestrator.py backend/tests/integration/test_orchestrator_api.py` |
+| [test_orchestrator.py](../backend/tests/unit/test_orchestrator.py) | Configuration, redirect/size boundaries and fake transport failures. | Backend coverage suite |
+| [test_orchestrator_api.py](../backend/tests/integration/test_orchestrator_api.py) | Fake signed identities, PKCE/state/nonce/browser binding, scopes, expiry/logout/CSRF, model and completed-stream checks, concurrent/exact replay, clock/reset boundaries and access-log redaction. No live provider calls. | Backend coverage suite |
+| [OrchestratorPanel.tsx](../frontend/src/components/OrchestratorPanel.tsx) | Account connection/sign-in/model selection, explicit read-only message transport, stable ambiguous retries, rejected-state correction, discard/new-message flow and unmount guards. App receives truthful connection status. | Frontend coverage suite |
+| [OrchestratorPanel.test.tsx](../frontend/src/components/OrchestratorPanel.test.tsx) | No fabricated advice, auth and logout, models, completed messages, failed/late requests and exact retry versus explicit new intent. | Frontend coverage suite |
+| [AgentNetwork.tsx](../frontend/src/components/AgentNetwork.tsx) | Connected assistant, unavailable specialists and deterministic capability status. | Frontend coverage suite |
+| [AgentNetwork.test.tsx](../frontend/src/components/AgentNetwork.test.tsx) | Truthful connection/default and autonomous-trigger status. | Frontend coverage suite |
+| [orchestrator-sidebar.spec.ts](../tests/e2e/orchestrator-sidebar.spec.ts) | Reference panel order, one visible scenario/reset surface, real unconfigured prompt, dark desktop/mobile layout and fake-provider read-only chat/retry without production mutation. | `npm run e2e` |
+
+App composes Orchestrator, unified DemoScenarios/ScenarioReset and AgentNetwork in
+reference order. Manual workflow links remain under the floor. Distinct component
+keys preserve identities across refresh/reset. The signed-in header distinguishes
+manual advice from automatic agents. ProductionControls supports an embedded reset
+heading; DemoScenarios keeps event history and reset in one Scenario controls section.
+Existing App and component regressions cover composition/command behavior.
+api.py mounts the isolated provider routes; generated types include their contracts.
+pyproject.toml pins maintained PyJWT crypto verification. Playwright clears public
+OAuth registration settings for deterministic offline tests. [Setup](openai-assistant-setup.md)
+documents registration/callback, granted inference and ephemeral-session limits.
+
+```mermaid
+graph LR
+  AppSidebar[App sidebar] -->|account messages| AssistantUI[OrchestratorPanel.tsx]
+  AppSidebar -->|one event/reset surface| ControlsUI[DemoScenarios + ScenarioReset]
+  AssistantUI -->|same-origin HTTP| AssistantAPI[orchestrator.py]
+  AssistantAPI -->|read-only captured state| Factory[FactoryService]
+  AssistantAPI -->|explicit user authorization and inference| OpenAI[Registered OpenAI OAuth / Responses]
+  AssistantTests[Offline auth and browser fakes] -->|verify identity, replay and no mutations| AssistantAPI
+```

@@ -617,3 +617,81 @@ Keep domain entities generic: orders, items, artifacts, jobs, materials, printer
 and deadlines. Etsy and figures belong in fixtures and demo copy, not core
 validation or scheduling rules. Marketplace adapters, design prompting, resin,
 metal printing, and physical equipment integration require subsequent designs.
+
+
+## Implemented refinement: healthy capacity and local automatic intake
+
+Ordinary pause/offline controls transfer approved unfinished parts onto compatible
+healthy idle or running printers, queuing behind healthy active work. They never
+use paused, offline or faulted destinations or interrupt healthy active prints.
+Interrupted parts restart with waste recorded; completed quantities stay complete.
+Blocked approved transfers retain commitments and retry when capacity changes.
+Incident-owned unapproved recovery work remains held. Legacy paused snapshots may
+resume their original part when no transfer was requested.
+
+Transfer reports retain original/revised assignments, completion estimates and
+order/part deadline impact. Current late or unavailable orders and parts appear
+in red. A running part retains its ETA even when a manual queue follows it.
+
+Fresh scenarios have no injected faults. Reset is explicit; reload preserves saved
+incident history. Faults are introduced through simulation controls, never by default.
+
+The local incoming-order simulator includes an explicitly selected fully automated
+mode. Selecting it authorizes matching the saved model, approving only this new
+order's complete feasible on-time plan, starting simulated printers and the clock,
+and tracking completion. Unknown manual queue starts are excluded from that plan.
+Unmatched or infeasible requests remain visible for operator attention; ordinary
+manual and match/review intake retain their confirmation steps. No physical printer
+control, shop connection or model calls are required.
+
+
+Returning healthy capacity must pull already-approved automatic queued attempts
+from other printers when compatible idle capacity becomes available, including
+resume, online and completion boundaries. Never preempt active work or release
+manual/incident approvals to fill a printer. Preserve attempt identity, update
+reservations/queue estimates atomically and record zero-waste rebalancing impacts.
+Schedule by earliest production deadline first; use priority to break equal-deadline
+ties, then deterministic start/identity ordering. Dispatch, proposals, recovery,
+forecasts and dashboard queue/timeline projections must follow that rule.
+
+
+### Reusable simulated demonstration events
+
+A collapsible Overview panel triggers configurable marketplace orders, urgent orders,
+thermal faults, insufficient filament and restored equipment in sequence without a
+reset. Simulated orders use shared ingestion and cached saved-model mappings. Faults
+and restorations use the ordinary fault/inspection/recovery policy; arbitrary printer
+IDs/counts are supported. No scenario hardcodes assignments or recovery success.
+Persist event identity, notification, actual tool calls, before/after job/order
+projections and indirect deadline impacts. Existing floor/timeline/incidents update
+from shared state; explicit reset clears scenario history with the rest of production.
+
+Returning capacity receives a balanced future automatic backlog, not just one part.
+Preserve running/completed parts, manual approvals and original filament commitments.
+New feasible urgent orders may reorder approved future parts by deadline without
+replacing job identities or silently approving other held order quantities.
+
+Scenario controls must preserve the authoritative recovery setting unless the user
+explicitly overrides it. Ambiguous retries retain the same event identity. Live agent
+orchestration is still planned; current tool coordination is deterministic with no
+LLM consumption and must be presented honestly as simulated external integrations.
+
+
+### Explicit signed-in advisory chat
+
+The Overview sidebar follows Orchestrator, Scenario controls and Agent network.
+Events and acknowledged workshop reset are one simulation surface; manual workflow
+links remain accessible below the floor. The assistant offers actual read-only advice
+only after a user connects through configured registered-client Sign in with ChatGPT
+and OpenAI grants inference permissions. Missing configuration is visibly disconnected.
+Automatic agents remain off; an explicit signed-in Send is the only manual inference
+exception. Normal events/ticks/polling never invoke this advisor. No production tool,
+shell or filesystem action is available to it; existing deterministic approvals remain
+authoritative. Specialist agents are labeled unavailable, not simulated as connected.
+
+Keep OAuth/browser identity and tokens outside manufacturing snapshots. Validate
+PKCE/state/nonce and signed identity claims, enforce actual scope grants and same-origin
+requests, redact callback credentials from access logs, and keep request/stream bounds.
+Manual advice uses captured state; retries preserve identity without duplicate inference.
+Factory reset invalidates an old reply. Provider failures are not successful messages.
+Registration settings and ephemeral server-session limits are documented separately.

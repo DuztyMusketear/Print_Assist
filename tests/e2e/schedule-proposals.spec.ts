@@ -12,7 +12,8 @@ test('idle start guidance makes printing visible and reviewed schedules reserve 
  const canvas=page.locator('.printer-card canvas').first();const before=await canvas.screenshot();await page.waitForTimeout(180);const after=await canvas.screenshot();expect(before.equals(after)).toBe(false);
  await page.getByRole('button',{name:'Pause clock',exact:true}).click();await expect(page.getByRole('button',{name:'Run clock',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Pause Printer 1',exact:true}).click();await expect(page.getByRole('button',{name:'Resume Printer 1',exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Resume Printer 1',exact:true}).click();await expect(page.locator('.printer-inspector').getByText('running',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Resume Printer 1',exact:true}).click();await expect(page.locator('.printer-inspector').getByText('idle',{exact:true})).toBeVisible();
+ const transferred=await (await page.request.get('/api/state')).json();expect(transferred.jobs.some((job:{printer_id:string;status:string})=>job.printer_id==='printer-3'&&job.status==='running')).toBe(true);
  await page.getByLabel('Scenario',{exact:true}).selectOption('seeded');await page.getByRole('checkbox',{name:/I understand/}).check();await page.getByRole('button',{name:'Reset scenario',exact:true}).click();await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
  await page.getByRole('tab',{name:'Schedule',exact:true}).click();await page.getByRole('button',{name:'Preview schedule',exact:true}).click();
  await expect(page.locator('.schedule-proposal li').filter({hasText:'25 g'})).toHaveCount(5);

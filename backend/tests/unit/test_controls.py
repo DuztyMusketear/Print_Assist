@@ -14,7 +14,7 @@ def working(mode='automatic'):
 
 
 @pytest.mark.parametrize('action',['pause','offline'])
-def test_controls_freeze_work_and_preserve_stock_until_explicit_resume(action):
+def test_controls_restart_work_elsewhere_and_preserve_consumed_source_stock(action):
     state=advance(working(),3600)
     original=deepcopy(state)
     stopped=control_printer(state,'printer-1',action)
@@ -24,19 +24,23 @@ def test_controls_freeze_work_and_preserve_stock_until_explicit_resume(action):
     assert later['printers'][0]['material']['grams']==987.5
     if action=='offline':
         later=control_printer(later,'printer-1','online')
-        assert later['jobs'][0]['status']=='paused'
-        assert later['printers'][0]['status']=='paused'
-    resumed=control_printer(later,'printer-1','resume')
+        assert later['jobs'][0]['status']=='failed'
+        assert later['printers'][0]['status']=='idle'
+        resumed=later
+    else:
+        resumed=control_printer(later,'printer-1','resume')
     finished=advance(resumed,3600)
     assert finished['orders'][0]['successful_quantity']==1
-    assert finished['printers'][0]['material']['grams']==975
+    assert finished['printers'][0]['material']['grams']==987.5
+    assert finished['printers'][1]['material']['grams']==975
 
 
 def test_pending_manual_work_does_not_start_on_resume_and_idle_equipment_can_return_online():
     paused=control_printer(working('manual'),'printer-1','pause')
     resumed=control_printer(paused,'printer-1','resume')
     assert resumed['jobs'][0]['status']=='pending'
-    assert resumed['printers'][0]['status']=='reserved'
+    assert resumed['printers'][0]['status']=='idle'
+    assert resumed['printers'][1]['status']=='reserved'
     state=control_printer(initial_state(),'printer-1','offline')
     assert control_printer(state,'printer-1','online')['printers'][0]['status']=='idle'
     state=control_printer(initial_state(),'printer-1','pause')
@@ -53,7 +57,9 @@ def test_controls_reject_invalid_and_unsafe_transitions_without_mutation():
         assert state==before
     state=control_printer(working(),'printer-1','pause')
     state['printers'][0]['material']['grams']=1
-    with pytest.raises(ValueError,match='filament'): control_printer(state,'printer-1','resume')
+    resumed=control_printer(state,'printer-1','resume')
+    assert resumed['printers'][0]['status']=='idle'
+    assert resumed['jobs'][-1]['printer_id']=='printer-2'
 
 
 def test_assignment_records_why_work_is_blocked_and_does_not_repeat_same_reason():
@@ -73,7 +79,7 @@ def test_assignment_explains_capability_and_material_mismatches():
         assert reason in schedule(state)['events'][-1]['message']
     state=control_printer(working(),'printer-1','pause')
     state['printers'][0]['capabilities']=[]
-    with pytest.raises(ValueError,match='capabilities'):control_printer(state,'printer-1','resume')
+    assert control_printer(state,'printer-1','resume')['jobs'][-1]['printer_id']=='printer-2'
 
 
 def test_invalid_scenarios_and_material_shortage_are_atomic():
@@ -107,3 +113,21 @@ def test_manual_quantity_prepares_the_next_batch_without_starting_it():
     assert len(result['jobs'])==4
     assert result['jobs'][-1]['status']=='pending'
     assert not any(job['status']=='running' for job in result['jobs'])
+
+
+@pytest.mark.parametrize('change,message', [
+    ({'status':'offline'}, 'unavailable'),
+    ({'capabilities':[]}, 'capabilities'),
+    ({'material':dict(type='ABS',color='red',grams=1000)}, 'filament'),
+    ({'material':dict(type='PLA',color='blue',grams=0)}, 'filament'),
+])
+def test_manual_start_revalidates_equipment_before_touching_job(change,message):
+    from print_assist.scheduling import start_job
+    state=working('manual')
+    state['printers'][0].update(change)
+    if message=='capabilities':
+        state['artifacts'][0]['required_capabilities']=['enclosed']
+    before=deepcopy(state)
+    with pytest.raises(ValueError,match=message):
+        start_job(state,state['jobs'][0]['id'])
+    assert state==before

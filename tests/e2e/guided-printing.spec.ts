@@ -37,6 +37,8 @@ test('prepared upload profile guides manual inspection and automatic quantity pr
  await page.getByRole('button',{name:'Pause Printer 2',exact:true}).click();
  await expect(page.locator('.printer-inspector').getByText('paused',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Resume Printer 2',exact:true}).click();
+ // Manual retries still require an explicit start after capacity returns.
+ await page.getByRole('button',{name:'Start print on Printer 2',exact:true}).click();
  await expect(page.locator('.printer-inspector').getByText('running',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'2. Choose model and quantity',exact:true}).click();
  await page.getByLabel('Number of copies',{exact:true}).fill('2');

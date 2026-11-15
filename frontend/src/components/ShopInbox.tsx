@@ -12,7 +12,7 @@ export function ShopInbox({state,onLoad,onDecision,onSchedule,onSimulate,initial
   {onSimulate&&<details className="incoming-demo-guide"><summary>How the order demo works</summary><ol>
    <li>Click Simulate incoming order, choose a saved model, copies and deadlines, then select a process.</li>
    <li>Manual: open Request details in the inbox, check the model and choose Review schedule.</li>
-   <li>Automatic: match the saved model and open its proposed schedule automatically.</li>
+   <li>Automatic: match the saved model and open its proposed schedule automatically.</li><li>Fully automated demo: match, confirm a feasible schedule and start printing without another approval. Watch the accelerated order progress in Overview.</li>
    <li>Check the colored timeline and estimates in Schedule. Choose Confirm and start printing, or confirm a manual schedule and start its jobs in Printers.</li>
    <li>Overview shows the assigned printers printing; use the clock to watch progress and completion. Pause/resume controls are in Printers.</li>
   </ol><p>This is a local example order feed. No live shop or physical printer is connected.</p></details>}

@@ -22,14 +22,14 @@ export function PrinterControls({id,status,onControl}:{id:string;status:string;o
   </div>;
 }
 
-export function ScenarioReset({onReset}:{onReset:(scenario:Scenario)=>Promise<void>}) {
+export function ScenarioReset({onReset,heading="Reset simulation scenario"}:{onReset:(scenario:Scenario)=>Promise<void>;heading?:string}) {
   const [scenario,setScenario]=useState<Scenario>('empty');const [ack,setAck]=useState(false);
   const [busy,setBusy]=useState(false);const [error,setError]=useState('');
   async function reset() {
     setBusy(true);setError('');
     try {await onReset(scenario);setAck(false);}catch(reason){setError((reason as Error).message);}finally{setBusy(false);}
   }
-  return <section className="scenario-reset"><h2>Reset simulation scenario</h2>
+  return <section className="scenario-reset"><h2>{heading}</h2>
     <EntryField id="scenario-choice" label="Scenario" help="Empty clears manufacturing work. Seeded creates two sample figure orders and three idle printers. Both reset the session and keep agents off."><select value={scenario} onChange={event=>setScenario(event.target.value as Scenario)}><option value="empty">Empty workshop</option><option value="seeded">Seeded figure shop</option></select></EntryField>
     <p>Reset replaces orders, attempts, inventory, modeling tasks, custom artifacts and activity history. The clock stops and agent controls turn off. Repository model files are kept.</p>
     <label className="example-toggle"><input type="checkbox" checked={ack} onChange={event=>setAck(event.target.checked)}/>I understand that reset replaces the current simulation data.</label>

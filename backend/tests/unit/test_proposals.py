@@ -83,7 +83,9 @@ def test_offline_and_paused_work_keep_future_filament_committed():
  assert ledger(state)[0]['reserved_grams']==100 and ledger(state)[0]['available_grams']==0
  state=control_printer(state,'printer-1','offline');state=advance(state,7200)
  assert ledger(state)[0]['reserved_grams']==100 and state['printers'][0]['material']['grams']==100
- state=control_printer(state,'printer-1','online');state=control_printer(state,'printer-1','resume')
+ state=control_printer(state,'printer-1','online')
+ assert state['printers'][0]['status']=='running'
+ assert len([j for j in state['jobs'] if j['status']=='failed'])==1
  state=advance(state,28800)
  assert ledger(state)[0]['reserved_grams']==0 and state['printers'][0]['material']['grams']==0
  assert sum(o['successful_quantity'] for o in state['orders'])==4

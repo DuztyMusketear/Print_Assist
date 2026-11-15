@@ -118,7 +118,9 @@ class FactoryService:
 
     def simulate_order(self,command):
         from .shop import simulate
-        return self._transition(command,'shop-simulate',lambda state:simulate(state,command.payload.model_dump(mode='json')))
+        from .order_demo import simulate_automatic_order
+        handler=simulate_automatic_order if command.payload.mode=='end_to_end' else simulate
+        return self._transition(command,'shop-simulate',lambda state:handler(state,command.payload.model_dump(mode='json')))
 
     def schedule(self, command: ScheduleCommand) -> dict:
         return self._transition(command, "schedule", lambda state: schedule(state, command.payload.mode))
@@ -179,11 +181,17 @@ class FactoryService:
                     state=original
                     state['running']=False
                     record(state,'clock_stopped','Clock paused: '+str(error),source='system',status='blocked')
+                from .order_demo import refresh_order_demonstrations
+                state=refresh_order_demonstrations(state)
                 state['revision']+=1
                 self.store.save(db,state)
 
     def printer_control(self,command):
         return self._transition(command,'printer-control',lambda state: control_printer(state,command.payload.printer_id,command.payload.action))
+
+    def scenario_event(self,command):
+        from .demo_scenarios import trigger_scenario
+        return self._transition(command,'scenario-event',lambda state:trigger_scenario(state,command.payload.model_dump(mode='json')))
 
     def reset(self,command):
         def replace(state):
@@ -214,6 +222,8 @@ class FactoryService:
                 raise ValueError("Stale revision; refresh state before submitting")
             before=state
             state = transition(state)
+            from .order_demo import refresh_order_demonstrations
+            state = refresh_order_demonstrations(state)
             if persist:
                 persist(db)
             if name=='reset':

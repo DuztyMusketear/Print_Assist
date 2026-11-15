@@ -12,7 +12,7 @@ def project(state):
     stock={p['id']:p['material']['grams'] for p in state['printers']}
     ends={o['id']:[] for o in state['orders']}
     held=set()
-    for job in sorted(state['jobs'],key=lambda j:(j['status']!='running',j.get('estimated_start',''),j['id'])):
+    for job in sorted(state['jobs'],key=lambda j:(j['status']!='running',next(o['production_due'] for o in state['orders'] if o['id']==j['order_id']),-next(o['priority'] for o in state['orders'] if o['id']==j['order_id']),j.get('estimated_start',''),j['id'])):
         if job['status'] not in {'running','pending','paused','planned'}: continue
         order=next(o for o in state['orders'] if o['id']==job['order_id'])
         artifact=next(a for a in state['artifacts'] if a['id']==order['artifact_id'])
@@ -24,7 +24,7 @@ def project(state):
         else:
             held.add(order['id']);available[pid]=None
     forecasts=[]
-    for order in sorted(state['orders'],key=lambda o:(-o['priority'],o['production_due'],o['id'])):
+    for order in sorted(state['orders'],key=lambda o:(o['production_due'],-o['priority'],o['id'])):
         if order['status']=='cancelled':continue
         artifact=next(a for a in state['artifacts'] if a['id']==order['artifact_id'])
         reason='Held or manual work requires an explicit start/resume' if order['id'] in held else ''

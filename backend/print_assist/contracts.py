@@ -99,11 +99,31 @@ class OrderEstimate(BaseModel):
 class SimulateOrderPayload(OrderCreate):
     artifact_id: str | None = None
     quantity: Annotated[int,Field(strict=True,gt=0,le=10000)]
-    mode: Literal['manual','automatic']='manual'
+    mode: Literal['manual','automatic','end_to_end']='manual'
+    clock_speed: Literal[1,60,300,3600] = 3600
 
 
 class SimulateOrderCommand(ScheduleCommand):
     payload: SimulateOrderPayload
+
+
+class ScenarioEventPayload(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    event: Literal['marketplace_order','thermal_fault','urgent_order','insufficient_filament','printer_restored']
+    event_id: Annotated[str,Field(min_length=1)]
+    printer_id: str | None = None
+    product_id: Annotated[str,Field(min_length=1)] = 'EXAMPLE-FIGURE'
+    order: SimulateOrderPayload | None = None
+    filament_type: str | None = None
+    color: str | None = None
+    available_grams: Annotated[float,Field(ge=0,allow_inf_nan=False)] = 0
+    refill_grams: Annotated[float,Field(gt=0,allow_inf_nan=False)] = 1000
+    confirmed: StrictBool = False
+    recovery_mode: Literal['review','automatic'] | None = None
+
+
+class ScenarioEventCommand(ScheduleCommand):
+    payload: ScenarioEventPayload
 
 
 class ApplySchedulePayload(BaseModel):
@@ -263,7 +283,11 @@ class ShopDecisionCommand(ScheduleCommand):
 class ShopRequest(OrderCreate):
     artifact_id: str | None = None
     id: str
-    source: Literal['example','simulation']
+    source: Literal['example','simulation','simulated_etsy']
+    event_id: str | None = None
+    filament_type: str | None = None
+    color: str | None = None
+    attention_reason: str | None = None
     sku: str
     product_name: str
     status: Literal['pending','accepted','rejected','cancelled']
@@ -378,6 +402,9 @@ class Telemetry(BaseModel):
 
 
 class FactorySnapshot(BaseModel):
+    workload_transfers: list[dict] = Field(default_factory=list)
+    order_demonstrations: list[dict] = Field(default_factory=list)
+    scenario_events: list[dict] = Field(default_factory=list)
     recovery_policy: Literal['review','automatic'] = 'review'
     incidents: list[dict] = Field(default_factory=list)
     session_id: UUID

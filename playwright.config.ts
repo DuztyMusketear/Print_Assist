@@ -9,7 +9,7 @@ export default defineConfig({
   webServer:[
     {command:`"${python}" -m uvicorn print_assist.api:create_app --factory --app-dir backend --host 127.0.0.1 --port ${apiPort}`,
       url:`http://127.0.0.1:${apiPort}/api/health`,reuseExistingServer:false,
-      env:{PRINT_ASSIST_API_PORT:String(apiPort),PRINT_ASSIST_DB:`.tools/e2e-${Date.now()}.sqlite3`}},
+      env:{PRINT_ASSIST_OPENAI_CLIENT_ID:'',PRINT_ASSIST_OPENAI_REDIRECT_URI:'',PRINT_ASSIST_API_PORT:String(apiPort),PRINT_ASSIST_DB:`.tools/e2e-${Date.now()}.sqlite3`}},
     {command:'npm run dev',url:`http://127.0.0.1:${webPort}`,reuseExistingServer:false},
   ],
 });

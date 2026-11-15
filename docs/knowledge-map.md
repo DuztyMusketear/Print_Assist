@@ -59,9 +59,16 @@ graph LR
     FAULTPLAN["Fault/recovery plan"] -->|test-first implementation of| FAULTDESIGN
     MAP -->|indexes recovery implementation| FAULTDESIGN
     MAP -->|indexes recovery implementation| FAULTPLAN
+    TRANSFER["Healthy transfer and automatic orders"] -->|extends scheduling requirements| SPEC
+    MAP -->|indexes refinement| TRANSFER
+    DEMOEVENTS["Reusable demo event engine"] -->|exercises real scheduling and recovery| TRANSFER
+    MAP -->|indexes| DEMOEVENTS
 ```
 
 ## File index
+
+- [Healthy transfer design](superpowers/specs/2026-11-14-automatic-workload-transfer-design.md): approved-work redistribution, red deadline risks and explicit automatic local order mode; verify with offline workflows.
+- [Healthy transfer plan](superpowers/plans/2026-11-14-automatic-workload-transfer.md): test-first implementation and integration gates for the refinement; root coverage/schema/build/browser verification.
 
 | File | Purpose and owned behavior | Related files | Verification |
 | --- | --- | --- | --- |
@@ -115,3 +122,13 @@ this page as the top-level entry point.
 Read the relevant implementation and tests before editing. Correct stale entries
 in the same branch. The map helps locate evidence; it does not prove correctness
 or automatically discover dependencies.
+
+
+- [Demo scenario engine design](superpowers/specs/2026-11-14-demo-scenario-engine-design.md): configurable events using shared intake, scheduling and recovery.
+- [Demo scenario engine plan](superpowers/plans/2026-11-14-demo-scenario-engine.md): backlog, identity safety, UI, regression and verification work.
+- [Offline demo runbook](demo-runbook.md): repeatable manual/automatic marketplace, urgent, fault, low-stock and restored-printer walkthroughs; truthful runtime limits.
+
+
+- [Signed-in assistant setup](openai-assistant-setup.md): registered client, exact callback and read-only account usage; no live account verification during development.
+- [Unified sidebar design](superpowers/specs/2026-11-14-orchestrator-sidebar-design.md): shared scenario/reset, truthful assistant/capability UI and separate manual inference.
+- [Unified sidebar plan](superpowers/plans/2026-11-14-orchestrator-sidebar.md): auth, UI, integration and offline verification.

@@ -1,7 +1,8 @@
 """Pure operator printer controls."""
 from copy import deepcopy
 from .activity import record
-from .scheduling import start_job, schedule
+from .scheduling import schedule, start_job
+from .redistribution import redistribute
 
 def control_printer(state,printer_id,action):
     result=deepcopy(state)
@@ -14,18 +15,13 @@ def control_printer(state,printer_id,action):
         raise ValueError('Invalid printer control for current state')
     job=next((job for job in result['jobs'] if job['printer_id']==printer_id and job['status'] in {'running','pending','paused'}),None)
     if action in {'pause','offline'}:
-        if job:
-            job.setdefault('suspended_status',job['status'])
-            job['status']='paused'
-        printer['status']='paused' if action=='pause' else 'offline'
+        result=redistribute(result,printer_id,action)
     elif action=='online':
-        printer['status']='paused' if job else 'idle'
-    elif job:
-        if job.get('suspended_status')=='pending':
-            job.pop('suspended_status')
-            job['status']='pending';printer['status']='reserved'
-        else:
-            result=start_job(result,job['id'])
+        printer['status']='idle'
+    elif job and job['status']=='paused' and not job.get('workload_transfer_pending'):
+        # Application restart pauses active jobs for safety. An explicit resume
+        # may continue that same physical printer's part with its saved progress.
+        result=start_job(result,job['id'])
     else:
         printer['status']='idle'
     record(result,'printer_'+action,'Printer '+printer_id+': '+action,printer_id=printer_id,

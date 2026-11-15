@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 
-test('seeded production can pause, go offline, resume and complete before reset',async({page})=>{
+test('seeded production transfers paused work, rejoins online capacity and completes before reset',async({page})=>{
   const external:string[]=[];
   await page.route('**/*',route=>{
     if(new URL(route.request().url()).hostname!=='127.0.0.1'){external.push(route.request().url());return route.abort();}
@@ -29,7 +29,6 @@ test('seeded production can pause, go offline, resume and complete before reset'
   expect(stopped.printers[0].material.grams).toBe(before.printers[0].material.grams);
   await page.getByRole('tab',{name:'Printers',exact:true}).click();
   await page.getByRole('button',{name:'Bring Printer 1 online',exact:true}).click();
-  await page.getByRole('button',{name:'Resume Printer 1',exact:true}).click();
   await expect(page.locator('.printer-status')).toHaveText('running');
   await openScheduleTools(page);
   for(let hour=0;hour<3;hour++) {

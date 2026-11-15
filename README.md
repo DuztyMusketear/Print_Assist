@@ -14,7 +14,7 @@ pay still need customer validation.
 **Current status:** Offline order entry uses a persisted queue. The dashboard
 also tracks operator-supplied model references through modeling, supports, and
 human review in persisted shared state; approved tasks become orderable artifacts. It does not generate models, create supports,
-or slice files. Three virtual printers, interactive 3D beds with local STL previews, and scheduling are implemented; fault recovery remains planned.
+or slice files. Three virtual printers, interactive 3D beds with local STL previews, and scheduling are implemented, including deterministic fault recovery and configurable demo events. The optional signed-in Orchestrator provides read-only advice after [OpenAI client setup](./docs/openai-assistant-setup.md); autonomous specialists remain planned.
 Physical printer control, marketplace integrations, and billing are outside the
 MVP.
 

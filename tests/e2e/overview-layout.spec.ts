@@ -11,8 +11,8 @@ test('compact overview keeps desktop panels aligned and stacks without mobile ov
  expect(sidebar!.x).toBeGreaterThanOrEqual(floor!.x+floor!.width);
  expect(bottom!.y).toBeGreaterThanOrEqual(floor!.y+floor!.height);
  expect(queue!.y).toBe(activity!.y);
- expect((await page.locator('header').boundingBox())!.height).toBe(76);
- await expect(page.locator('header').getByRole('region',{name:'Simulation clock'})).toBeVisible();
+ expect((await page.locator('main>header').boundingBox())!.height).toBe(76);
+ await expect(page.locator('main>header').getByRole('region',{name:'Simulation clock'})).toBeVisible();
  await expect(page.locator('.printer-inspector')).toHaveCount(1);
  await expect(page.locator('.printer-telemetry')).toHaveCount(0);
  await page.getByRole('button',{name:'Inspect Printer 2',exact:true}).click();

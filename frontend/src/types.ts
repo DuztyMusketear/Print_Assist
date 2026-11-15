@@ -4,6 +4,108 @@
  */
 
 export interface paths {
+    "/api/orchestrator/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connection */
+        get: operations["connection_api_orchestrator_connection_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orchestrator/auth/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: operations["start_api_orchestrator_auth_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orchestrator/auth/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Callback */
+        get: operations["callback_api_orchestrator_auth_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orchestrator/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_api_orchestrator_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orchestrator/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Chat */
+        post: operations["chat_api_orchestrator_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scenarios/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Scenario Event */
+        post: operations["scenario_event_api_scenarios_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/incidents/telemetry": {
         parameters: {
             query?: never;
@@ -613,6 +715,37 @@ export interface components {
             visual_asset_id?: string | null;
             support_task?: components["schemas"]["SupportTask"] | null;
         };
+        /** AuthorizationStart */
+        AuthorizationStart: {
+            /** Authorization Url */
+            authorization_url: string;
+        };
+        /** ChatReply */
+        ChatReply: {
+            /** Reply */
+            reply: string;
+            /** Model */
+            model: string;
+            /**
+             * Read Only
+             * @default true
+             * @constant
+             */
+            read_only: true;
+        };
+        /** ChatRequest */
+        ChatRequest: {
+            /** Message */
+            message: string;
+            /** Session Id */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Model */
+            model?: string | null;
+        };
         /** ClearFaultCommand */
         ClearFaultCommand: {
             /**
@@ -683,6 +816,19 @@ export interface components {
             idempotency_key: string;
             payload: components["schemas"]["OrderCreate"];
         };
+        /** ConnectionState */
+        ConnectionState: {
+            /** Configured */
+            configured: boolean;
+            /** Connected */
+            connected: boolean;
+            /** Account Label */
+            account_label?: string | null;
+            /** Message */
+            message: string;
+            /** Models */
+            models?: components["schemas"]["ModelOption"][];
+        };
         /** Controls */
         Controls: {
             /** Agents Enabled */
@@ -742,6 +888,18 @@ export interface components {
         ExampleFeedPayload: Record<string, never>;
         /** FactorySnapshot */
         FactorySnapshot: {
+            /** Workload Transfers */
+            workload_transfers?: {
+                [key: string]: unknown;
+            }[];
+            /** Order Demonstrations */
+            order_demonstrations?: {
+                [key: string]: unknown;
+            }[];
+            /** Scenario Events */
+            scenario_events?: {
+                [key: string]: unknown;
+            }[];
             /**
              * Recovery Policy
              * @default review
@@ -958,6 +1116,13 @@ export interface components {
              */
             idempotency_key: string;
             payload: components["schemas"]["ModelAction"];
+        };
+        /** ModelOption */
+        ModelOption: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** ModelTask */
         ModelTask: {
@@ -1298,6 +1463,61 @@ export interface components {
             /** Confirmed */
             confirmed?: boolean;
         };
+        /** ScenarioEventCommand */
+        ScenarioEventCommand: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             */
+            idempotency_key: string;
+            payload: components["schemas"]["ScenarioEventPayload"];
+        };
+        /** ScenarioEventPayload */
+        ScenarioEventPayload: {
+            /**
+             * Event
+             * @enum {string}
+             */
+            event: "marketplace_order" | "thermal_fault" | "urgent_order" | "insufficient_filament" | "printer_restored";
+            /** Event Id */
+            event_id: string;
+            /** Printer Id */
+            printer_id?: string | null;
+            /**
+             * Product Id
+             * @default EXAMPLE-FIGURE
+             */
+            product_id: string;
+            order?: components["schemas"]["SimulateOrderPayload"] | null;
+            /** Filament Type */
+            filament_type?: string | null;
+            /** Color */
+            color?: string | null;
+            /**
+             * Available Grams
+             * @default 0
+             */
+            available_grams: number;
+            /**
+             * Refill Grams
+             * @default 1000
+             */
+            refill_grams: number;
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+            /** Recovery Mode */
+            recovery_mode?: ("review" | "automatic") | null;
+        };
         /** ScheduleAssignment */
         ScheduleAssignment: {
             /** Order Id */
@@ -1428,7 +1648,15 @@ export interface components {
              * Source
              * @enum {string}
              */
-            source: "example" | "simulation";
+            source: "example" | "simulation" | "simulated_etsy";
+            /** Event Id */
+            event_id?: string | null;
+            /** Filament Type */
+            filament_type?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Attention Reason */
+            attention_reason?: string | null;
             /** Sku */
             sku: string;
             /** Product Name */
@@ -1483,7 +1711,13 @@ export interface components {
              * @default manual
              * @enum {string}
              */
-            mode: "manual" | "automatic";
+            mode: "manual" | "automatic" | "end_to_end";
+            /**
+             * Clock Speed
+             * @default 3600
+             * @enum {integer}
+             */
+            clock_speed: 1 | 60 | 300 | 3600;
         };
         /** StartCommand */
         StartCommand: {
@@ -1593,6 +1827,164 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    connection_api_orchestrator_connection_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionState"];
+                };
+            };
+        };
+    };
+    start_api_orchestrator_auth_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorizationStart"];
+                };
+            };
+        };
+    };
+    callback_api_orchestrator_auth_callback_get: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_orchestrator_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionState"];
+                };
+            };
+        };
+    };
+    chat_api_orchestrator_chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatReply"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenario_event_api_scenarios_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioEventCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactorySnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     incident_telemetry_api_incidents_telemetry_post: {
         parameters: {
             query?: never;

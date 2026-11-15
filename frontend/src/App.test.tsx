@@ -2,10 +2,20 @@ import {act,render,screen,waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {test,expect,vi} from 'vitest';
 import App from './App';
+vi.mock('./components/OrchestratorPanel',()=>({OrchestratorPanel:({onConnectionChange}:{onConnectionChange:(value:{configured:boolean;connected:boolean;account_label:string|null;message:string;models:[]})=>void})=><section aria-label="Orchestrator chat"><h2>Orchestrator</h2><button onClick={()=>onConnectionChange({configured:true,connected:true,account_label:'Test account',message:'Connected',models:[]})}>Connect test assistant</button></section>}));
 vi.mock('./monitoring',()=>({useMonitoring:()=>{}}));
 vi.mock('./components/useOrderEstimate',()=>({useOrderEstimate:()=>({estimate:undefined,busy:false,error:''})}));
 vi.mock('./printers/scene',()=>({mountScene:()=>({command:()=>{},update:()=>{},dispose:()=>{}})}));
 import {state,orderedState} from './test-fixtures';
+
+test('explicit end-to-end incoming demo navigates directly to printer monitoring',async()=>{
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state))).mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('tab',{name:'Orders'}));await user.click(screen.getByRole('button',{name:'Simulate incoming order'}));
+ await user.selectOptions(screen.getByLabelText('Incoming process'),'end_to_end');await user.click(screen.getByRole('button',{name:'Simulate order'}));
+ await waitFor(()=>expect(screen.getByRole('tab',{name:'Overview'})).toHaveAttribute('aria-selected','true'));
+ expect(JSON.parse(String(transport.mock.calls[1][1]?.body))).toMatchObject({payload:{mode:'end_to_end',clock_speed:3600}});
+});
 
 test('incident policy commands use shared guarded transport from overview and printer inspection',async()=>{
  const transport=vi.spyOn(globalThis,'fetch').mockImplementation(async()=>new Response(JSON.stringify(state)));
@@ -754,7 +764,8 @@ test.each([null,'2026-11-15T04:00:00Z'])('overview displays forecast and simulat
     telemetry:[{printer_id:'printer-1',nozzle_c:210,bed_c:60}]})));
   render(<App/>);await screen.findByText(/Estimated print completion:/);
   expect(screen.getByText(/Estimated print completion:/)).toBeInTheDocument();
-  expect(screen.getByText(/Capacity estimate/)).toHaveTextContent(completion ?? 'Unavailable');
+  expect(screen.getByText(/Estimated print completion:/)).toHaveTextContent('Capacity estimate');
+  expect(screen.getByText(/Estimated print completion:/)).toHaveTextContent(completion ?? 'Unavailable');
 });
 
 
@@ -865,7 +876,7 @@ test('a late quick-print result cannot navigate away from a reset session',async
 test('overview places floor above queue/activity and scenarios in the sidebar',async()=>{
  vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)));
  render(<App/>);await screen.findByText(/No orders yet/);
- expect(screen.getByRole('complementary',{name:'Production controls'})).toContainElement(screen.getByRole('heading',{name:'Reset simulation scenario'}));
+ expect(screen.getByRole('complementary',{name:'Production controls'})).toContainElement(screen.getByRole('heading',{name:'Reset workshop'}));
  expect(screen.getByRole('heading',{name:'Production activity'}).closest('.overview-bottom')).not.toBeNull();
  expect(screen.getByRole('region',{name:'Simulation clock'}).closest('header')).not.toBeNull();
 });
@@ -999,4 +1010,50 @@ test('a refreshed new session invalidates an open confirmation even when order I
  const next={...orderedState,session_id:'00000000-0000-4000-8000-000000000099'};
  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(orderedState))).mockResolvedValueOnce(new Response(JSON.stringify(next)));
  const user=userEvent.setup();render(<App/>);await screen.findByText(/2 items/);await user.click(screen.getByRole('tab',{name:'Schedule'}));await user.click(screen.getByRole('button',{name:/Inspect order/}));await user.click(screen.getByRole('button',{name:'Delete scheduled order'}));await user.click(screen.getByRole('button',{name:'Refresh queue'}));await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());expect(transport).toHaveBeenCalledTimes(2);
+});
+
+
+test('demo events share guarded production commands and retain the overview',async()=>{
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state))).mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,scenario_events:[{event_id:'event-1',event:'marketplace_order',status:'accepted',notification:'Incoming simulated marketplace request',timestamp:state.simulation_time,tool_calls:[],impacts:[]}]})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByText('Demo scenarios',{exact:true}));
+ await user.click(screen.getByRole('button',{name:'Trigger simulated event'}));
+ expect(await screen.findByRole('status')).toHaveTextContent('Incoming simulated marketplace request');
+ expect(transport.mock.calls[1][0]).toBe('/api/scenarios/events');
+ expect(JSON.parse(String(transport.mock.calls[1][1]!.body))).toMatchObject({session_id:state.session_id,expected_revision:0,payload:{event:'marketplace_order',order:{mode:'manual',quantity:2}}});
+ expect(screen.getByRole('tab',{name:'Overview'})).toHaveAttribute('aria-selected','true');
+});
+
+
+test('overview groups the assistant, all scenario controls and actual capability status in reference order',async()=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(state)));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ const sidebar=screen.getByRole('complementary',{name:'Production controls'});
+ expect(Array.from(sidebar.querySelectorAll(':scope > section')).map(section=>section.querySelector('h2')?.textContent)).toEqual(['Orchestrator','Scenario controls','Agent network']);
+ expect(screen.getByRole('heading',{name:'Reset workshop'}).closest('.scenario-controls')).not.toBeNull();
+ expect(screen.queryByRole('heading',{name:'Reset simulation scenario'})).not.toBeInTheDocument();
+ expect(screen.getByText('Sign in required')).toBeVisible();
+ await user.click(screen.getByRole('button',{name:'Connect test assistant'}));
+ expect(screen.getByText('Connected',{exact:true})).toBeVisible();
+ expect(screen.getByText(/Manual assistant connected/)).toBeVisible();
+});
+
+test('printer view uses the same unified simulated event commands and reset surface',async()=>{
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(state)));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('tab',{name:'Printers'}));
+ await user.click(screen.getByText('Demo scenarios',{exact:true}));
+ await user.click(screen.getByRole('button',{name:'Trigger simulated event'}));
+ expect(transport.mock.calls.at(-1)?.[0]).toBe('/api/scenarios/events');
+ expect(screen.getByRole('heading',{name:'Reset workshop'})).toBeVisible();
+});
+
+
+test('assistant and scenario controls keep distinct React identities across state refreshes',async()=>{
+ const warnings=vi.spyOn(console,'error').mockImplementation(()=>{});
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify(state)));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('button',{name:'Refresh queue'}));
+ await user.click(screen.getByRole('button',{name:'Connect test assistant'}));
+ expect(warnings.mock.calls.flat().join(' ')).not.toContain('same key');
 });

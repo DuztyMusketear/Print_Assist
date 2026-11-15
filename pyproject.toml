@@ -2,7 +2,7 @@
 name = "print-assist"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["fastapi==0.162.7", "pydantic==2.14.3", "uvicorn==0.54.0"]
+dependencies = ["fastapi==0.162.7", "pydantic==2.14.3", "uvicorn==0.54.0", "PyJWT[crypto]==2.15.1"]
 
 [project.optional-dependencies]
 test = ["pytest==9.2.0", "pytest-cov==7.1.0", "httpx2==2.16.0"]

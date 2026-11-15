@@ -1,0 +1,4 @@
+import type {Snapshot} from '../api';
+export function AgentNetwork({state,connected=false}:{state:Snapshot;connected?:boolean}){
+ return <section className="agent-network"><header className="sidebar-panel-heading"><h2>Agent network</h2><span className="sidebar-badge">Capabilities</span></header><ul>{[['Orchestrator',connected?'Connected':'Sign in required'],['Modeling','Not connected'],['Review','Not connected'],['Supports','Not connected'],['Scheduling','Deterministic tools'],['Printing','Deterministic tools'],['Monitoring','Deterministic tools']].map(([name,status])=><li key={name}><span className={status==='Connected'?'network-indicator connected':'network-indicator'}/><strong>{name}</strong><small>{status}</small></li>)}</ul><p>Automatic triggers {state.controls.automatic_triggers?'on':'off'}. Specialist agents are not connected.</p></section>;
+}

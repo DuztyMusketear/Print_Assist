@@ -561,3 +561,133 @@ Fresh root `.venv\Scripts\python.exe scripts/check.py coverage` passed: **170 ba
 schema drift, TypeScript and build checks. Prior feature-only verification passed 450
 tests. Existing Vite bundle advisory remains. The exact combined tree is used for
 main integration; no live inference, remote shop, datasets or hardware were used.
+
+
+## Healthy transfer and automatic local orders - 2026-11-14
+
+On `feat/automatic-workload-transfer`, final root verification:
+
+```powershell
+$env:PRINT_ASSIST_API_PORT='8002'
+$env:PRINT_ASSIST_WEB_PORT='5175'
+.venv\Scripts\python.exe scripts/check.py coverage
+```
+
+Passed **206 backend + 312 frontend + 24 browser tests (542 total)**. Backend
+statement/branch coverage and all frontend coverage metrics are 100%; schema drift,
+TypeScript and production build pass. Existing Vite bundle advisory remains; the
+WebGL failure test intentionally logs renderer failures while verifying fallback.
+The ordinary 8000/5173 preview remained available during isolated-port tests.
+
+Independent review identified and regression tests fixed: incident-owned deferred
+transfers bypassing approval, running parts losing ETA before future manual holds,
+and feasible automatic intake rejected instead of planning around manual queues.
+Legacy browser expectations were updated for transfer rather than abandoned-part
+resume; transferred manual retries still require explicit manual start.
+
+Preview runs at http://127.0.0.1:5173 with a separate healthy database: three idle
+printers, paused clock, no incidents or orders. The old fault-demo database remains
+intact; reload still preserves incident history. Desktop 1440px and mobile 390px
+screenshots were inspected; mobile has no horizontal overflow. Orders > Simulate
+incoming order > Fully automated order-to-print demo exercises matching, targeted
+approval, clock start, dispatch and completion without manual printer starts.
+Infeasible/unmatched orders stop for attention. No live agents, shop or hardware
+were used. Changes remain local on the feature branch.
+
+
+### Returning printers and deadline-first queues
+
+The same root coverage command on ports 8002/5175 passed **227 backend + 316 frontend
++ 25 browser tests (568 total)**, 100% application coverage, schema, TypeScript and
+production build after the return-to-work fix. Existing Vite size advisory remains.
+Browser checks pause/offline an active printer, confirm late queued completion,
+resume/online it and verify the same queued attempt starts immediately, healthy
+active attempts remain unchanged, and completion risk returns to on-time.
+
+Queue rebalancing operates before dispatch on healthy idle capacity, choosing
+already-approved unstarted automatic attempts by production deadline, then priority.
+The initial dispatch, proposal, transfer, recovery, forecast, impact and dashboard
+ordering follow the same rule. Manual starts and incident-held parts remain guarded.
+An API replay regression also covers impact snapshots containing virtual unassigned
+parts: only real jobs receive updated saved queue estimates.
+
+The local API preview was restarted with its existing healthy database, retaining
+all saved data and startup safety. No printers were running before that restart.
+No remote integration, commits, merge or push was performed by this follow-up.
+
+
+## Demo scenario engine and restored backlogs - 2026-11-14
+
+Final root verification uses the ordinary offline runner with isolated server ports:
+
+```powershell
+$env:PRINT_ASSIST_API_PORT='8002'
+$env:PRINT_ASSIST_WEB_PORT='5175'
+.venv\Scripts\python.exe scripts/check.py coverage
+```
+
+Implementation covers shared configurable event ingestion, urgent future-queue
+replanning, safe complete backlog balancing, incident/restore policy guards, actual
+before/after impacts and deterministic tool-call history. The five events are tested
+sequentially through the real UI, including exact completed quantities and reset.
+The new [demo runbook](demo-runbook.md) documents manual and automatic presentations.
+
+Independent review found a stale panel recovery setting and generic queue placement
+stranding restricted-printer filament. Regression-first fixes send no policy override
+unless explicitly selected and preserve remaining original queued stock during
+placement. New orders cannot displace previously approved commitments. The API
+uses the existing single transaction, session/revision guard and replay cache.
+
+The local preview was restarted using the same saved database with a backup; no
+active printers were running before restart and no reset/event was injected into
+user data. Actual desktop 1440px and mobile 390px inspection shows no horizontal
+overflow. The new panel is collapsed by default; expanded labels/forms override
+inherited page-level margins so controls remain compact. The browser regression
+limits initial expanded fieldset height to 700px (original inherited spacing: 894.5px).
+No model calls, live agents, real marketplace connection or physical printers ran.
+
+
+Final verification after the compact spacing adjustment: **253 backend + 335 frontend
++ 26 browser tests (614 total)** pass with 100% application coverage, generated schema
+consistency, TypeScript and build. `git diff --check` and documentation link checks
+pass. Existing Vite bundle-size advisory remains. Source/test responsibility map
+covers every newly added application and test file. Work remains local on the
+feature branch, without a commit, merge or push.
+
+
+## Unified sidebar and OpenAI account-backed read-only assistant - 2026-11-14
+
+Root verification on the final tree:
+
+```powershell
+$env:PRINT_ASSIST_API_PORT='8002'
+$env:PRINT_ASSIST_WEB_PORT='5175'
+.venv\Scripts\python.exe scripts/check.py coverage
+```
+
+Passed **289 backend + 357 frontend + 28 browser tests (674 total)** with 100%
+application statement/branch coverage, generated schema consistency, TypeScript and
+production build. Existing Vite bundle-size advisory remains. OAuth/provider tests use
+fake transports and generated test signing keys; browser connected chat uses explicit
+fixture routes, while the real default API confirms registration is unconfigured.
+No actual OpenAI sign-in, account credential access or model calls were performed.
+
+The sidebar follows the reference's Orchestrator / Scenario controls / Agent network.
+Workshop reset is visibly inside the same Scenario controls section as event injection.
+Manual workflow links remain below the floor. Registered-client account setup and
+remaining ephemeral-session/registration constraints are in [assistant setup](openai-assistant-setup.md).
+Manual requests are read-only recommendations; specialist agents remain disconnected.
+
+Security review regressions enforce actual inference grants, resource binding, verified
+identity, exact replay without paid duplication, and reset invalidation. Live clock
+revision changes do not discard captured read-only advice. Callback query credentials
+are removed before access logging. UI tests prove explicit discard does not submit a
+new request and new messages use a fresh identity. Sidebar key collisions were reproduced
+and fixed, retaining component state across ordinary refreshes.
+
+The API preview was restarted with its existing database and a pre-restart backup;
+no active printers were running and no reset or scenario was injected. Desktop 1440px
+and mobile 390px were inspected: no page errors or horizontal overflow. The actual
+connection remains configured=false/connected=false until the owner supplies registered
+OpenAI client/callback settings and approved inference access. Work remains local;
+no commit, merge, push or deployment was performed.

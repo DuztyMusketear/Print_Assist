@@ -20,6 +20,17 @@ test('planning summaries and the calendar axis use the same explicit UTC timezon
 
 const first=orderedState.orders[0],second={...first,id:'order-2',quantity:1};
 const slot:Slot={order_id:first.id,printer_id:'printer-1',start:'2026-11-15T01:00:00Z',finish:'2026-11-15T03:00:00Z',status:'planned',late:false,overlap:false};
+
+test('transferred planned work follows the backend start-time queue order with deterministic ties',()=>{
+ const job={order_id:first.id,printer_id:'printer-1',status:'planned',duration_seconds:7200};
+ const jobs=[{...job,id:'later',estimated_start:'2026-11-15T08:00:00Z'},{...job,id:'b',estimated_start:'2026-11-15T02:00:00Z'},{...job,id:'a',estimated_start:'2026-11-15T02:00:00Z'}];
+ expect(timelineSlots({...orderedState,jobs}).map(slot=>[slot.job_id,slot.finish])).toEqual([['a','2026-11-15T02:00:00.000Z'],['b','2026-11-15T04:00:00.000Z'],['later','2026-11-15T06:00:00.000Z']]);
+});
+
+test('legacy planned jobs without saved start times sort deterministically by identity',()=>{
+ const job={order_id:first.id,printer_id:'printer-1',status:'planned',duration_seconds:60};
+ expect(timelineSlots({...orderedState,jobs:[{...job,id:'z'},{...job,id:'a'}]}).map(slot=>slot.job_id)).toEqual(['a','z']);
+});
 test('each order keeps its own color across printers, completed work and later arrivals',()=>{
  const snapshot={...orderedState,orders:[first,second]},slots=[slot,{...slot,printer_id:'printer-2',finish:'2026-11-15T04:00:00Z'},{...slot,order_id:second.id}];
  const groups=timelineOrders(snapshot,slots);
@@ -39,4 +50,20 @@ test('partial, blocked, overlapping, unavailable and unknown work cannot promise
  expect(timelineOrders({...snapshot,orders:[{...second,requires_schedule_review:true}],forecasts:[{order_id:second.id,risk:'unavailable',completion:null,reason:'Previously held'}]},[shown],{...proposal,blocked:[]})[0].finish).toBe(new Date(slot.finish).toISOString());
  const orphan=timelineOrders(snapshot,[{...shown,order_id:'orphan'}])[0];expect(orphan.finish).toBeUndefined();expect(orphan.id).toBe('orphan');expect(orphan.color).not.toBe(timelineOrders(snapshot,[shown])[0].color);
  expect(timelineOrders(snapshot,[])).toEqual([]);
+});
+
+
+test('queued timeline puts the earliest deadline before a later high-priority reservation',()=>{
+ const early={...first,id:'early',priority:0,production_due:'2026-11-15T03:00:00Z'};
+ const later={...first,priority:10,production_due:'2026-11-15T12:00:00Z'};
+ const job={printer_id:'printer-1',status:'planned',schedule_mode:'automatic',duration_seconds:7200};
+ const jobs=[{...job,id:'later',order_id:later.id,estimated_start:'2026-11-15T02:00:00Z'},
+             {...job,id:'early',order_id:early.id,estimated_start:'2026-11-15T04:00:00Z'}];
+ expect(timelineSlots({...orderedState,orders:[later,early],jobs}).map(slot=>[slot.job_id,slot.finish])).toEqual([['early','2026-11-15T02:00:00.000Z'],['later','2026-11-15T04:00:00.000Z']]);
+});
+
+
+test('orphan queued references keep deterministic preview ordering without crashing',()=>{
+ const job={order_id:'removed-order',printer_id:'printer-1',status:'planned',duration_seconds:60};
+ expect(timelineSlots({...orderedState,orders:[],jobs:[{...job,id:'b'},{...job,id:'a'}]}).map(slot=>slot.job_id)).toEqual(['a','b']);
 });

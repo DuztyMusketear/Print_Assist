@@ -3,7 +3,7 @@ import type {components} from '../types';
 export type Proposal=components['schemas']['ScheduleProposal'];
 export type Scale='day'|'week'|'month';
 export function formatScheduleTime(value:string){return new Date(value).toLocaleString('en-US',{timeZone:'UTC'})+' UTC';}
-export type Slot={order_id:string;printer_id:string;start:string;finish:string;status:string;late:boolean;overlap:boolean};
+export type Slot={job_id?:string;order_id:string;printer_id:string;start:string;finish:string;status:string;late:boolean;overlap:boolean};
 
 /** Persisted orders are append-only, including archived ones: colors survive queue changes. */
 export function timelineOrders(state:Snapshot,slots:Slot[],proposal?:Proposal){
@@ -20,14 +20,15 @@ export function timelineOrders(state:Snapshot,slots:Slot[],proposal?:Proposal){
 export function timelineSlots(state:Snapshot,proposal?:Proposal):Slot[]{
  const now=Date.parse(state.simulation_time),capacity=new Map<string,number>();
  const active=state.jobs.filter(job=>['running','pending','paused','planned'].includes(String(job.status)));
- const queue=[...active.filter(job=>job.status!=='planned'),...active.filter(job=>job.status==='planned')];
+ const planned=active.filter(job=>job.status==='planned').sort((a,b)=>String(state.orders.find(order=>order.id===a.order_id)?.production_due??'').localeCompare(String(state.orders.find(order=>order.id===b.order_id)?.production_due??''))||Number(state.orders.find(order=>order.id===b.order_id)?.priority??0)-Number(state.orders.find(order=>order.id===a.order_id)?.priority??0)||String(a.estimated_start??'').localeCompare(String(b.estimated_start??''))||String(a.id).localeCompare(String(b.id)));
+ const queue=[...active.filter(job=>job.status!=='planned'),...planned];
  const existing=queue.flatMap(job=>{
   const order=state.orders.find(order=>order.id===job.order_id),model=state.artifacts.find(model=>model.id===order?.artifact_id);
   const duration=Number(job.duration_seconds??model?.duration_seconds),elapsed=Number(job.elapsed_seconds??0);
   if(!Number.isFinite(duration)||!Number.isFinite(elapsed))return [];
   const printer=String(job.printer_id),start=job.status==='planned'?(capacity.get(printer)??now):now-elapsed*1000;
   const finish=(job.status==='planned'?start:now)+Math.max(0,duration-elapsed)*1000;capacity.set(printer,finish);
-  return [{order_id:String(job.order_id),printer_id:printer,start:new Date(start).toISOString(),finish:new Date(finish).toISOString(),status:String(job.status)}];
+  return [{job_id:String(job.id),order_id:String(job.order_id),printer_id:printer,start:new Date(start).toISOString(),finish:new Date(finish).toISOString(),status:String(job.status)}];
  });
  const slots=[...existing,...(proposal?.assignments??[]).map(slot=>({...slot,status:'proposed'}))].filter(slot=>Number.isFinite(Date.parse(slot.start))&&Number.isFinite(Date.parse(slot.finish)));
  return slots.map((slot,index)=>{

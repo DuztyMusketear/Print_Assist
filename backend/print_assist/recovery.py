@@ -76,7 +76,7 @@ def propose_recovery(state, incident_id, include_movable=True):
     orders={o['id']:o for o in state['orders']}
     now=datetime.fromisoformat(state['simulation_time'].replace('Z','+00:00'))
     assignments=[]; blocked=[]
-    for job in sorted(owned+movable,key=lambda j:(-orders[j['order_id']]['priority'],orders[j['order_id']]['production_due'],j['order_id'],j['id'])):
+    for job in sorted(owned+movable,key=lambda j:(orders[j['order_id']]['production_due'],-orders[j['order_id']]['priority'],j['order_id'],j['id'])):
         order=orders[job['order_id']]
         artifact=next(a for a in state['artifacts'] if a['id']==order['artifact_id'])
         candidates=[p for p in draft['printers'] if capacity[p['id']] is not None

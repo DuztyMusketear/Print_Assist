@@ -11,6 +11,16 @@ test('simulate one incoming request in manual or automatic matching mode with sa
  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
+test('fully automated demo explicitly authorizes a fast local order-to-print workflow',async()=>{
+ const simulate=vi.fn().mockResolvedValue(undefined),user=userEvent.setup();render(<OrderSimulation state={state} onSimulate={simulate}/>);
+ await user.click(screen.getByRole('button',{name:'Simulate incoming order'}));
+ await user.selectOptions(screen.getByLabelText('Incoming process'),'end_to_end');
+ expect(screen.getByText(/Automatically matches, schedules and starts/)).toBeVisible();
+ await user.selectOptions(screen.getByLabelText('Demo playback speed'),'300');
+ await user.click(screen.getByRole('button',{name:'Simulate order'}));
+ expect(simulate).toHaveBeenCalledWith(expect.objectContaining({mode:'end_to_end',clock_speed:300,artifact_id:'figure-pla-blue'}));
+});
+
 test('incoming request edits, unmatched choices and errors remain in the dialog for correction',async()=>{
  const simulate=vi.fn().mockRejectedValue(new Error('State changed')),user=userEvent.setup();render(<OrderSimulation state={state} initialModel="figure-pla-blue" onSimulate={simulate}/>);
  await user.click(screen.getByRole('button',{name:'Simulate incoming order'}));await user.selectOptions(screen.getByLabelText('Incoming model'),'');await user.clear(screen.getByLabelText('Incoming quantity'));await user.type(screen.getByLabelText('Incoming quantity'),'5');

@@ -1,4 +1,4 @@
-"""Offline-only HTTP boundary. No provider imports or credential reads."""
+"""Manufacturing HTTP boundary with optional, user-initiated account-backed advice."""
 import os
 import asyncio
 from contextlib import asynccontextmanager
@@ -13,7 +13,7 @@ from .contracts import ScheduleProposal, ApplyScheduleCommand
 from .contracts import AdvanceCommand, CommandEnvelope, FactorySnapshot, ScheduleCommand, StartCommand
 from .service import FactoryService
 from .contracts import ModelTaskCommand, ModelActionCommand
-from .contracts import PrinterControlCommand, ResetCommand
+from .contracts import PrinterControlCommand, ResetCommand, ScenarioEventCommand
 from .contracts import LibraryUploadCommand, ExampleFeedCommand, ShopDecisionCommand, ReviseOrderCommand
 from fastapi.responses import Response
 from .contracts import DeleteOrderCommand, EstimateRequest, OrderEstimate, SimulateOrderCommand
@@ -37,6 +37,15 @@ def create_app(path=None):
             except asyncio.CancelledError:
                 pass
     app = FastAPI(lifespan=lifespan,title="Print Assist", version="0.1.0")
+    from .orchestrator import mount_orchestrator
+    mount_orchestrator(app, service)
+
+    @app.post('/api/scenarios/events',response_model=FactorySnapshot)
+    def scenario_event(command:ScenarioEventCommand):
+        try:
+            return project(service.scenario_event(command))
+        except ValueError as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
 
     from .contracts import FaultCommand
     from .contracts import RecoverCommand, RejectRecoveryCommand, ClearFaultCommand, RecoveryPolicyCommand, IncidentTelemetryCommand

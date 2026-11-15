@@ -61,3 +61,9 @@ test.each([JSON.stringify({detail:'Incident recovery has already been applied'})
  vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(response,{status:409}));
  await expect(productionCommand('/api/incidents/reject',{session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,payload:{incident_id:'incident-a',confirmed:true}})).rejects.toThrow(response.includes('already been applied')?'Incident recovery has already been applied':'Production command failed');
 });
+
+
+test('scenario event conflicts explain the correction without losing the typed command',async()=>{
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify({detail:'Restore requires paused, offline or faulted equipment'}),{status:409}));
+ await expect(productionCommand('/api/scenarios/events',{session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,payload:{event:'printer_restored',event_id:'restore-1',printer_id:'printer-1',product_id:'sku',available_grams:0,refill_grams:1000,confirmed:true}})).rejects.toThrow('Restore requires paused, offline or faulted equipment');
+});
