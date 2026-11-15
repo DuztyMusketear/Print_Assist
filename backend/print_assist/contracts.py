@@ -306,8 +306,17 @@ class ModelTaskCommand(ScheduleCommand):
 class ModelAction(BaseModel):
     model_config = ConfigDict(extra='forbid')
     task_id: str
-    action: Literal['prepare-supports', 'submit-review', 'approve', 'request-changes', 'remove']
+    action: Literal['set-color', 'prepare-supports', 'submit-review', 'approve', 'request-changes', 'remove']
     support_assessment: SupportAssessment | None = None
+    color: Literal['blue', 'black', 'white', 'gray', 'red'] | None = None
+
+    @model_validator(mode='after')
+    def color_only_for_color_change(self):
+        if self.action == 'set-color' and self.color is None:
+            raise ValueError('Choose a filament color')
+        if self.action != 'set-color' and self.color is not None:
+            raise ValueError('Filament color can only be changed on a modeling task')
+        return self
 
 
 class ModelActionCommand(ScheduleCommand):

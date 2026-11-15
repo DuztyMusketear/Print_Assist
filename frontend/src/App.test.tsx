@@ -117,11 +117,17 @@ test('server restart releases an uncertain production envelope and server errors
 test.each(['order','model'] as const)('late pre-reset %s replies cannot erase new-session retry keys',async(kind)=>{
   let finish!:(response:Response)=>void;
   const next={...state,session_id:'00000000-0000-4000-8000-000000000099'};
-  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
-    .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
+  const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)));
+  if(kind==='order') transport.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
     .mockResolvedValueOnce(new Response(JSON.stringify(next)))
     .mockRejectedValueOnce(new Error('New response lost'))
-    .mockResolvedValueOnce(new Response(JSON.stringify({...next,revision:1,orders:kind==='order'?orderedState.orders:[],modeling_tasks:kind==='model'?[modelTask]:[]})));
+    .mockResolvedValueOnce(new Response(JSON.stringify({...next,revision:1,orders:orderedState.orders})));
+  else transport.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
+    .mockResolvedValueOnce(new Response(JSON.stringify(next)))
+    .mockResolvedValueOnce(new Response(JSON.stringify(next)))
+    .mockRejectedValueOnce(new Error('New response lost'))
+    .mockResolvedValueOnce(new Response(JSON.stringify(next)))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...next,revision:1,modeling_tasks:[modelTask]})));
   const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
   async function enter() {
     await user.click(screen.getByRole('tab',{name:kind==='order'?'Orders':'Models'}));if(kind==='model')await openPreparation(user);
@@ -131,7 +137,7 @@ test.each(['order','model'] as const)('late pre-reset %s replies cannot erase ne
       await user.type(screen.getByLabelText('Production due (UTC)'),'2026-11-20T12:00');
       await user.type(screen.getByLabelText('Ship by (UTC)'),'2026-11-21T12:00');
     }
-    await user.click(screen.getByRole('button',{name:kind==='order'?'Add order':'Add to modeling'}));
+    if(kind==='order') await user.click(screen.getByRole('button',{name:'Add order'}));
   }
   await enter();
   await user.click(screen.getByRole('tab',{name:'Printers'}));
@@ -140,9 +146,93 @@ test.each(['order','model'] as const)('late pre-reset %s replies cannot erase ne
   await waitFor(()=>expect(screen.getByRole('checkbox',{name:/I understand/})).not.toBeChecked());
   await enter();await screen.findByText('New response lost');
   await act(async()=>finish(new Response(JSON.stringify(orderedState))));
-  await user.click(screen.getByRole('button',{name:kind==='order'?'Add order':'Add to modeling'}));
-  await waitFor(()=>expect(transport).toHaveBeenCalledTimes(5));
-  expect(JSON.parse(String(transport.mock.calls[3][1]!.body)).idempotency_key).toBe(JSON.parse(String(transport.mock.calls[4][1]!.body)).idempotency_key);
+  if(kind==='order') await user.click(screen.getByRole('button',{name:'Add order'}));
+  else await user.click(screen.getByRole('button',{name:'Retry preset model send'}));
+  await waitFor(()=>expect(transport).toHaveBeenCalledTimes(kind==='order'?5:7));
+  const previousCommandIndex=kind==='order'?3:4;
+  const retryCommandIndex=kind==='order'?4:6;
+  expect(JSON.parse(String(transport.mock.calls[previousCommandIndex][1]!.body)).idempotency_key).toBe(JSON.parse(String(transport.mock.calls[retryCommandIndex][1]!.body)).idempotency_key);
+});
+
+test.each(['conflict','success','rejection'] as const)('reset supersedes pending modeling %s and preserves a new-session retry',async(outcome)=>{
+ let finish!:(response:Response)=>void;
+ const original={...state,modeling_tasks:[modelTask]};
+ const next={...original,session_id:'00000000-0000-4000-8000-000000000099',modeling_tasks:[{...modelTask,title:'Replacement model'}]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(original)));
+ if(outcome==='conflict')transport.mockResolvedValueOnce(new Response('',{status:409}));
+ transport.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
+ .mockResolvedValueOnce(new Response(JSON.stringify(next)))
+ .mockRejectedValueOnce(new Error('New modeling response lost'))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...next,revision:1,modeling_tasks:[{...next.modeling_tasks[0],stage:'supports'}]})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await openPreparation(user);await user.click(screen.getByRole('button',{name:'Prepare supports'}));
+ const beforeReset=outcome==='conflict'?3:2;
+ await waitFor(()=>expect(transport).toHaveBeenCalledTimes(beforeReset));
+ await user.click(screen.getByRole('tab',{name:'Printers'}));await user.click(screen.getByRole('checkbox',{name:/I understand/}));
+ await user.click(screen.getByRole('button',{name:'Reset scenario'}));
+ await waitFor(()=>expect(screen.getByRole('checkbox',{name:/I understand/})).not.toBeChecked());
+ await openPreparation(user);await user.click(screen.getByRole('button',{name:'Prepare supports'}));
+ await screen.findByText('New modeling response lost');
+ await act(async()=>finish(outcome==='rejection'?new Response('',{status:422}):new Response(JSON.stringify({...original,revision:2}))));
+ expect(transport).toHaveBeenCalledTimes(beforeReset+2);
+ expect(screen.getByRole('heading',{name:'Replacement model'})).toBeInTheDocument();
+ await user.click(screen.getByRole('button',{name:'Retry modeling change'}));
+ await screen.findByRole('button',{name:'Send model and support assessment to review'});
+ expect(transport.mock.calls[beforeReset+2][1]!.body).toBe(transport.mock.calls[beforeReset+1][1]!.body);
+});
+
+test('a modeling conflict refresh from a different scenario asks for a fresh selection',async()=>{
+ const original={...state,modeling_tasks:[modelTask]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(original)))
+ .mockResolvedValueOnce(new Response('',{status:409}))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...original,session_id:'00000000-0000-4000-8000-000000000099'})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);await openPreparation(user);
+ await user.click(screen.getByRole('button',{name:'Prepare supports'}));
+ await screen.findByText('The demo scenario changed. Select the preset again.');
+ expect(transport).toHaveBeenCalledTimes(3);
+});
+
+test.each([422,409])('a rejected modeling command releases its envelope for a different action (%s)',async(status)=>{
+ const original={...state,modeling_tasks:[modelTask]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(original)))
+ .mockResolvedValueOnce(new Response('',{status}));
+ if(status===409)transport.mockResolvedValueOnce(new Response(JSON.stringify(original))).mockResolvedValueOnce(new Response('',{status:422}));
+ transport.mockResolvedValueOnce(new Response(JSON.stringify({...original,revision:1,modeling_tasks:[{...modelTask,color:'red'}]})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);await openPreparation(user);
+ await user.click(screen.getByRole('button',{name:'Prepare supports'}));await screen.findByRole('alert');
+ await user.selectOptions(screen.getByRole('combobox',{name:'Color for Planter'}),'red');
+ await waitFor(()=>expect(screen.getByRole('combobox',{name:'Color for Planter'})).toHaveValue('red'));
+ expect(JSON.parse(String(transport.mock.calls.at(-1)![1]!.body)).payload.action).toBe('set-color');
+});
+
+test('a modeling conflict refresh preserves a newer same-session snapshot',async()=>{
+ let finish!:(response:Response)=>void;
+ const original={...state,modeling_tasks:[modelTask]};
+ const newer={...original,revision:3,modeling_tasks:[{...modelTask,title:'Newer title'}]};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(original)))
+ .mockResolvedValueOnce(new Response('',{status:409}))
+ .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}))
+ .mockResolvedValueOnce(new Response(JSON.stringify(newer)))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...original,revision:2})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);await openPreparation(user);
+ await user.click(screen.getByRole('button',{name:'Prepare supports'}));await waitFor(()=>expect(transport).toHaveBeenCalledTimes(3));
+ await user.click(screen.getByRole('button',{name:'Refresh queue'}));await screen.findByRole('heading',{name:'Newer title'});
+ await act(async()=>finish(new Response(JSON.stringify({...original,revision:1}))));
+ expect(screen.getByRole('heading',{name:'Newer title'})).toBeInTheDocument();
+ expect(JSON.parse(String(transport.mock.calls[4][1]!.body)).expected_revision).toBe(1);
+});
+
+test('sending a preset preserves newer displayed state while using its refreshed revision',async()=>{
+ const original={...state,revision:3,modeling_tasks:[modelTask]};
+ let finish!:(response:Response)=>void;
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(original)))
+ .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:2})))
+ .mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);await openPreparation(user);
+ await fillModel(user);await waitFor(()=>expect(transport).toHaveBeenCalledTimes(3));
+ expect(screen.getByRole('heading',{name:'Planter'})).toBeInTheDocument();
+ expect(JSON.parse(String(transport.mock.calls[2][1]!.body)).expected_revision).toBe(2);
+ await act(async()=>finish(new Response(JSON.stringify(original))));
 });
 
 test('modeling is available alongside the default production overview',async()=>{
@@ -155,51 +245,68 @@ test('modeling is available alongside the default production overview',async()=>
   expect(screen.getByRole('heading',{name:'Modeling dashboard'})).toBeVisible();
 });
 
-test('retry after a rejected modeling change refreshes instead of resubmitting rejected work',async()=>{
+test('preset action opens modeling and creates a task directly without an intake form',async()=>{
+ const presetTask={...modelTask,title:'3DBenchy',modelReference:'https://www.printables.com/model/3161-3d-benchy'};
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state))).mockResolvedValueOnce(new Response(JSON.stringify(state))).mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[presetTask]})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
+ await user.click(screen.getByRole('tab',{name:'Models'}));
+ await user.click(screen.getAllByRole('button',{name:'Send to modeling dashboard'})[0]);
+ await screen.findByRole('button',{name:'Prepare supports'});
+ expect(screen.queryByRole('heading',{name:'Add a model task'})).not.toBeInTheDocument();
+ expect(await screen.findByRole('combobox',{name:'Color for 3DBenchy'})).toBeVisible();
+ expect(transport.mock.calls[2][0]).toBe('/api/modeling/tasks');
+ expect(JSON.parse(String(transport.mock.calls[2][1]!.body)).payload).toMatchObject({title:'3DBenchy',modelReference:'https://www.printables.com/model/3161-3d-benchy'});
+ expect((document.querySelector('details.preparation-tools') as HTMLDetailsElement|null)?.open).toBe(true);
+ expect(transport).toHaveBeenCalledTimes(3);
+});
+
+test('retries a stale modeling revision against refreshed state automatically',async()=>{
   const original={...state,modeling_tasks:[modelTask]};
   const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(original)))
-    .mockResolvedValueOnce(new Response('',{status:409}))
-    .mockResolvedValueOnce(new Response(JSON.stringify({...original,revision:1})));
+    .mockResolvedValueOnce(new Response(JSON.stringify({detail:'Stale revision; refresh state before submitting'}),{status:409}))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...original,revision:1})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...original,revision:2,modeling_tasks:[{...modelTask,stage:'supports',support_task:{id:'support-1',assessment_status:'pending'}}]})));
   const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);
   await openPreparation(user);
   await user.click(screen.getByRole('button',{name:'Prepare supports'}));
-  await screen.findByText(/Modeling change rejected/);
-  await user.click(screen.getByRole('button',{name:'Retry modeling change'}));
-  await waitFor(()=>expect(screen.queryByText(/Modeling change rejected/)).not.toBeInTheDocument());
+  await screen.findByRole('combobox',{name:'Support requirement'});
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(transport.mock.calls[2][0]).toBe('/api/state');
-  expect(transport.mock.calls[2][1]).toBeUndefined();
+  expect(transport.mock.calls[3][0]).toBe('/api/modeling/actions');
 });
 
 async function fillModel(user:ReturnType<typeof userEvent.setup>) {
-  const preparation=screen.getByText('Model preparation (team only)');
-  if(!preparation.closest('details')!.open) await user.click(preparation);
-  await user.type(screen.getByLabelText('Model name'),'Planter');
-  await user.type(screen.getByLabelText('Model file reference'),'planter.stl');
-  await user.type(screen.getByLabelText('Estimated print minutes'),'60');
-  await user.type(screen.getByLabelText('Estimated filament grams'),'30');
-  await user.type(screen.getByLabelText('Filament type'),'PLA');
-  await user.type(screen.getByLabelText('Filament color'),'blue');
+  await user.click(screen.getAllByRole('button',{name:'Send to modeling dashboard'})[0]);
 }
 
 const modelTask={id:'model-1',title:'Planter',modelReference:'planter.stl',stage:'modeling',duration_seconds:3600,filament_grams:30,filament_type:'PLA',color:'blue',required_capabilities:['FFF']};
 
+test('modeling task color selection persists through the modeling action API',async()=>{
+ const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[modelTask]}))).mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[{...modelTask,color:'red'}]})));
+ const user=userEvent.setup();render(<App/>);await screen.findByText(/No orders yet/);await openPreparation(user);
+ await user.selectOptions(screen.getByRole('combobox',{name:'Color for Planter'}),'red');
+ await waitFor(()=>expect(screen.getByRole('combobox',{name:'Color for Planter'})).toHaveValue('red'));
+ expect(transport.mock.calls[1][0]).toBe('/api/modeling/actions');
+ expect(JSON.parse(String(transport.mock.calls[1][1]!.body)).payload).toEqual({task_id:'model-1',action:'set-color',color:'red'});
+});
+
 test('saved modeling tasks can be created and moved through server commands',async()=>{
   const user=userEvent.setup();
   const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify(state)))
+    .mockResolvedValueOnce(new Response(JSON.stringify(state)))
     .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[modelTask]})))
     .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:2,modeling_tasks:[{...modelTask,stage:'supports',support_task:{id:'support-1',assessment_status:'pending'}}]})))
     .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:3,modeling_tasks:[{...modelTask,stage:'review',support_task:{id:'support-1',assessment_status:'ready-for-review',supports_required:true}}]})));
   render(<App/>); await screen.findByText(/No orders yet/);
   await openPreparation(user);
   await fillModel(user);
-  await user.click(screen.getByRole('button',{name:'Add to modeling'}));
   await user.click(await screen.findByRole('button',{name:'Prepare supports'}));
   await user.selectOptions(await screen.findByRole('combobox',{name:'Support requirement'}),'required');
   await user.click(screen.getByRole('button',{name:'Send model and support assessment to review'}));
   await screen.findByRole('button',{name:'Approve model and supports'});
-  expect(String(transport.mock.calls[1][0])).toBe('/api/modeling/tasks');
-  expect(String(transport.mock.calls[2][0])).toBe('/api/modeling/actions');
-  const reviewCommand=JSON.parse(String(transport.mock.calls[3][1]!.body));
+  expect(String(transport.mock.calls[2][0])).toBe('/api/modeling/tasks');
+  expect(String(transport.mock.calls[3][0])).toBe('/api/modeling/actions');
+  const reviewCommand=JSON.parse(String(transport.mock.calls[4][1]!.body));
   expect(reviewCommand.payload.support_assessment.supports_required).toBe(true);
 });
 
@@ -234,21 +341,29 @@ test('blocks approved-task removal when the artifact appears in an order',async(
 test('modeling handles uncertain retries, blocks different changes, and reports rejection',async()=>{
   const user=userEvent.setup();
   const transport=vi.spyOn(globalThis,'fetch').mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[modelTask]})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,modeling_tasks:[modelTask]})))
     .mockRejectedValueOnce(new Error('Response lost'))
-    .mockResolvedValueOnce(new Response('',{status:409}))
-    .mockResolvedValueOnce(new Response('',{status:409}));
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[modelTask]})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({detail:'Stale revision; refresh state before submitting'}),{status:409}))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:1,modeling_tasks:[modelTask]})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:2,modeling_tasks:[modelTask]})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:2,modeling_tasks:[modelTask]})))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...state,revision:3,modeling_tasks:[{...modelTask,stage:'supports',support_task:{id:'support-1',assessment_status:'pending'}}]})));
   render(<App/>); await screen.findByText(/No orders yet/);
   await openPreparation(user);
   await fillModel(user);
-  await user.click(screen.getByRole('button',{name:'Add to modeling'}));
   await screen.findByText('Response lost');
   await user.click(screen.getByRole('button',{name:'Prepare supports'}));
   await screen.findByText('Retry the previous modeling change first.');
-  await user.click(screen.getByRole('button',{name:'Add to modeling'}));
-  await screen.findByText(/Modeling change rejected/);
-  expect(JSON.parse(String(transport.mock.calls[1][1]!.body)).idempotency_key).toBe(JSON.parse(String(transport.mock.calls[2][1]!.body)).idempotency_key);
+  await user.click(screen.getByRole('button',{name:'Retry preset model send'}));
+  await screen.findByRole('button',{name:'Prepare supports'});
+  await user.click(screen.getByRole('button',{name:'Retry modeling change'}));
+  await screen.findByRole('button',{name:'Prepare supports'});
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(JSON.parse(String(transport.mock.calls[2][1]!.body)).idempotency_key).toBe(JSON.parse(String(transport.mock.calls[4][1]!.body)).idempotency_key);
+  expect(JSON.parse(String(transport.mock.calls[6][1]!.body)).idempotency_key).not.toBe(JSON.parse(String(transport.mock.calls[4][1]!.body)).idempotency_key);
   await user.click(screen.getByRole('button',{name:'Prepare supports'}));
-  await waitFor(()=>expect(transport).toHaveBeenCalledTimes(4));
+  await waitFor(()=>expect(transport).toHaveBeenCalledTimes(9));
 });
 
 test('late modeling results cannot roll back refreshed production state',async()=>{

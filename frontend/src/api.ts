@@ -8,7 +8,11 @@ export type ProductionPayload=ProductionBody['payload'];
 export class RejectedCommand extends Error {constructor(message:string,public status=409){super(message);}}
 export async function modelingCommand(path:'/api/modeling/tasks'|'/api/modeling/actions',body:components['schemas']['ModelTaskCommand']|components['schemas']['ModelActionCommand']):Promise<Snapshot> {
   const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!response.ok) throw new RejectedCommand('Modeling change rejected. Refresh state and check the task details.');
+  if(!response.ok) {
+    const result=await response.json().catch(()=>null);
+    const detail=typeof result?.detail==='string'?result.detail:Array.isArray(result?.detail)?result.detail.map((item:{loc?:unknown[];msg?:string})=>`${Array.isArray(item.loc)?item.loc.slice(1).join('.')+': ':''}${item.msg??''}`).filter(Boolean).join('; '):'';
+    throw new RejectedCommand(detail?`Modeling change rejected: ${detail}`:'Modeling change rejected. Refresh state and check the task details.',response.status);
+  }
   return response.json();
 }
 export async function productionCommand(path:ProductionPath,body:ProductionBody):Promise<Snapshot> {

@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 
-test('prepared profile guides model approval, manual inspection and automatic quantity printing',async({page})=>{
+test('prepared upload profile guides manual inspection and automatic quantity printing',async({page})=>{
  const external:string[]=[];
  await page.route('**/*',route=>{if(new URL(route.request().url()).hostname!=='127.0.0.1'){external.push(route.request().url());return route.abort();}return route.continue();});
  await page.goto('/');
@@ -9,17 +9,17 @@ test('prepared profile guides model approval, manual inspection and automatic qu
  await page.getByRole('checkbox',{name:/I understand/}).check();
  await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
  await expect(page.getByRole('checkbox',{name:/I understand/})).not.toBeChecked();
- await openPreparation(page);
+ await page.getByRole('tab',{name:'Models',exact:true}).click();
+ await page.getByRole('button',{name:'Upload a model',exact:true}).click();
  const profile={title:'Guided tower',modelReference:'tower.stl',duration_seconds:7200,filament_grams:25.125,filament_type:'PLA',color:'blue',visual_asset_id:'example-tower'};
- await page.getByLabel('Prepared model profile',{exact:true}).setInputFiles({name:'tower.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(profile))});
- await expect(page.getByText(/Profile ready: Guided tower/)).toBeVisible();
- await page.getByRole('button',{name:'Add to modeling',exact:true}).click();
- const task=page.locator('.work-card').filter({has:page.getByRole('heading',{name:'Guided tower',exact:true})});
- await task.getByRole('button',{name:'Prepare supports',exact:true}).click();
- await task.getByLabel('Support requirement').selectOption('not-required');
- await task.getByRole('button',{name:'Send model and support assessment to review',exact:true}).click();
- await task.getByRole('button',{name:'Approve model and supports',exact:true}).click();
- await task.getByRole('button',{name:'Next: choose quantity',exact:true}).click();
+ await page.getByLabel('STL model file',{exact:true}).setInputFiles('frontend/public/models/example-tower.stl');
+ await page.getByLabel('Prepared estimate profile (optional)',{exact:true}).setInputFiles({name:'tower.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(profile))});
+ await expect(page.getByLabel('Saved model name',{exact:true})).toHaveValue('Guided tower');
+ await page.getByLabel('Support assessment',{exact:true}).selectOption('not-required');
+ await page.getByRole('checkbox',{name:'I have reviewed the model and its print settings'}).check();
+ await page.getByRole('button',{name:'Save print-ready model',exact:true}).click();
+ await expect(page.getByRole('status')).toContainText('Model saved');
+ await page.getByRole('button',{name:'Print Guided tower',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Model to print',exact:true})).toHaveValue(/^model-/);
  await page.getByLabel('Number of copies',{exact:true}).fill('4');
  await page.getByText('Advanced start options',{exact:true}).click();await page.getByRole('button',{name:'Plan manual printing',exact:true}).click();

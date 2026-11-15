@@ -537,3 +537,27 @@ recovery action. Desktop and 375px inspection had no page errors or horizontal
 overflow. Original incident and resolution data were retained; only printers that
 were running before verification were resumed after the required server restart.
 No physical hardware, remote models or agent controls were enabled.
+
+
+## Main integration verification - 2026-11-14
+
+Integrated origin/main f4fcd01 (persistent modeling colors and preset intake) with
+7177a76 dashboard planning, b7dc100 fault recovery and 4cbac3e compact incident flags.
+Resolved disjoint stylesheet additions together and combined code-map responsibilities.
+Incoming modeling browser workflows each resetEmpty, preserving test isolation while
+adding the persistent five-color selector case. Regenerated TypeScript from the
+combined backend contract rather than selecting one generated schema side.
+
+Independent review found a delayed modeling 409 refresh could overwrite a newer reset
+session and its retry envelope. A red/green App regression now proves the old refresh
+cannot send another request or replace the newer session. Request ownership/session
+checks and same-session monotonic state updates protect the retry. Removed unreachable
+preset-handler guards and App callbacks for hidden intake; disabled-send/UI boundaries
+remain tested. Added missing color-action validation and malformed-response/profile
+boundary coverage without changing valid modeling behavior.
+
+Fresh root `.venv\Scripts\python.exe scripts/check.py coverage` passed: **170 backend,
+288 frontend and 22 browser tests (480 total)**, 100% application statement/branch coverage,
+schema drift, TypeScript and build checks. Prior feature-only verification passed 450
+tests. Existing Vite bundle advisory remains. The exact combined tree is used for
+main integration; no live inference, remote shop, datasets or hardware were used.

@@ -46,18 +46,20 @@ test('WebGL failure retains readable printer statuses and fallback',async({page}
 
 test('approved visual model flows through ordering, scheduling and real progress',async({page})=>{
   await page.goto('/');
-  await openPreparation(page);
-  await page.getByText('Model preparation (team only)',{exact:true}).click();
-  for(const [label,value] of [['Model name','Visual tower order'],['Model file reference','tower.stl'],['Estimated print minutes','120'],['Estimated filament grams','25'],['Filament type','PLA'],['Filament color','blue']]) {
-    await page.getByLabel(label,{exact:true}).fill(value);
-  }
-  await page.getByLabel('3D preview model',{exact:true}).selectOption('example-tower');
-  await page.getByRole('button',{name:'Add to modeling',exact:true}).click();
-  const task=page.locator('.work-card').filter({has:page.getByRole('heading',{name:'Visual tower order',exact:true})});
-  await task.getByRole('button',{name:'Prepare supports'}).click();
-  await task.getByLabel('Support requirement').selectOption('not-required');
-  await task.getByRole('button',{name:'Send model and support assessment to review'}).click();
-  await task.getByRole('button',{name:'Approve model and supports',exact:true}).click();
+  await page.getByRole('tab',{name:'Printers',exact:true}).click();
+  await page.getByLabel('Scenario',{exact:true}).selectOption('empty');
+  await page.getByRole('checkbox',{name:/I understand/}).check();
+  await page.getByRole('button',{name:'Reset scenario',exact:true}).click();
+  await page.getByRole('tab',{name:'Models',exact:true}).click();
+  await page.getByRole('button',{name:'Upload a model',exact:true}).click();
+  const profile={title:'Visual tower order',modelReference:'tower.stl',duration_seconds:7200,filament_grams:25,filament_type:'PLA',color:'blue',visual_asset_id:'example-tower'};
+  await page.getByLabel('STL model file',{exact:true}).setInputFiles('frontend/public/models/example-tower.stl');
+  await page.getByLabel('Prepared estimate profile (optional)',{exact:true}).setInputFiles({name:'tower.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(profile))});
+  await page.getByLabel('Support assessment',{exact:true}).selectOption('not-required');
+  await page.getByRole('checkbox',{name:'I have reviewed the model and its print settings'}).check();
+  await page.getByRole('button',{name:'Save print-ready model',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Model saved');
+  await page.getByRole('button',{name:'Print Visual tower order',exact:true}).click();
   await page.getByRole('tab',{name:'Orders',exact:true}).click();
   await page.getByText('Custom order details',{exact:true}).click();
   await page.getByLabel('Print-ready product',{exact:true}).selectOption({label:'Visual tower order'});
@@ -77,7 +79,5 @@ test('approved visual model flows through ordering, scheduling and real progress
   await expect(page.locator('.printer-card canvas')).toBeVisible();
   await expect(page.getByText('Loading part model...')).toBeHidden();
 });
-
-async function openPreparation(page:import('@playwright/test').Page){await page.getByRole('tab',{name:'Models',exact:true}).click();if(await page.locator('details.preparation-tools').getAttribute('open')===null)await page.getByText('Model preparation & support review',{exact:true}).click();}
 
 async function openScheduleTools(page:import('@playwright/test').Page){await page.getByRole('tab',{name:'Schedule',exact:true}).click();if(await page.locator('details.advanced-schedule').getAttribute('open')===null)await page.getByText('Manual scheduling tools',{exact:true}).click();}

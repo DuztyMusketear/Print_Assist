@@ -1,5 +1,7 @@
 export type WorkStage='modeling'|'supports'|'review'|'approved';
 export type ReviewOutcome='changes-requested';
+export const FILAMENT_COLOR_CHOICES=['blue','black','white','gray','red'] as const;
+export type FilamentColor=typeof FILAMENT_COLOR_CHOICES[number];
 export interface SupportAssessment {
   supports_required:boolean;
   support_reference?:string|null;
@@ -18,20 +20,27 @@ export interface WorkItem {
   id:string;
   title:string;
   modelReference:string;
+  duration_seconds?:number;
+  filament_grams?:number;
+  filament_type?:string;
+  color?:string;
+  required_capabilities?:string[];
   stage:WorkStage;
   reviewOutcome?:ReviewOutcome|null;
   support_task?:SupportTask|null;
 }
-export type WorkflowAction='prepare-supports'|'submit-review'|'approve'|'request-changes';
+export type WorkflowAction='set-color'|'prepare-supports'|'submit-review'|'approve'|'request-changes';
 
-export function createWorkItem(id:string,title:string,modelReference:string):WorkItem {
+export function createWorkItem(id:string,title:string,modelReference:string,profile?:Pick<WorkItem,'duration_seconds'|'filament_grams'|'filament_type'|'color'|'required_capabilities'>):WorkItem {
   const cleanTitle=title.trim();
   const cleanReference=modelReference.trim();
   if(!cleanTitle || !cleanReference) throw new Error('Enter a model name and file reference');
-  return {id,title:cleanTitle,modelReference:cleanReference,stage:'modeling',support_task:null};
+  return {id,title:cleanTitle,modelReference:cleanReference,...profile,stage:'modeling',support_task:null};
 }
 
-export function advanceWorkItem(item:WorkItem,action:WorkflowAction,assessment?:SupportAssessment):WorkItem {
+export function advanceWorkItem(item:WorkItem,action:WorkflowAction,assessment?:SupportAssessment,color?:FilamentColor):WorkItem {
+  if(action==='set-color' && item.stage==='modeling' && color) return {...item,color};
+  if(action==='set-color') throw new Error('Choose a valid color while the model is in Modeling');
   if(action==='prepare-supports' && item.stage==='modeling') return {...item,stage:'supports',reviewOutcome:undefined,
     support_task:{id:`${item.id}-support`,assessment_status:'pending'}};
   if(action==='submit-review' && item.stage==='supports') {

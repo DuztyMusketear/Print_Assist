@@ -10,6 +10,30 @@ test('state fetch failure is actionable',async()=>{
   vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('',{status:503}));
   await expect(readState()).rejects.toThrow('Check the local server');
 });
+test('modeling rejection includes safe server validation detail',async()=>{
+ const {modelingCommand}=await import('./api');
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify({detail:'Expected revision 4, received 2'}),{status:409}));
+ await expect(modelingCommand('/api/modeling/tasks',{session_id:state.session_id,expected_revision:2,idempotency_key:state.session_id,payload:{title:'Part',modelReference:'part.stl',duration_seconds:60,filament_grams:1,filament_type:'PLA',color:'blue',required_capabilities:['FFF'],visual_asset_id:null}})).rejects.toThrow('Modeling change rejected: Expected revision 4, received 2');
+});
+test('modeling validation rejection names the offending payload field',async()=>{
+ const {modelingCommand}=await import('./api');
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify({detail:[{loc:['body','payload','visual_asset_id'],msg:'Extra inputs are not permitted',type:'extra_forbidden'}]}),{status:422}));
+ const command={session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,payload:{title:'Part',modelReference:'part.stl',duration_seconds:60,filament_grams:1,filament_type:'PLA',color:'blue',required_capabilities:['FFF'],visual_asset_id:null}};
+ await expect(modelingCommand('/api/modeling/tasks',command)).rejects.toThrow('Modeling change rejected: payload.visual_asset_id: Extra inputs are not permitted');
+});
+test.each([
+ ['not json','Modeling change rejected. Refresh state and check the task details.'],
+ [JSON.stringify(null),'Modeling change rejected. Refresh state and check the task details.'],
+ [JSON.stringify({detail:{message:'unknown response format'}}),'Modeling change rejected. Refresh state and check the task details.'],
+ [JSON.stringify({detail:''}),'Modeling change rejected. Refresh state and check the task details.'],
+ [JSON.stringify({detail:[{}, {loc:'payload.color',msg:'Choose an available filament color'}, {msg:'Check the prepared profile'}]}),'Modeling change rejected: Choose an available filament color; Check the prepared profile'],
+ [JSON.stringify({detail:[{}]}),'Modeling change rejected. Refresh state and check the task details.'],
+])('modeling errors retain available validation messages and provide a fallback for incomplete responses: %s',async(response,message)=>{
+ const {modelingCommand,RejectedCommand}=await import('./api');
+ vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(response,{status:422}));
+ const command={session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,payload:{task_id:'task-1',action:'prepare-supports' as const}};
+ await expect(modelingCommand('/api/modeling/actions',command)).rejects.toEqual(new RejectedCommand(message,422));
+});
 const body = {session_id:state.session_id,expected_revision:0,idempotency_key:state.session_id,
   payload:{artifact_id:'figure-pla-blue',quantity:1,priority:0,production_due:'2026-11-15T00:00:00Z',ship_by:'2026-11-16T00:00:00Z'}};
 test('posts a typed command and returns the saved state',async()=>{

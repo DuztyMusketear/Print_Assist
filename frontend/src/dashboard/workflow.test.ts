@@ -39,6 +39,12 @@ describe('model preparation workflow',()=>{
       .toThrow('Complete the support assessment before continuing');
   });
 
+  test('updates color only before the modeling task leaves Modeling',()=>{
+    expect(advanceWorkItem(item,'set-color',undefined,'red').color).toBe('red');
+    expect(()=>advanceWorkItem(item,'set-color')).toThrow('Choose a valid color');
+    expect(()=>advanceWorkItem({...item,stage:'supports'},'set-color',undefined,'red')).toThrow('Choose a valid color');
+  });
+
   test('does not approve a review package without an assessed support task',()=>{
     const review={...item,stage:'review' as const};
     expect(()=>advanceWorkItem(review,'approve')).toThrow('A completed support assessment is required before approval');
